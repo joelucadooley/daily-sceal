@@ -27,13 +27,15 @@ jobs:
       - name: Run generation script
         run: node scripts/generate.js
 
-      - name: Commit today.json
+      - name: Commit and push today.json
         run: |
           git config user.name "Daily Scéal Bot"
           git config user.email "bot@daily-sceal"
           git add public/data/today.json
           git diff --staged --quiet || git commit -m "📰 Daily stories $(date +%Y-%m-%d)"
-          git pull --rebase && git push
+          git fetch origin main
+          git rebase origin/main
+          git push
 
       - name: Trigger deploy
         run: |
