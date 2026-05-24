@@ -22,7 +22,7 @@ const CAT_MAP = {
 const FALLBACK_STORIES = [
   {
     id: "f1", title: "Government Announces Ambitious New Housing Plan",
-    summary: "The Irish government has unveiled a new strategy to build fifty thousand homes over the next three years, with a focus on affordable housing in Dublin, Cork, and Galway.",
+    summary: "The Irish government has unveiled a major new housing strategy, promising to build fifty thousand homes over the next three years. The plan focuses heavily on affordable housing in Dublin, Cork, and Galway, where rents have reached record highs. The Taoiseach said the plan would be the largest state investment in housing since the 1970s, and that construction would begin before the end of the year.",
     category: "Ireland", categoryIr: "Éire", timeAgo: "2h ago",
     levels: {
       10: "The Irish [[rialtas|government]] has unveiled a new strategy to build fifty thousand [[tithe|homes]] over the next three years, with a focus on affordable [[tithíocht|housing]] in Dublin, Cork, and Galway.",
@@ -34,7 +34,7 @@ const FALLBACK_STORIES = [
   },
   {
     id: "f2", title: "Leinster Rugby Reach Champions Cup Quarterfinals",
-    summary: "Leinster Rugby secured their place in the Champions Cup quarterfinals with a convincing performance against Toulouse at the Aviva Stadium on Friday night.",
+    summary: "Leinster Rugby secured their place in the Champions Cup quarterfinals with a dominant performance against Toulouse at the Aviva Stadium on Friday night. Two first-half tries put Leinster firmly in control, and despite a spirited Toulouse comeback in the second half, the Irish province held on to win by eleven points. Coach Leo Cullen praised the team's discipline and said he was looking forward to the draw for the last eight.",
     category: "Sport", categoryIr: "Spórt", timeAgo: "4h ago",
     levels: {
       10: "Leinster [[rugbaí|Rugby]] secured their place in the Champions Cup [[ceathrúchrainn|quarterfinals]] with a convincing performance against Toulouse at the Aviva [[Staidiam|Stadium]] on Friday [[oíche|night]].",
@@ -46,7 +46,7 @@ const FALLBACK_STORIES = [
   },
   {
     id: "f3", title: "Wild Atlantic Way Voted Top European Scenic Drive",
-    summary: "Ireland's famous coastal route has been voted the best scenic drive in Europe by a leading travel magazine, boosting hopes for a record summer tourism season.",
+    summary: "Ireland's Wild Atlantic Way has been voted the best scenic drive in Europe by Condé Nast Traveller magazine, beating routes in Norway, Scotland, and the Amalfi Coast. The 2,500 kilometre route stretches from Donegal in the north to Cork in the south, passing through some of the most dramatic coastline on the continent. Tourism Ireland said the award could not have come at a better time, with bookings for the west coast already up thirty percent on last year.",
     category: "Travel", categoryIr: "Taisteal", timeAgo: "6h ago",
     levels: {
       10: "Ireland's famous coastal [[bealach|route]] has been voted the best scenic [[tiomáint|drive]] in Europe by a leading [[irisleabhar|magazine]], boosting hopes for a record summer [[turasóireacht|tourism]] season.",
@@ -58,7 +58,7 @@ const FALLBACK_STORIES = [
   },
   {
     id: "f4", title: "New Irish Language Tech Hub Opens in Galway",
-    summary: "A new technology centre dedicated to developing Irish language software and AI tools has opened in Galway, creating over one hundred new jobs in the region.",
+    summary: "A new technology centre dedicated entirely to Irish language software and artificial intelligence has officially opened in Galway city. The hub, funded jointly by the state and private investors, will focus on developing tools that make Irish more accessible in everyday digital life, from voice assistants to translation software. Over one hundred jobs have been created, with another fifty expected by the end of the year. The Minister for the Gaeltacht described it as a landmark moment for the language.",
     category: "Technology", categoryIr: "Teicneolaíocht", timeAgo: "8h ago",
     levels: {
       10: "A new [[teicneolaíocht|technology]] centre dedicated to developing Irish [[bogearraí|software]] and AI tools has opened in Galway, creating over one hundred new [[poist|jobs]] in the [[réigiún|region]].",
@@ -70,7 +70,7 @@ const FALLBACK_STORIES = [
   },
   {
     id: "f5", title: "Record Numbers Visit National Museums This Year",
-    summary: "Irish national museums and galleries have reported record visitor numbers, with over four million people attending cultural institutions across the country since January.",
+    summary: "Irish national museums and galleries have recorded their highest ever visitor numbers, with more than four million people passing through their doors since January. The National Museum, the National Gallery, and the Irish Museum of Modern Art all reported significant increases compared to last year. Officials credited a combination of free admission, improved facilities, and a growing interest in Irish history and culture. The figures do not yet include summer visitors, meaning the full year total could break all previous records.",
     category: "Culture", categoryIr: "Cultúr", timeAgo: "10h ago",
     levels: {
       10: "Irish national [[músaeim|museums]] and [[gailearaithe|galleries]] have reported record [[cuairteoir|visitor]] numbers, with over four million [[daoine|people]] attending cultural [[institiúidí|institutions]] across the country since January.",
@@ -82,7 +82,7 @@ const FALLBACK_STORIES = [
   },
   {
     id: "f6", title: "Met Éireann Forecasts Warmest June in Decades",
-    summary: "Ireland's national meteorological service has forecast an exceptionally warm and dry June, with temperatures expected to reach twenty-six degrees in parts of the country.",
+    summary: "Met Éireann has forecast an exceptionally warm and dry June, with temperatures expected to reach twenty-six degrees in parts of the country. The forecast is good news for farmers and the tourism sector, though water conservation warnings have already been issued in several counties. Meteorologists say a high pressure system sitting over the Atlantic is responsible for the settled spell, and that it could persist well into July. It would make this June the warmest since records began in the 1940s.",
     category: "Weather", categoryIr: "Aimsir", timeAgo: "12h ago",
     levels: {
       10: "Met Éireann has forecast an exceptionally warm and dry [[Meitheamh|June]], with [[teocht|temperatures]] expected to reach twenty-six [[céim|degrees]] in parts of the [[tír|country]].",
@@ -170,7 +170,7 @@ function Footer() {
           Joe Luca Dooley
         </a>
       </div>
-      <div style={{ color: "#ddd" }}>News sourced from RTÉ · Powered by AI</div>
+      <div style={{ color: "#ddd" }}>News sourced from RTÉ</div>
     </div>
   );
 }
