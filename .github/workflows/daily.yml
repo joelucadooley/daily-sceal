@@ -34,7 +34,7 @@ jobs:
           git checkout -- .
           git pull origin main
           git add public/data/today.json
-          git diff --staged --quiet || git commit -m "📰 Daily stories $(date +%Y-%m-%d)"
+          git commit -m "📰 Daily stories $(date '+%Y-%m-%d %H:%M:%S')" --allow-empty
           git push origin main
 
       - name: Trigger deploy
