@@ -330,8 +330,6 @@ function AboutView() {
   );
 }
 
-const SNAP_LEVELS = [10, 25, 50, 75, 100];
-
 export default function DailySceal() {
   const [view, setView] = useState("feed");
   const [stories, setStories] = useState(FALLBACK_STORIES);
