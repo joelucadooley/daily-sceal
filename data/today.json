@@ -1,6 +1,6 @@
 {
   "date": "2026-05-24",
-  "generated": "2026-05-24T21:11:02.514Z",
+  "generated": "2026-05-24T21:35:09.165Z",
   "stories": [
     {
       "id": "story-0",
@@ -36,12 +36,12 @@
     },
     {
       "id": "story-2",
-      "title": "At a glance: The Dáil's two new TDs",
+      "title": "At a glance: The Dáil's two newly-elected TDs",
       "summary": "So, who did the people of Dublin Central and Galway West send to the Dáil? Daniel Ennis is from Dublin's North Strand. He was a former League of Ireland footballer, operations manager in a shopping centre in Tallaght and volunteer with East Wall Bessborough Football Club before entering politics three years ago. The 38-year-old father of two says an \"emotional shift\" following the death of a friend and the birth of his second child prompted him to get involved in politics in 2023. He first worked in the constituency for TD Gary Gannon before becoming a councillor in 2024 after his first election run.",
       "link": "https://www.rte.ie/news/2026/0524/1575030-at-a-glance-dail-two-newest-tds/",
       "category": "Politics",
       "categoryIr": "Polaitíocht",
-      "timeAgo": "1h ago",
+      "timeAgo": "2h ago",
       "levels": {
         "10": "So, who did the [[an pobal|people]] of Dublin Central and Galway West send to the Dáil? Daniel Ennis is from Dublin's North Strand. He was a former League of Ireland footballer, operations manager in a shopping centre in Tallaght and volunteer with East Wall Bessborough Football Club before [[iontráil|entering]] politics three years ago. The 38-year-old father of two says an \"emotional [[aistrigh|shift]]\" following the death of a friend and the birth of his second child prompted him to get involved in [[polaitíocht|politics]] in 2023. He first worked in the constituency for TD Gary Gannon before becoming a councillor in 2024 after his first election run.",
         "25": "So, who did the [[an pobal|people]] of Dublin Central and Galway West send to the Dáil? Daniel Ennis is from Dublin's North Strand. He was a former League of Ireland footballer, [[gníomhaíocht|operations]] manager in a shopping centre in Tallaght and [[deonach|volunteer]] with East Wall Bessborough Football Club before entering politics [[a trí|three]] years ago. The 38-year-old father of two [[a deir:|says]] an \"emotional shift\" following the [[bás|death]] of a friend and the birth of his second [[leanbh|child]] prompted him to get involved in [[polaitíocht|politics]] in 2023. He first worked in the constituency for TD Gary Gannon before becoming a councillor in 2024 after his first election run.",
@@ -89,7 +89,7 @@
       "link": "https://www.rte.ie/news/ireland/2026/0524/1575013-weather-ireland/",
       "category": "Ireland",
       "categoryIr": "Éire",
-      "timeAgo": "7h ago",
+      "timeAgo": "8h ago",
       "levels": {
         "10": "Met Éireann is forecasting \"very warm\" temperatures of up to 27C tomorrow, with \"long spells of sunshine\". It [[coimhdire|comes]] as the forecaster reported a temperature reading of 24.9C in the Phoenix Park in Dublin today. Met Éireann says it is provisionally the [[is airde|highest]] temperature of the year so far. Tomorrow is due to start with \"mist and fog patches\", but it will turn dry with plenty of sunshine.",
         "25": "Met Éireann is forecasting \"very warm\" temperatures of up to 27C tomorrow, with \"long spells of [[grian|sunshine]]\". It comes as the forecaster reported a [[teocht|temperature]] reading of 24.9C in the Phoenix Park in Dublin today. Met Éireann says it is provisionally the highest [[teocht|temperature]] of the year so far. Tomorrow is due to start with \"mist and fog patches\", but it will turn dry with plenty of sunshine.",
