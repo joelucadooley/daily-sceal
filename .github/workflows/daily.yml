@@ -33,7 +33,7 @@ jobs:
           git config user.email "bot@daily-sceal"
           git add public/data/today.json
           git diff --staged --quiet || git commit -m "📰 Daily stories $(date +%Y-%m-%d)"
-          git push
+          git pull --rebase && git push
 
       - name: Trigger deploy
         run: |
