@@ -20,6 +20,24 @@ const CAT_MAP = {
   dublin: "Baile Átha Cliath", hurling: "Iomáint", football: "Peil",
 };
 
+// Words that should never be translated — proper nouns, titles, etc.
+const NEVER_TRANSLATE = new Set([
+  "ireland", "irish", "dublin", "cork", "galway", "limerick", "belfast",
+  "donegal", "kerry", "mayo", "wicklow", "wexford", "kilkenny", "tipperary",
+  "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday",
+  "january", "february", "march", "april", "june", "july", "august",
+  "september", "october", "november", "december",
+  "euro", "euros", "percent", "million", "billion",
+  "rte", "garda", "gardaí", "taoiseach", "tánaiste", "dáil",
+]);
+
+// Strings that indicate a bad/garbage translation from MyMemory
+const BAD_TRANSLATION_MARKERS = [
+  "optional", "city name", "probably does not", "file is being downloaded",
+  "no translation", "translation not found", "mymemory", "daily quota",
+  "please", "contact", "http", "www", "quota", "abuse",
+];
+
 function getIrCat(c) {
   if (!c) return "Nuacht";
   const l = c.toLowerCase();
@@ -34,6 +52,26 @@ function msAgo(d) {
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
+function isGoodTranslation(original, translated) {
+  if (!translated) return false;
+  // Same as original — didn't translate
+  if (translated.toLowerCase() === original.toLowerCase()) return false;
+  // Contains garbage markers
+  const tLower = translated.toLowerCase();
+  if (BAD_TRANSLATION_MARKERS.some(m => tLower.includes(m))) return false;
+  // Contains brackets — likely an error message
+  if (translated.includes("[") || translated.includes("(")) return false;
+  // Contains newlines — malformed
+  if (translated.includes("\n")) return false;
+  // Way too long — likely an explanation not a translation
+  if (translated.length > original.length * 3) return false;
+  // Contains numbers when original didn't — suspicious
+  if (/\d/.test(translated) && !/\d/.test(original)) return false;
+  // Looks like a URL or code
+  if (translated.includes("http") || translated.includes("_")) return false;
+  return true;
+}
+
 // Scrape full article text from an RTÉ story page
 async function scrapeArticle(url) {
   try {
@@ -43,15 +81,12 @@ async function scrapeArticle(url) {
     });
     if (!res.ok) return null;
     const html = await res.text();
-
-    // RTÉ article body is in <p> tags inside the article element
-    // Extract all paragraph text and join into a readable article
     const paragraphs = [];
     const pRegex = /<p[^>]*>(.*?)<\/p>/gs;
     let match;
     while ((match = pRegex.exec(html)) !== null) {
       const text = match[1]
-        .replace(/<[^>]+>/g, "") // strip inner tags
+        .replace(/<[^>]+>/g, "")
         .replace(/&amp;/g, "&")
         .replace(/&lt;/g, "<")
         .replace(/&gt;/g, ">")
@@ -59,13 +94,10 @@ async function scrapeArticle(url) {
         .replace(/&#\d+;/g, "")
         .replace(/&[a-z]+;/g, "")
         .trim();
-      // Only keep substantial paragraphs, skip nav/footer text
       if (text.length > 60 && !text.includes("RTÉ") && !text.includes("cookie") && !text.includes("javascript")) {
         paragraphs.push(text);
       }
     }
-
-    // Take the first 4 good paragraphs and join them
     const article = paragraphs.slice(0, 4).join(" ");
     return article.length > 100 ? article : null;
   } catch (e) {
@@ -74,7 +106,7 @@ async function scrapeArticle(url) {
   }
 }
 
-// MyMemory free translation API — no key, no signup, 5000 words/day free
+// MyMemory free translation API
 async function translate(text, langPair = "en|ga") {
   const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${langPair}`;
   const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
@@ -92,19 +124,28 @@ async function buildLevel(sentence, pct) {
     "he","she","they","we","you","i","his","her","their","our","my","your",
     "as","by","from","not","no","so","if","than","then","when","which","who",
     "over","into","after","before","about","up","out","said","says","new","also",
-    "been","its","than","more","also","just","been","have",
+    "just","more","also","have","been","its","than",
   ]);
 
   const tokens = sentence.match(/(\w[\w']*|[^\w\s]|\s+)/g) || [];
   const contentTokens = tokens
     .map((tok, i) => ({ tok, i, isWord: /^\w/.test(tok) }))
-    .filter(({ tok, isWord }) => isWord && !FUNCTION_WORDS.has(tok.toLowerCase()) && tok.length > 3);
+    .filter(({ tok, isWord }) => {
+      if (!isWord) return false;
+      if (tok.length <= 3) return false;
+      if (FUNCTION_WORDS.has(tok.toLowerCase())) return false;
+      if (NEVER_TRANSLATE.has(tok.toLowerCase())) return false;
+      // Skip words that look like proper nouns (capitalised mid-sentence)
+      if (tok[0] === tok[0].toUpperCase() && tok[0] !== tok[0].toLowerCase()) return false;
+      return true;
+    });
 
   const targetCount = Math.ceil(contentTokens.length * (pct / 100));
   const step = contentTokens.length / Math.max(targetCount, 1);
   const toTranslate = new Set(
-    Array.from({ length: targetCount }, (_, k) => contentTokens[Math.min(Math.round(k * step), contentTokens.length - 1)]?.i)
-      .filter(i => i !== undefined)
+    Array.from({ length: targetCount }, (_, k) =>
+      contentTokens[Math.min(Math.round(k * step), contentTokens.length - 1)]?.i
+    ).filter(i => i !== undefined)
   );
 
   const result = [];
@@ -113,9 +154,10 @@ async function buildLevel(sentence, pct) {
       try {
         await sleep(250);
         const irish = await translate(tok);
-        if (irish && irish.toLowerCase() !== tok.toLowerCase() && !/^\[/.test(irish) && irish.length < tok.length * 4) {
-          result.push(`[[${irish}|${tok}]]`);
+        if (isGoodTranslation(tok, irish)) {
+          result.push(`[[${irish.trim()}|${tok}]]`);
         } else {
+          // Bad translation — just keep English
           result.push(tok);
         }
       } catch {
@@ -154,8 +196,6 @@ async function fetchStories() {
 
 async function processStory(story, index) {
   console.log(`\nProcessing story ${index + 1}: ${story.title}`);
-
-  // Try to scrape the full article, fall back to summary
   console.log(`  Scraping full article...`);
   const fullText = await scrapeArticle(story.link);
   const baseText = fullText || story.summary;
