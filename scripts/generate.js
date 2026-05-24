@@ -13,21 +13,32 @@ const CAT_MAP = {
   dublin: "Baile Átha Cliath", hurling: "Iomáint", football: "Peil",
 };
 
+// Words that should never be sent to translation API
 const NEVER_TRANSLATE = new Set([
   "ireland", "irish", "dublin", "cork", "galway", "limerick", "belfast",
   "donegal", "kerry", "mayo", "wicklow", "wexford", "kilkenny", "tipperary",
   "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday",
   "january", "february", "march", "april", "june", "july", "august",
   "september", "october", "november", "december",
-  "euro", "euros", "percent", "million", "billion",
-  "rte", "garda", "gardaí", "taoiseach", "tánaiste", "dáil",
+  "euro", "euros", "rte", "garda", "gardaí", "taoiseach", "tánaiste", "dáil",
+  "leinster", "munster", "connacht", "ulster",
 ]);
 
-// All lowercase — we compare against translated.toLowerCase()
+// Function words — skipped at low levels, included at higher levels
+const FUNCTION_WORDS = new Set([
+  "the","a","an","and","or","but","in","on","at","to","for","of","with",
+  "is","are","was","were","be","been","has","have","had","will","would",
+  "could","should","may","might","this","that","these","those","it","its",
+  "he","she","they","we","you","his","her","their","our","my","your",
+  "as","by","from","not","no","so","if","than","then","when","which","who",
+  "over","into","after","before","about","up","out","also","just","more",
+]);
+
+// Strings that mean MyMemory returned garbage
 const BAD_MARKERS = [
   "optional", "city name", "probably does not", "file is being downloaded",
   "no translation", "translation not found", "mymemory", "daily quota",
-  "please", "contact us", "http", "www", "quota", "abuse", "being downloaded",
+  "contact us", "quota", "abuse", "being downloaded", "does not need",
 ];
 
 function getIrCat(c) {
@@ -46,25 +57,27 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 function isGoodTranslation(original, raw) {
   if (!raw) return false;
-  const translated = raw.trim();
-  if (!translated) return false;
-  // Same as original
-  if (translated.toLowerCase() === original.toLowerCase()) return false;
-  // Contains newlines or tabs
-  if (/[\n\r\t]/.test(translated)) return false;
-  // Contains brackets or parentheses — likely an error message
-  if (/[\[\]({}]/.test(translated)) return false;
-  // Check all bad markers case-insensitively
-  const tLower = translated.toLowerCase();
-  if (BAD_MARKERS.some(m => tLower.includes(m))) return false;
-  // Way too long
-  if (translated.length > original.length * 4) return false;
+  const t = raw.trim();
+  if (!t) return false;
+  // Same as original — didn't translate
+  if (t.toLowerCase() === original.toLowerCase()) return false;
+  // Whitespace inside (newlines, tabs)
+  if (/[\n\r\t]/.test(t)) return false;
+  // Contains brackets — error message
+  if (/[\[\](){}]/.test(t)) return false;
+  // Bad markers — case insensitive
+  const tl = t.toLowerCase();
+  if (BAD_MARKERS.some(m => tl.includes(m))) return false;
+  // Too long — more than 2 words means it's a phrase explanation not a word
+  if (t.trim().split(/\s+/).length > 2) return false;
+  // Way too many characters
+  if (t.length > original.length * 5) return false;
   // Contains digits when original didn't
-  if (/\d/.test(translated) && !/\d/.test(original)) return false;
-  // Contains underscores or slashes — code/URL fragment
-  if (/[_/\\]/.test(translated)) return false;
-  // More than 4 words — probably a phrase explanation not a translation
-  if (translated.split(/\s+/).length > 4) return false;
+  if (/\d/.test(t) && !/\d/.test(original)) return false;
+  // Contains punctuation other than fada letters and hyphens
+  if (/[_/\\@#$%^&*=+|<>]/.test(t)) return false;
+  // Contains "http" or "www"
+  if (tl.includes("http") || tl.includes("www")) return false;
   return true;
 }
 
@@ -105,45 +118,63 @@ async function translate(word) {
   throw new Error(`Translation failed: ${data.responseStatus}`);
 }
 
-async function buildLevel(sentence, pct) {
-  const FUNCTION_WORDS = new Set([
-    "the","a","an","and","or","but","in","on","at","to","for","of","with",
-    "is","are","was","were","be","been","has","have","had","will","would",
-    "could","should","may","might","this","that","these","those","it","its",
-    "he","she","they","we","you","i","his","her","their","our","my","your",
-    "as","by","from","not","no","so","if","than","then","when","which","who",
-    "over","into","after","before","about","up","out","said","says","new",
-    "also","just","more","have","been","its","than","said",
-  ]);
+// Cache translations to avoid translating the same word twice
+const translationCache = {};
 
+async function translateCached(word) {
+  const key = word.toLowerCase();
+  if (translationCache[key] !== undefined) return translationCache[key];
+  await sleep(250);
+  const result = await translate(word);
+  translationCache[key] = result;
+  return result;
+}
+
+function shouldTranslate(tok, pct) {
+  const lower = tok.toLowerCase();
+  // Never translate proper nouns or known Irish words
+  if (NEVER_TRANSLATE.has(lower)) return false;
+  // Never translate capitalised words (names like Emily, Paul, Logan)
+  if (/^[A-Z]/.test(tok)) return false;
+  // Never translate numbers
+  if (/^\d+$/.test(tok)) return false;
+  // At beginner/elementary levels, skip function words and short words
+  if (pct <= 50) {
+    if (FUNCTION_WORDS.has(lower)) return false;
+    if (tok.length <= 3) return false;
+  }
+  // At intermediate level, skip function words but allow short content words
+  if (pct <= 75) {
+    if (FUNCTION_WORDS.has(lower)) return false;
+    if (tok.length <= 2) return false;
+  }
+  // At 100%, translate everything including function words (but still skip length <= 1)
+  if (tok.length <= 1) return false;
+  return true;
+}
+
+async function buildLevel(sentence, pct) {
   const tokens = sentence.match(/(\w[\w']*|[^\w\s]|\s+)/g) || [];
 
-  const contentTokens = tokens
+  // Find all translatable candidate tokens
+  const candidates = tokens
     .map((tok, i) => ({ tok, i, isWord: /^\w/.test(tok) }))
-    .filter(({ tok, isWord }) => {
-      if (!isWord) return false;
-      if (tok.length <= 3) return false;
-      if (FUNCTION_WORDS.has(tok.toLowerCase())) return false;
-      if (NEVER_TRANSLATE.has(tok.toLowerCase())) return false;
-      // Skip capitalised words (proper nouns like names)
-      if (/^[A-Z]/.test(tok)) return false;
-      return true;
-    });
+    .filter(({ tok, isWord }) => isWord && shouldTranslate(tok, pct));
 
-  const targetCount = Math.ceil(contentTokens.length * (pct / 100));
-  const step = contentTokens.length / Math.max(targetCount, 1);
-  const toTranslate = new Set(
+  // Pick how many to actually translate based on percentage
+  const targetCount = Math.ceil(candidates.length * (pct / 100));
+  const step = candidates.length / Math.max(targetCount, 1);
+  const toTranslateIndices = new Set(
     Array.from({ length: targetCount }, (_, k) =>
-      contentTokens[Math.min(Math.round(k * step), contentTokens.length - 1)]?.i
+      candidates[Math.min(Math.round(k * step), candidates.length - 1)]?.i
     ).filter(i => i !== undefined)
   );
 
   const result = [];
   for (const { tok, i, isWord } of tokens.map((tok, i) => ({ tok, i, isWord: /^\w/.test(tok) }))) {
-    if (isWord && toTranslate.has(i)) {
+    if (isWord && toTranslateIndices.has(i)) {
       try {
-        await sleep(250);
-        const irish = await translate(tok);
+        const irish = await translateCached(tok);
         if (isGoodTranslation(tok, irish)) {
           result.push(`[[${irish.trim()}|${tok}]]`);
         } else {
@@ -196,7 +227,7 @@ async function processStory(story, index) {
       console.warn(`  Failed level ${pct}: ${err.message}`);
       levels[pct] = baseText;
     }
-    await sleep(500);
+    await sleep(300);
   }
 
   return { ...story, summary: baseText, levels };
