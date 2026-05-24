@@ -1,4 +1,4 @@
-# Daily Scéal
+# Daily Scéal 📰
 
 **Foghlaim Gaeilge gach lá · Learn Irish every day**
 
