@@ -31,8 +31,9 @@ jobs:
         run: |
           git config user.name "Daily Scéal Bot"
           git config user.email "bot@daily-sceal"
-          git checkout -- package-lock.json
+          git stash
           git pull origin main
+          git stash pop
           git add public/data/today.json
           git commit -m "📰 Daily stories $(date '+%Y-%m-%d %H:%M:%S')" --allow-empty
           git push origin main
