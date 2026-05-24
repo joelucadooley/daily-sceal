@@ -225,6 +225,9 @@ function ReadingView({ story, onBack }) {
   const [activeWord, setActiveWord] = useState(null);
   const level = getLevel(pct);
   const parts = parseText(story.levels[pct] || story.summary);
+  const irishCount = parts.filter(p => p.t === "ir").length;
+  const totalWords = parts.filter(p => p.t === "en" || p.t === "ir").reduce((acc, p) => acc + (p.v ? p.v.trim().split(/\s+/).filter(Boolean).length : 1), 0);
+  const actualPct = totalWords > 0 ? Math.round((irishCount / totalWords) * 100) : 0;
 
   return (
     <div style={{ animation: "fadeIn 0.25s ease" }}>
@@ -259,6 +262,13 @@ function ReadingView({ story, onBack }) {
         </div>
       </div>
       <div style={{ background: "#fff", borderRadius: 12, padding: "22px", border: "1px solid #e0d8cc", animation: "fadeIn 0.2s ease" }} key={pct}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, paddingBottom: 12, borderBottom: "1px solid #f0ece4" }}>
+          <span style={{ fontFamily: "sans-serif", fontSize: "0.75rem", color: "#888" }}>
+            <span style={{ color: "#2563eb", fontWeight: 700 }}>{irishCount} focal Gaeilge</span>
+            {" "}· {actualPct}% Irish
+          </span>
+          <span style={{ fontFamily: "sans-serif", fontSize: "0.7rem", color: "#ccc" }}>Tap words to translate</span>
+        </div>
         <p style={{ margin: "0 0 18px", fontSize: "clamp(0.97rem,2.2vw,1.06rem)", lineHeight: 1.95, color: "#222", fontFamily: "Georgia,serif" }}>
           {parts.map((p, i) =>
             p.t === "en" ? <span key={i}>{p.v}</span> :
