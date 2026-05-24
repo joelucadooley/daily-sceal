@@ -1,17 +1,17 @@
 import { useState, useEffect } from "react";
 
-const NAVY = "#0f2942", AMBER = "#f5a623", CREAM = "#f7f4ef";
-const NAVY2 = "#1a3d5c";
-
-const FOCAL_AN_LAE = [
-  { irish: "Fáilte", english: "Welcome", pron: "FAWL-cha", note: "Fáilte go hÉirinn — Welcome to Ireland" },
-  { irish: "Go raibh maith agat", english: "Thank you", pron: "guh REV mah AH-gut", note: "Said after any kindness" },
-  { irish: "Conas atá tú?", english: "How are you?", pron: "KUN-us ah-TAW too", note: "The everyday Irish greeting" },
-  { irish: "Céad míle fáilte", english: "A hundred thousand welcomes", pron: "KADE MEE-lah FAWL-cha", note: "The most famous Irish phrase" },
-  { irish: "Is breá liom é", english: "I love it", pron: "iss BRAW lum AY", note: "Express enthusiasm about anything" },
-  { irish: "Slán go fóill", english: "Goodbye for now", pron: "SLAWN guh FOIL", note: "A warm farewell between friends" },
-  { irish: "Tá sé go hálainn", english: "It is beautiful", pron: "taw shay guh HAW-lin", note: "Used for scenery, music, art" },
-];
+const C = {
+  navy: "#0d2137",
+  amber: "#e8951e",
+  bg: "#f4f1ec",
+  card: "#ffffff",
+  border: "#e8e2d9",
+  text: "#111111",
+  muted: "#6b6460",
+  faint: "#a8a29a",
+  blue: "#2563eb",
+  blueLight: "#eff6ff",
+};
 
 const CAT_MAP = {
   ireland: "Éire", sport: "Spórt", politics: "Polaitíocht",
@@ -27,12 +27,12 @@ const CAT_MAP = {
 const FALLBACK_STORIES = [
   {
     id: "f1", title: "Government Announces Ambitious New Housing Plan",
-    summary: "The Irish government has unveiled a major new housing strategy, promising to build fifty thousand homes over the next three years. The plan focuses heavily on affordable housing in Dublin, Cork, and Galway, where rents have reached record highs. The Taoiseach said the plan would be the largest state investment in housing since the 1970s, and that construction would begin before the end of the year.",
+    summary: "The Irish government has unveiled a major new housing strategy, promising to build fifty thousand homes over the next three years. The plan focuses heavily on affordable housing in Dublin, Cork, and Galway, where rents have reached record highs. The Taoiseach said the plan would be the largest state investment in housing since the 1970s.",
     category: "Ireland", categoryIr: "Éire", timeAgo: "2h ago",
     levels: {
-      10: "The Irish [[rialtas|government]] has unveiled a major new [[straitéis|strategy]], promising to build fifty thousand [[tithe|homes]] over the next three years. The [[plean|plan]] focuses on affordable [[tithíocht|housing]] in Dublin, Cork, and Galway, where [[cíosanna|rents]] have reached record highs.",
-      25: "The Irish [[rialtas|government]] has [[nochtaithe|unveiled]] a major new [[straitéis|strategy]], promising to [[tógáil|build]] fifty thousand [[tithe|homes]] over the next three [[blianta|years]]. The [[plean|plan]] focuses on affordable [[tithíocht|housing]] in Dublin, Cork, and Galway, where [[cíosanna|rents]] have reached [[taifead|record]] highs.",
-      50: "The Irish [[rialtas|government]] has [[nochtaithe|unveiled]] a major new [[straitéis|strategy]], [[gealltanas|promising]] to [[tógáil|build]] fifty thousand [[tithe|homes]] over the next three [[blianta|years]]. The [[plean|plan]] [[dírithe|focuses]] on [[inacmhainne|affordable]] [[tithíocht|housing]] in Dublin, Cork, and Galway, where [[cíosanna|rents]] have reached [[taifead|record]] highs.",
+      10: "The Irish [[rialtas|government]] has unveiled a major new [[straitéis|strategy]], promising to build fifty thousand [[tithe|homes]] over the next three years. The [[plean|plan]] focuses on affordable [[tithíocht|housing]] in Dublin, Cork, and Galway.",
+      25: "The Irish [[rialtas|government]] has [[nochtaithe|unveiled]] a major new [[straitéis|strategy]], promising to [[tógáil|build]] fifty thousand [[tithe|homes]] over the next three [[blianta|years]]. The [[plean|plan]] focuses on affordable [[tithíocht|housing]] where [[cíosanna|rents]] have reached [[taifead|record]] highs.",
+      50: "The Irish [[rialtas|government]] has [[nochtaithe|unveiled]] a major new [[straitéis|strategy]], [[gealltanas|promising]] to [[tógáil|build]] fifty thousand [[tithe|homes]] over the next three [[blianta|years]]. The [[plean|plan]] [[dírithe|focuses]] on [[tithíocht inacmhainne|affordable housing]] in Dublin, Cork, and Galway, where [[cíosanna|rents]] have reached [[taifead|record]] highs.",
       75: "Tá an [[rialtas|government]] [[Éireannach|Irish]] tar éis [[straitéis|strategy]] nua a [[nochtadh|unveil]], ag [[gealltanas|promising]] caoga míle [[teach|home]] a [[tógáil|build]] thar na trí [[blianta|years]] amach romhainn. Tá [[fócas|focus]] ar [[tithíocht inacmhainne|affordable housing]] i mBaile Átha Cliath, Corcaigh, agus Gaillimh.",
       100: "Tá an [[rialtas|government]] [[Éireannach|Irish]] tar éis [[straitéis|strategy]] mhór nua a [[nochtadh|unveil]], ag [[gealltanas|promising]] caoga míle [[teach|home]] a [[tógáil|build]] thar na trí [[blianta|years]] amach [[romhainn|ahead]]. Tá [[fócas|focus]] ar [[tithíocht inacmhainne|affordable housing]] i mBaile Átha Cliath, Corcaigh, agus Gaillimh, áit a bhfuil [[cíosanna|rents]] ag [[ardú|rising]] go [[mór|greatly]].",
     }
@@ -56,8 +56,8 @@ const FALLBACK_STORIES = [
     levels: {
       10: "Ireland's Wild Atlantic Way has been voted the best scenic [[tiomáint|drive]] in Europe, [[buaigh|beating]] [[bealaí|routes]] in Norway, Scotland, and the Amalfi Coast.",
       25: "Ireland's Wild Atlantic Way has been [[vótáilte|voted]] the best [[radharcach|scenic]] [[tiomáint|drive]] in Europe, beating [[bealaí|routes]] in Norway, Scotland, and the Amalfi [[Cósta|Coast]].",
-      50: "Ireland's Wild Atlantic Way has been [[vótáilte|voted]] the best [[radharcach|scenic]] [[tiomáint|drive]] in Europe, [[buaigh|beating]] [[bealaí|routes]] in Norway, Scotland, and the Amalfi [[Cósta|Coast]]. The [[bealach|route]] [[síneann|stretches]] from Donegal to Cork, passing through [[cósta|coastline]] [[drámatúil|dramatic]].",
-      75: "Tá Wild Atlantic Way na hÉireann [[vótáilte|voted]] an [[tiomáint radharcach|scenic drive]] is [[fearr|best]] san [[Eoraip|Europe]] ag [[irisleabhar|magazine]] taistil [[ceannasach|leading]]. [[Síneann|stretches]] an [[bealach|route]] 2,500 [[ciliméadar|kilometre]] ó Dhún na nGall go Corcaigh.",
+      50: "Ireland's Wild Atlantic Way has been [[vótáilte|voted]] the best [[radharcach|scenic]] [[tiomáint|drive]] in Europe, [[buaigh|beating]] [[bealaí|routes]] in Norway and Scotland. The [[bealach|route]] [[síneann|stretches]] from Donegal to Cork, passing through [[cósta|coastline]] [[drámatúil|dramatic]].",
+      75: "Tá Wild Atlantic Way na hÉireann [[vótáilte|voted]] an [[tiomáint radharcach|scenic drive]] is [[fearr|best]] san [[Eoraip|Europe]]. [[Síneann|stretches]] an [[bealach|route]] 2,500 [[ciliméadar|kilometre]] ó Dhún na nGall go Corcaigh.",
       100: "Tá Wild Atlantic Way na [[hÉireann|Ireland]] [[vótáilte|voted]] an [[tiomáint radharcach|scenic drive]] is [[fearr|best]] san [[Eoraip|Europe]]. [[Síneann|stretches]] an [[bealach|route]] 2,500 [[ciliméadar|kilometre]] ó Dhún na nGall go Corcaigh, ag [[dul|passing]] tríd an [[gcósta|coastline]] is [[drámatúla|dramatic]] ar an [[Mór-roinn|continent]].",
     }
   },
@@ -66,7 +66,7 @@ const FALLBACK_STORIES = [
     summary: "A new technology centre dedicated entirely to Irish language software and artificial intelligence has officially opened in Galway city. Over one hundred jobs have been created, with another fifty expected by the end of the year. The Minister for the Gaeltacht described it as a landmark moment for the language.",
     category: "Technology", categoryIr: "Teicneolaíocht", timeAgo: "8h ago",
     levels: {
-      10: "A new [[teicneolaíocht|technology]] [[ionad|centre]] dedicated to Irish language [[bogearraí|software]] and artificial [[intleacht|intelligence]] has opened in Galway. Over one hundred [[poist|jobs]] have been created.",
+      10: "A new [[teicneolaíocht|technology]] [[ionad|centre]] dedicated to Irish language [[bogearraí|software]] has opened in Galway. Over one hundred [[poist|jobs]] have been created.",
       25: "A new [[teicneolaíocht|technology]] [[ionad|centre]] [[dírithe|dedicated]] to Irish language [[bogearraí|software]] and [[intleacht shaorga|artificial intelligence]] has [[oscailte|opened]] in Galway, creating over one hundred new [[poist|jobs]].",
       50: "[[Osclaíodh|Opened]] [[ionad teicneolaíochta|technology centre]] nua i nGaillimh [[dírithe|dedicated]] ar [[bogearraí|software]] Gaeilge agus [[intleacht shaorga|artificial intelligence]]. [[Cruthaíodh|created]] níos mó ná céad [[post|job]] nua sa [[réigiún|region]].",
       75: "[[Osclaíodh|Opened]] [[ionad|centre]] [[teicneolaíochta|technology]] nua i nGaillimh atá [[dírithe|dedicated]] ar [[bogearraí|software]] Gaeilge agus [[intleacht shaorga|artificial intelligence]]. [[Cruthaíodh|created]] níos mó ná céad [[post|job]] nua.",
@@ -79,10 +79,10 @@ const FALLBACK_STORIES = [
     category: "Culture", categoryIr: "Cultúr", timeAgo: "10h ago",
     levels: {
       10: "Irish national [[músaeim|museums]] and [[gailearaithe|galleries]] have recorded their highest ever [[cuairteoir|visitor]] numbers, with more than four million [[daoine|people]] since January.",
-      25: "Irish national [[músaeim|museums]] and [[gailearaithe|galleries]] have [[taifeadta|recorded]] their highest ever [[cuairteoir|visitor]] numbers, with more than four million [[daoine|people]] since January. [[Luaigh|credited]] oifigigh [[iontráil saor in aisce|free admission]].",
+      25: "Irish national [[músaeim|museums]] and [[gailearaithe|galleries]] have [[taifeadta|recorded]] their highest ever [[cuairteoir|visitor]] numbers, with more than four million [[daoine|people]] since January.",
       50: "Tá [[músaeim|museums]] agus [[gailearaithe|galleries]] [[náisiúnta|national]] na hÉireann tar éis a [[líon|number]] is [[airde|highest]] [[cuairteoirí|visitors]] a [[thaifead|record]], le níos mó ná ceithre milliún [[duine|person]] ó [[Eanáir|January]].",
       75: "Tá [[músaeim|museums]] agus [[gailearaithe|galleries]] [[náisiúnta|national]] na hÉireann tar éis a [[líon|number]] is [[airde|highest]] [[cuairteoirí|visitors]] a [[thaifead|record]] i [[mbliana|this year]]. [[Luaigh|credited]] [[oifigigh|officials]] [[iontráil saor in aisce|free admission]] agus [[suim|interest]] ag [[fás|growing]] sa [[stair|history]] [[Éireannach|Irish]].",
-      100: "Tá [[músaeim|museums]] agus [[gailearaithe|galleries]] [[náisiúnta|national]] na [[hÉireann|Ireland]] tar éis a [[líon|number]] is [[airde|highest]] [[cuairteoirí|visitors]] a [[thaifead|record]] i [[mbliana|this year]], le níos mó ná ceithre [[milliún|million]] [[duine|person]] ó [[Eanáir|January]]. [[Luaigh|credited]] [[oifigigh|officials]] [[iontráil saor in aisce|free admission]] agus [[suim|interest]] ag [[fás|growing]] sa [[chultúr|culture]] [[Éireannach|Irish]].",
+      100: "Tá [[músaeim|museums]] agus [[gailearaithe|galleries]] [[náisiúnta|national]] na [[hÉireann|Ireland]] tar éis a [[líon|number]] is [[airde|highest]] [[cuairteoirí|visitors]] a [[thaifead|record]] i [[mbliana|this year]], le níos mó ná ceithre [[milliún|million]] [[duine|person]] ó [[Eanáir|January]].",
     }
   },
   {
@@ -94,18 +94,18 @@ const FALLBACK_STORIES = [
       25: "Met Éireann has [[réamhaisnéisithe|forecast]] an exceptionally [[te|warm]] and [[tirim|dry]] [[Meitheamh|June]], with [[teochtaí|temperatures]] expected to reach twenty-six [[céim|degrees]] in [[codanna|parts]] of the [[tír|country]].",
       50: "Tá Met Éireann tar éis [[Meitheamh|June]] [[te|warm]] agus [[tirim|dry]] a [[réamhaisnéis|forecast]]. Táthar ag [[súil|expecting]] go [[sroichfidh|reach]] [[teochtaí|temperatures]] fiche a sé [[céim|degrees]] i [[gcodanna|parts]] den [[tír|country]].",
       75: "Tá Met Éireann tar éis [[Meitheamh|June]] [[eisceachtúil|exceptional]] [[te|warm]] agus [[tirim|dry]] a [[réamhaisnéis|forecast]] don [[tír|country]]. Táthar ag [[súil|expecting]] go [[sroichfidh|reach]] na [[teochtaí|temperatures]] fiche a sé [[céim|degrees]] i [[gcodanna|parts]] den [[tír|country]].",
-      100: "Tá Met Éireann tar éis [[Meitheamh|June]] [[eisceachtúil|exceptional]] [[te|warm]] agus [[tirim|dry]] a [[réamhaisnéis|forecast]] don [[tír|country]]. Táthar ag [[súil|expecting]] go [[sroichfidh|reach]] na [[teochtaí|temperatures]] fiche a sé [[céim|degrees]] i [[gcodanna|parts]] den [[tír|country]], rud a [[dhéanfadh|would make]] é ar cheann de na [[Meitheamh|Junes]] is [[teo|hottest]] le [[scór bliain|twenty years]].",
+      100: "Tá Met Éireann tar éis [[Meitheamh|June]] [[eisceachtúil|exceptional]] [[te|warm]] agus [[tirim|dry]] a [[réamhaisnéis|forecast]] don [[tír|country]]. Táthar ag [[súil|expecting]] go [[sroichfidh|reach]] na [[teochtaí|temperatures]] fiche a sé [[céim|degrees]], rud a [[dhéanfadh|would make]] é ar cheann de na [[Meitheamh|Junes]] is [[teo|hottest]] le [[scór bliain|twenty years]].",
     }
   },
 ];
 
 const SNAP_LEVELS = [10, 25, 50, 75, 100];
 const LEVELS_CONFIG = [
-  { pct: 10, label: "Beginner", color: "#16a34a", bg: "#dcfce7", tip: "Key nouns only" },
-  { pct: 25, label: "Elementary", color: "#2563eb", bg: "#dbeafe", tip: "Nouns and verbs" },
-  { pct: 50, label: "Intermediate", color: "#d97706", bg: "#fef3c7", tip: "Most content words" },
-  { pct: 75, label: "Advanced", color: "#7c3aed", bg: "#ede9fe", tip: "Near-fluent" },
-  { pct: 100, label: "As Gaeilge", color: NAVY, bg: "#e0e7ff", tip: "Full immersion" },
+  { pct: 10, label: "Beginner", color: "#16a34a", bg: "#f0fdf4", tip: "Key nouns only" },
+  { pct: 25, label: "Elementary", color: "#2563eb", bg: "#eff6ff", tip: "Nouns and verbs" },
+  { pct: 50, label: "Intermediate", color: "#d97706", bg: "#fffbeb", tip: "Most content words" },
+  { pct: 75, label: "Advanced", color: "#7c3aed", bg: "#faf5ff", tip: "Near-fluent" },
+  { pct: 100, label: "As Gaeilge", color: "#0d2137", bg: "#f0f4f8", tip: "Full Irish" },
 ];
 
 const getLevel = pct => LEVELS_CONFIG.find(l => l.pct === pct) || LEVELS_CONFIG[0];
@@ -138,11 +138,10 @@ async function fetchTodayContent() {
   return await r.json();
 }
 
-function Spinner({ msg }) {
+function Spinner() {
   return (
-    <div style={{ textAlign: "center", padding: "48px 0" }}>
-      <div style={{ display: "inline-block", width: 32, height: 32, border: "2.5px solid #e0d8cc", borderTop: "2.5px solid " + NAVY, borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
-      <p style={{ marginTop: 12, color: "#aaa", fontFamily: "sans-serif", fontSize: "0.82rem", letterSpacing: "0.02em" }}>{msg || "Ag lódáil..."}</p>
+    <div style={{ textAlign: "center", padding: "60px 0" }}>
+      <div style={{ display: "inline-block", width: 28, height: 28, border: `2px solid ${C.border}`, borderTop: `2px solid ${C.navy}`, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
     </div>
   );
 }
@@ -152,29 +151,33 @@ function WordChip({ part, active, onToggle }) {
     <span style={{ position: "relative", display: "inline" }}>
       <span onClick={onToggle} style={{
         cursor: "pointer",
-        color: active ? "#1d4ed8" : "#3b82f6",
+        color: active ? "#1d4ed8" : C.blue,
         fontWeight: 600,
-        borderBottom: "1.5px solid " + (active ? "#1d4ed8" : "#93c5fd"),
-        background: active ? "#eff6ff" : "transparent",
-        borderRadius: 2,
-        padding: "0 1px",
-        transition: "all 0.12s",
+        textDecoration: "underline",
+        textDecorationColor: active ? "#1d4ed8" : "#93c5fd",
+        textDecorationThickness: "1.5px",
+        textUnderlineOffset: "3px",
+        background: active ? C.blueLight : "transparent",
+        borderRadius: 3,
+        padding: "0 2px",
+        transition: "all 0.1s",
       }}>
         {part.irish}
       </span>
       {active && (
         <span style={{
           position: "absolute", bottom: "calc(100% + 8px)", left: "50%", transform: "translateX(-50%)",
-          background: NAVY, color: "#fff", borderRadius: 8, padding: "8px 12px",
-          whiteSpace: "nowrap", zIndex: 20, boxShadow: "0 8px 24px rgba(15,41,66,0.25)",
-          fontSize: "0.82rem", fontFamily: "sans-serif", display: "flex", alignItems: "center", gap: 8,
+          background: C.navy, color: "#fff", borderRadius: 8, padding: "8px 12px",
+          whiteSpace: "nowrap", zIndex: 20, boxShadow: "0 8px 32px rgba(13,33,55,0.2)",
+          fontSize: "0.82rem", fontFamily: "system-ui, sans-serif",
+          display: "flex", alignItems: "center", gap: 8,
         }}>
           <span style={{ fontWeight: 600 }}>{part.english}</span>
           <button onClick={e => { e.stopPropagation(); speakWord(part.irish); }}
-            style={{ background: "rgba(255,255,255,0.12)", border: "none", borderRadius: 5, padding: "2px 7px", cursor: "pointer", color: "#fff", fontSize: "0.82rem" }}>
+            style={{ background: "rgba(255,255,255,0.1)", border: "none", borderRadius: 5, padding: "3px 8px", cursor: "pointer", color: "#fff", fontSize: "0.8rem" }}>
             🔊
           </button>
-          <span style={{ position: "absolute", top: "100%", left: "50%", transform: "translateX(-50%)", width: 0, height: 0, borderLeft: "5px solid transparent", borderRight: "5px solid transparent", borderTop: "5px solid " + NAVY }} />
+          <span style={{ position: "absolute", top: "100%", left: "50%", transform: "translateX(-50%)", width: 0, height: 0, borderLeft: "5px solid transparent", borderRight: "5px solid transparent", borderTop: `5px solid ${C.navy}` }} />
         </span>
       )}
     </span>
@@ -182,86 +185,32 @@ function WordChip({ part, active, onToggle }) {
 }
 
 function FeedView({ stories, loading, onStoryClick }) {
-  const focal = FOCAL_AN_LAE[new Date().getDay() % FOCAL_AN_LAE.length];
-  const [flipped, setFlipped] = useState(false);
-  const [showTip, setShowTip] = useState(true);
-
   return (
-    <div style={{ animation: "fadeIn 0.3s ease" }}>
-
-      {/* Onboarding */}
-      {showTip && (
-        <div style={{ background: "#fff", border: "1px solid #e2ddd6", borderRadius: 10, padding: "13px 16px", marginBottom: 18, position: "relative" }}>
-          <button onClick={() => setShowTip(false)} style={{ position: "absolute", top: 10, right: 12, background: "none", border: "none", fontSize: "0.9rem", color: "#ccc", cursor: "pointer" }}>✕</button>
-          <div style={{ fontFamily: "sans-serif", fontWeight: 600, fontSize: "0.82rem", color: NAVY, marginBottom: 4 }}>Conas a oibríonn sé</div>
-          <div style={{ fontFamily: "sans-serif", fontSize: "0.79rem", color: "#666", lineHeight: 1.55 }}>
-            Tap a story, choose a level, and read. Any <span style={{ color: "#3b82f6", fontWeight: 600, borderBottom: "1.5px solid #93c5fd" }}>blue word</span> is in Irish. Tap it to translate.
-          </div>
-        </div>
-      )}
-
-      {/* Focal an Lae */}
-      <div style={{ marginBottom: 24 }}>
-        <div style={{ fontSize: "0.64rem", textTransform: "uppercase", letterSpacing: "0.1em", color: "#b0a898", fontFamily: "sans-serif", marginBottom: 8 }}>Focal an Lae · Word of the Day</div>
-        <div onClick={() => setFlipped(f => !f)} style={{
-          background: "linear-gradient(135deg, " + NAVY + " 0%, " + NAVY2 + " 100%)",
-          borderRadius: 12, padding: "20px 22px", cursor: "pointer", minHeight: 86,
-          position: "relative", overflow: "hidden", transition: "transform 0.15s",
-        }}
-          onMouseEnter={e => e.currentTarget.style.transform = "translateY(-1px)"}
-          onMouseLeave={e => e.currentTarget.style.transform = "none"}
-        >
-          <div style={{ position: "absolute", top: -50, right: -50, width: 160, height: 160, background: "rgba(245,166,35,0.06)", borderRadius: "50%" }} />
-          <div style={{ position: "absolute", bottom: -20, left: -20, width: 100, height: 100, background: "rgba(255,255,255,0.03)", borderRadius: "50%" }} />
-          {!flipped ? (
-            <div>
-              <div style={{ fontSize: "clamp(1.5rem,4vw,1.9rem)", fontWeight: 700, color: AMBER, fontFamily: "Georgia,serif", marginBottom: 6, letterSpacing: "-0.01em" }}>{focal.irish}</div>
-              <div style={{ fontSize: "0.76rem", color: "rgba(147,180,204,0.9)", fontFamily: "sans-serif", display: "flex", alignItems: "center", gap: 7 }}>
-                <span style={{ animation: "pulse 2s ease-in-out infinite", display: "inline-block", fontSize: "0.85rem" }}>👆</span>
-                <span>Tap to reveal · <em>{focal.pron}</em></span>
-              </div>
-            </div>
-          ) : (
-            <div style={{ animation: "fadeIn 0.2s ease" }}>
-              <div style={{ fontSize: "1.1rem", fontWeight: 600, color: "#fff", fontFamily: "Georgia,serif", marginBottom: 5 }}>{focal.english}</div>
-              <div style={{ fontSize: "0.79rem", color: "rgba(147,180,204,0.9)", fontStyle: "italic", fontFamily: "sans-serif" }}>{focal.note}</div>
-            </div>
-          )}
-          <button onClick={e => { e.stopPropagation(); speakWord(focal.irish); }}
-            style={{ position: "absolute", top: 14, right: 14, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 7, padding: "5px 9px", cursor: "pointer", color: "#fff", fontSize: "0.85rem", transition: "background 0.15s" }}
-            onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.15)"}
-            onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.08)"}
-          >🔊</button>
-        </div>
-      </div>
-
-      {/* Stories */}
-      <div style={{ fontSize: "0.64rem", textTransform: "uppercase", letterSpacing: "0.1em", color: "#b0a898", fontFamily: "sans-serif", marginBottom: 10 }}>Nuacht an Lae · Today's News</div>
-      {loading && <Spinner msg="Ag lódáil nuacht..." />}
+    <div>
+      {loading && <Spinner />}
       {!loading && stories.map((s, i) => (
         <div key={s.id} onClick={() => onStoryClick(s)}
           style={{
-            background: "#fff", borderRadius: 10, padding: "16px 18px", marginBottom: 8,
-            border: "1px solid #e8e2da", cursor: "pointer",
-            transition: "box-shadow 0.15s, transform 0.15s",
-            animation: "fadeIn " + (0.08 + i * 0.04) + "s ease",
+            padding: "20px 0",
+            borderBottom: `1px solid ${C.border}`,
+            cursor: "pointer",
+            animation: `fadeIn ${0.1 + i * 0.04}s ease`,
           }}
-          onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 4px 20px rgba(15,41,66,0.08)"; e.currentTarget.style.transform = "translateY(-1px)"; }}
-          onMouseLeave={e => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = "none"; }}
+          onMouseEnter={e => e.currentTarget.querySelector("h3").style.color = C.blue}
+          onMouseLeave={e => e.currentTarget.querySelector("h3").style.color = C.text}
         >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, gap: 8 }}>
-            <span style={{ fontSize: "0.63rem", fontFamily: "sans-serif", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#b0a898" }}>{s.categoryIr}</span>
-            <span style={{ color: "#c8c0b4", fontSize: "0.66rem", fontFamily: "sans-serif", whiteSpace: "nowrap" }}>{s.timeAgo}</span>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+            <span style={{ fontSize: "0.65rem", fontFamily: "system-ui, sans-serif", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", color: C.amber }}>{s.categoryIr}</span>
+            <span style={{ color: C.faint, fontSize: "0.7rem", fontFamily: "system-ui, sans-serif" }}>{s.timeAgo}</span>
           </div>
-          <h3 style={{ margin: "0 0 6px", fontSize: "clamp(0.92rem,2.3vw,1.02rem)", lineHeight: 1.35, fontWeight: 700, color: "#111", fontFamily: "Georgia,serif" }}>{s.title}</h3>
-          <p style={{ margin: "0 0 10px", fontSize: "0.79rem", color: "#888", lineHeight: 1.55, fontFamily: "sans-serif", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{s.summary}</p>
-          <span style={{ fontSize: "0.71rem", color: NAVY, fontFamily: "sans-serif", fontWeight: 600, letterSpacing: "0.01em" }}>Léigh as Gaeilge →</span>
+          <h3 style={{ margin: "0 0 8px", fontSize: "clamp(1rem,2.8vw,1.15rem)", lineHeight: 1.3, fontWeight: 700, color: C.text, fontFamily: "Georgia, serif", transition: "color 0.15s" }}>{s.title}</h3>
+          <p style={{ margin: 0, fontSize: "0.82rem", color: C.muted, lineHeight: 1.6, fontFamily: "system-ui, sans-serif", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{s.summary}</p>
         </div>
       ))}
 
-      <div style={{ textAlign: "center", padding: "20px 0 4px", fontFamily: "sans-serif", fontSize: "0.69rem", color: "#c8c0b4", lineHeight: 1.8 }}>
-        Created by <a href="https://github.com/joelucadooley/daily-sceal" target="_blank" rel="noopener noreferrer" style={{ color: "#8a9eb0", textDecoration: "none", borderBottom: "1px solid #c8d8e4" }}>Joe Luca Dooley</a>
-        {" · "}News from RTÉ
+      <div style={{ paddingTop: 32, textAlign: "center", fontFamily: "system-ui, sans-serif", fontSize: "0.7rem", color: C.faint, lineHeight: 1.9 }}>
+        <div>News from RTÉ · Updated daily</div>
+        <div>Created by <a href="https://github.com/joelucadooley/daily-sceal" target="_blank" rel="noopener noreferrer" style={{ color: C.navy, textDecoration: "none", borderBottom: `1px solid ${C.border}` }}>Joe Luca Dooley</a></div>
       </div>
     </div>
   );
@@ -276,50 +225,51 @@ function ReadingView({ story, onBack }) {
 
   async function handleShare() {
     const data = { title: story.title, text: "Léigh as Gaeilge ar Daily Scéal", url: story.link || "https://joelucadooley.github.io/daily-sceal" };
-    try { if (navigator.share) { await navigator.share(data); } else { await navigator.clipboard.writeText(data.url); } } catch {}
+    try { if (navigator.share) await navigator.share(data); else await navigator.clipboard?.writeText(data.url); } catch {}
   }
 
   return (
-    <div style={{ animation: "fadeIn 0.25s ease" }}>
-      {/* Top bar */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-        <button onClick={onBack} style={{ background: "none", border: "none", color: NAVY, fontFamily: "sans-serif", fontSize: "0.83rem", fontWeight: 600, cursor: "pointer", padding: 0, display: "flex", alignItems: "center", gap: 5, letterSpacing: "0.01em" }}>
+    <div style={{ animation: "fadeIn 0.2s ease" }}>
+      {/* Nav */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: 20, borderBottom: `1px solid ${C.border}`, marginBottom: 20 }}>
+        <button onClick={onBack} style={{ background: "none", border: "none", color: C.muted, fontFamily: "system-ui, sans-serif", fontSize: "0.8rem", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", gap: 5 }}>
           ← Nuacht
         </button>
-        <button onClick={handleShare} style={{ background: "#fff", border: "1px solid #e8e2da", color: NAVY, fontFamily: "sans-serif", fontSize: "0.75rem", fontWeight: 600, cursor: "pointer", borderRadius: 7, padding: "6px 12px" }}>
+        <button onClick={handleShare} style={{ background: "none", border: `1px solid ${C.border}`, color: C.navy, fontFamily: "system-ui, sans-serif", fontSize: "0.75rem", fontWeight: 600, cursor: "pointer", borderRadius: 6, padding: "5px 11px" }}>
           Roinn ↗
         </button>
       </div>
 
-      {/* Story header */}
-      <div style={{ marginBottom: 18 }}>
-        <div style={{ fontSize: "0.63rem", fontFamily: "sans-serif", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#b0a898", marginBottom: 8 }}>{story.categoryIr}</div>
-        <h2 style={{ margin: "0 0 6px", color: NAVY, fontSize: "clamp(1.15rem,3.5vw,1.5rem)", lineHeight: 1.25, fontFamily: "Georgia,serif", fontWeight: 700 }}>{story.title}</h2>
-        <div style={{ fontSize: "0.72rem", color: "#b0a898", fontFamily: "sans-serif" }}>{story.timeAgo}</div>
+      {/* Headline */}
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ fontSize: "0.65rem", fontFamily: "system-ui, sans-serif", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", color: C.amber, marginBottom: 10 }}>{story.categoryIr}</div>
+        <h1 style={{ margin: "0 0 8px", color: C.navy, fontSize: "clamp(1.3rem,4vw,1.75rem)", lineHeight: 1.2, fontFamily: "Georgia, serif", fontWeight: 700 }}>{story.title}</h1>
+        <div style={{ fontSize: "0.72rem", color: C.faint, fontFamily: "system-ui, sans-serif" }}>{story.timeAgo}</div>
       </div>
 
       {/* Level selector */}
-      <div style={{ background: "#fff", borderRadius: 10, padding: "16px 18px", marginBottom: 14, border: "1px solid #e8e2da" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 12 }}>
-          <div style={{ fontFamily: "sans-serif", fontWeight: 700, fontSize: "0.9rem", color: level.color }}>{level.label}</div>
-          <div style={{ fontFamily: "sans-serif", fontSize: "0.72rem", color: "#b0a898" }}>{level.tip}</div>
+      <div style={{ background: C.card, borderRadius: 10, border: `1px solid ${C.border}`, padding: "16px 18px", marginBottom: 20 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+          <span style={{ fontFamily: "system-ui, sans-serif", fontSize: "0.8rem", fontWeight: 700, color: level.color }}>{level.label}</span>
+          <span style={{ fontFamily: "system-ui, sans-serif", fontSize: "0.72rem", color: C.faint }}>{level.tip}</span>
         </div>
         <input type="range" min={0} max={4} step={1} value={SNAP_LEVELS.indexOf(pct)}
           onChange={e => { setPct(SNAP_LEVELS[+e.target.value]); setActiveWord(null); }}
-          style={{ width: "100%", cursor: "pointer", margin: "0 0 8px" }} />
-        <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "sans-serif", fontSize: "0.63rem", color: "#c8c0b4", marginBottom: 12 }}>
-          <span>English</span><span>As Gaeilge</span>
+          style={{ width: "100%", cursor: "pointer", marginBottom: 10 }} />
+        <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "system-ui, sans-serif", fontSize: "0.63rem", color: C.faint, marginBottom: 12 }}>
+          <span>More English</span><span>More Irish</span>
         </div>
         <div style={{ display: "flex", gap: 4 }}>
           {LEVELS_CONFIG.map(l => (
             <button key={l.pct} onClick={() => { setPct(l.pct); setActiveWord(null); }}
               style={{
-                flex: "1 1 auto", background: pct === l.pct ? l.bg : "#f8f6f1",
-                color: pct === l.pct ? l.color : "#b0a898",
-                border: "1px solid " + (pct === l.pct ? l.color : "#e8e2da"),
-                borderRadius: 6, padding: "5px 2px", cursor: "pointer",
-                fontFamily: "sans-serif", fontSize: "0.63rem", fontWeight: 600,
-                transition: "all 0.12s", letterSpacing: "0.01em",
+                flex: "1 1 auto",
+                background: pct === l.pct ? l.bg : "transparent",
+                color: pct === l.pct ? l.color : C.faint,
+                border: `1px solid ${pct === l.pct ? l.color + "60" : C.border}`,
+                borderRadius: 6, padding: "6px 2px", cursor: "pointer",
+                fontFamily: "system-ui, sans-serif", fontSize: "0.62rem", fontWeight: 600,
+                transition: "all 0.12s",
               }}>
               {l.label}
             </button>
@@ -327,23 +277,22 @@ function ReadingView({ story, onBack }) {
         </div>
       </div>
 
-      {/* Article body */}
-      <div style={{ background: "#fff", borderRadius: 10, padding: "22px", border: "1px solid #e8e2da" }} key={pct}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, paddingBottom: 12, borderBottom: "1px solid #f0ece4" }}>
-          <span style={{ fontFamily: "sans-serif", fontSize: "0.73rem", color: "#888" }}>
-            <span style={{ color: "#3b82f6", fontWeight: 600 }}>{irishCount} focal Gaeilge</span> sa scéal seo
+      {/* Article */}
+      <div style={{ background: C.card, borderRadius: 10, border: `1px solid ${C.border}`, padding: "22px 20px" }} key={pct}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18, paddingBottom: 14, borderBottom: `1px solid ${C.border}` }}>
+          <span style={{ fontFamily: "system-ui, sans-serif", fontSize: "0.72rem", color: C.muted }}>
+            <span style={{ color: C.blue, fontWeight: 600 }}>{irishCount} focal Gaeilge</span> sa scéal seo
           </span>
-          <span style={{ fontFamily: "sans-serif", fontSize: "0.68rem", color: "#c8c0b4" }}>Tap to translate</span>
+          <span style={{ fontFamily: "system-ui, sans-serif", fontSize: "0.68rem", color: C.faint }}>Tap to translate</span>
         </div>
-        <p style={{ margin: "0 0 18px", fontSize: "clamp(0.97rem,2.2vw,1.06rem)", lineHeight: 1.95, color: "#1a1a1a", fontFamily: "Georgia,serif" }}>
+        <div style={{ fontSize: "clamp(1rem,2.3vw,1.06rem)", lineHeight: 2, color: C.text, fontFamily: "Georgia, serif", marginBottom: 18 }}>
           {parts.map((p, i) =>
             p.t === "en" ? <span key={i}>{p.v}</span> :
               <WordChip key={i} part={p} active={activeWord === i} onToggle={() => setActiveWord(a => a === i ? null : i)} />
           )}
-        </p>
-        <div style={{ borderTop: "1px solid #f0ece4", paddingTop: 13, fontFamily: "sans-serif", fontSize: "0.75rem", color: "#b0a898", display: "flex", gap: 6, alignItems: "center" }}>
-          <span style={{ fontSize: "0.85rem" }}>💡</span>
-          <span>Tap any <span style={{ color: "#3b82f6", fontWeight: 600 }}>blue word</span> to translate and hear it</span>
+        </div>
+        <div style={{ paddingTop: 14, borderTop: `1px solid ${C.border}`, fontFamily: "system-ui, sans-serif", fontSize: "0.73rem", color: C.faint }}>
+          Tap any <span style={{ color: C.blue, fontWeight: 600 }}>blue word</span> to see the English and hear it spoken
         </div>
       </div>
     </div>
@@ -352,36 +301,33 @@ function ReadingView({ story, onBack }) {
 
 function AboutView() {
   return (
-    <div style={{ animation: "fadeIn 0.25s ease" }}>
-      <div style={{ marginBottom: 24, paddingBottom: 20, borderBottom: "1px solid #e8e2da" }}>
-        <div style={{ fontFamily: "Georgia,serif", fontSize: "1.1rem", color: NAVY, fontWeight: 700, marginBottom: 4 }}>Faoi Daily Scéal</div>
-        <div style={{ fontFamily: "sans-serif", fontSize: "0.8rem", color: "#888", lineHeight: 1.5 }}>Foghlaim Gaeilge gach lá · Learn Irish every day</div>
+    <div style={{ animation: "fadeIn 0.2s ease" }}>
+      <div style={{ paddingBottom: 24, borderBottom: `1px solid ${C.border}`, marginBottom: 28 }}>
+        <h2 style={{ margin: "0 0 6px", fontFamily: "Georgia, serif", fontSize: "1.35rem", color: C.navy, fontWeight: 700 }}>Faoi Daily Scéal</h2>
+        <p style={{ margin: 0, fontFamily: "system-ui, sans-serif", fontSize: "0.82rem", color: C.muted }}>Foghlaim Gaeilge gach lá · Learn Irish every day</p>
       </div>
 
       {[
         { t: "Cad é Daily Scéal?", b: "Real Irish news from RTÉ, with a slider that controls how much of each article is in Irish. Read as much or as little Gaeilge as you like. No account required." },
-        { t: "Conas a oibríonn sé?", b: "Tap a story, pick a level, and read. Blue underlined words are in Irish. Tap any of them to see the English and hear it said aloud. The Beginner level keeps most of the text in English with a handful of Irish words. As Gaeilge is the full thing." },
-        { t: "An Ionchur Intuigthe · Comprehensible Input", b: "There is a well-established idea in language learning that you absorb a language most effectively when you can follow most of what you are reading but encounter enough unfamiliar words to learn from. The slider is a practical way of putting that into practice." },
-      ].map(({ t, b }) => (
-        <div key={t} style={{ marginBottom: 18 }}>
-          <div style={{ fontFamily: "Georgia,serif", fontWeight: 700, fontSize: "0.9rem", color: NAVY, marginBottom: 5 }}>{t}</div>
-          <div style={{ fontFamily: "sans-serif", fontSize: "0.81rem", color: "#555", lineHeight: 1.65 }}>{b}</div>
+        { t: "Conas a oibríonn sé?", b: "Tap a story, pick a level, and read. Blue words are in Irish — tap any of them to see the English and hear it said aloud. Beginner keeps most of the text in English with a handful of Irish words. As Gaeilge is the full thing." },
+        { t: "An Ionchur Intuigthe", b: "There is a well-established idea in language learning that you absorb a language best when you can follow most of what you are reading but encounter enough unfamiliar words to learn from. The slider is a practical way of putting that into practice." },
+        { t: "Foinse Oscailte · Open Source", b: "Daily Scéal is a free project built by Joe Luca Dooley. The source code is publicly available on GitHub." },
+      ].map(({ t, b }, i, arr) => (
+        <div key={t} style={{ marginBottom: i < arr.length - 1 ? 24 : 20 }}>
+          <div style={{ fontFamily: "Georgia, serif", fontWeight: 700, fontSize: "0.95rem", color: C.navy, marginBottom: 6 }}>{t}</div>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: "0.82rem", color: C.muted, lineHeight: 1.7 }}>{b}</div>
         </div>
       ))}
 
-      <div style={{ borderTop: "1px solid #e8e2da", paddingTop: 20, marginTop: 8 }}>
-        <div style={{ fontFamily: "Georgia,serif", fontWeight: 700, fontSize: "0.9rem", color: NAVY, marginBottom: 5 }}>Foinse Oscailte · Open Source</div>
-        <div style={{ fontFamily: "sans-serif", fontSize: "0.81rem", color: "#555", lineHeight: 1.65, marginBottom: 14 }}>
-          Daily Scéal is a free project built by Joe Luca Dooley. The source code is publicly available on GitHub.
-        </div>
+      <div style={{ paddingTop: 20, borderTop: `1px solid ${C.border}` }}>
         <a href="https://github.com/joelucadooley/daily-sceal" target="_blank" rel="noopener noreferrer"
-          style={{ display: "inline-block", background: NAVY, color: "#fff", borderRadius: 8, padding: "9px 16px", fontFamily: "sans-serif", fontSize: "0.78rem", fontWeight: 600, textDecoration: "none", letterSpacing: "0.01em" }}>
+          style={{ display: "inline-block", background: C.navy, color: "#fff", borderRadius: 8, padding: "10px 18px", fontFamily: "system-ui, sans-serif", fontSize: "0.8rem", fontWeight: 600, textDecoration: "none", letterSpacing: "0.01em" }}>
           View on GitHub →
         </a>
       </div>
 
-      <div style={{ textAlign: "center", padding: "28px 0 4px", fontFamily: "sans-serif", fontSize: "0.69rem", color: "#c8c0b4", lineHeight: 1.8 }}>
-        News sourced from RTÉ · Foghlaim Gaeilge gach lá
+      <div style={{ marginTop: 32, fontFamily: "system-ui, sans-serif", fontSize: "0.7rem", color: C.faint, lineHeight: 1.9 }}>
+        News sourced from RTÉ · Updated daily at 6:30am
       </div>
     </div>
   );
@@ -409,51 +355,61 @@ export default function DailySceal() {
   const todayFmt = new Date().toLocaleDateString("en-IE", { weekday: "long", day: "numeric", month: "long" });
 
   return (
-    <div style={{ minHeight: "100vh", background: CREAM }}>
+    <div style={{ minHeight: "100vh", background: C.bg }}>
       <style>{`
-        @keyframes spin{to{transform:rotate(360deg)}}
-        @keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
-        @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.45}}
-        *{box-sizing:border-box}
-        input[type=range]{-webkit-appearance:none;appearance:none;height:4px;background:#e8e2da;border-radius:2px;outline:none}
-        input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;background:${NAVY};border-radius:50%;cursor:pointer;border:2.5px solid #fff;box-shadow:0 1px 6px rgba(15,41,66,0.25)}
-        button:active{opacity:0.75}
-        a:hover{opacity:0.8}
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+        * { box-sizing: border-box; }
+        input[type=range] { -webkit-appearance: none; appearance: none; height: 3px; background: ${C.border}; border-radius: 2px; outline: none; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; background: ${C.navy}; border-radius: 50%; cursor: pointer; border: 2px solid #fff; box-shadow: 0 1px 6px rgba(13,33,55,0.2); }
+        button:active { opacity: 0.7; }
+        a:hover { opacity: 0.75; }
       `}</style>
 
       {/* Header */}
-      <header style={{ background: NAVY, position: "sticky", top: 0, zIndex: 100, boxShadow: "0 1px 0 rgba(255,255,255,0.06), 0 4px 24px rgba(15,41,66,0.2)" }}>
-        <div style={{ maxWidth: 640, margin: "0 auto", padding: "13px 18px 11px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <header style={{ background: C.navy, borderBottom: `3px solid ${C.amber}` }}>
+        <div style={{ maxWidth: 640, margin: "0 auto", padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div onClick={() => setView("feed")} style={{ cursor: "pointer" }}>
-            <div style={{ fontSize: "clamp(1.25rem,3.5vw,1.55rem)", fontWeight: 700, color: "#fff", lineHeight: 1, fontFamily: "Georgia,serif", letterSpacing: "-0.01em" }}>
-              Daily <span style={{ color: AMBER, fontStyle: "italic" }}>Scéal</span>
+            <div style={{ fontSize: "clamp(1.2rem,3.5vw,1.5rem)", fontWeight: 700, color: "#fff", fontFamily: "Georgia, serif", letterSpacing: "-0.01em", lineHeight: 1 }}>
+              Daily <span style={{ color: C.amber }}>Scéal</span>
             </div>
-            <div style={{ fontSize: "0.62rem", color: "rgba(147,180,204,0.8)", fontFamily: "sans-serif", letterSpacing: "0.04em", marginTop: 2 }}>{todayFmt}</div>
+            <div style={{ fontSize: "0.62rem", color: "rgba(255,255,255,0.4)", fontFamily: "system-ui, sans-serif", marginTop: 3, letterSpacing: "0.03em" }}>{todayFmt}</div>
           </div>
-          <div style={{ fontFamily: "sans-serif", fontSize: "0.7rem", color: "rgba(147,180,204,0.7)", fontStyle: "italic", letterSpacing: "0.02em" }}>Foghlaim Gaeilge</div>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: "0.7rem", color: "rgba(255,255,255,0.35)", letterSpacing: "0.03em" }}>Foghlaim Gaeilge</div>
         </div>
       </header>
 
       {/* Content */}
-      <main style={{ maxWidth: 640, margin: "0 auto", padding: "22px 16px 90px" }}>
-        {view === "feed" && <FeedView stories={stories} loading={loading} onStoryClick={openStory} />}
-        {view === "reading" && activeStory && <ReadingView story={activeStory} onBack={() => setView("feed")} />}
-        {view === "about" && <AboutView />}
+      <main style={{ maxWidth: 640, margin: "0 auto", padding: "0 20px 100px" }}>
+        {/* Inner container with white bg for feed/reading */}
+        <div style={{ background: view === "about" ? "transparent" : C.card, borderLeft: `1px solid ${C.border}`, borderRight: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}`, borderRadius: "0 0 12px 12px", padding: "0 20px", minHeight: 400 }}>
+          {view === "feed" && <FeedView stories={stories} loading={loading} onStoryClick={openStory} />}
+          {view === "reading" && activeStory && (
+            <div style={{ paddingTop: 20 }}>
+              <ReadingView story={activeStory} onBack={() => setView("feed")} />
+            </div>
+          )}
+          {view === "about" && (
+            <div style={{ paddingTop: 28 }}>
+              <AboutView />
+            </div>
+          )}
+        </div>
       </main>
 
       {/* Bottom nav */}
-      <nav style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "rgba(255,252,248,0.96)", borderTop: "1px solid #e8e2da", zIndex: 100, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}>
-        <div style={{ maxWidth: 640, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(2,1fr)" }}>
+      <nav style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "rgba(255,255,255,0.96)", borderTop: `1px solid ${C.border}`, backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", zIndex: 100 }}>
+        <div style={{ maxWidth: 640, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr" }}>
           {[
-            { id: "feed", icon: "📰", label: "Nuacht" },
-            { id: "about", icon: "ℹ️", label: "Faoi" },
+            { id: "feed", label: "Nuacht", icon: "📰" },
+            { id: "about", label: "Faoi", icon: "ℹ️" },
           ].map(tab => (
             <button key={tab.id} onClick={() => setView(tab.id)}
-              style={{ background: "none", border: "none", padding: "10px 0 8px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}
+              style={{ background: "none", border: "none", padding: "11px 0 9px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 3, position: "relative" }}
             >
-              <span style={{ fontSize: "1.15rem" }}>{tab.icon}</span>
-              <span style={{ fontFamily: "sans-serif", fontSize: "0.59rem", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: view === tab.id ? NAVY : "#b0a898", transition: "color 0.15s" }}>{tab.label}</span>
-              {view === tab.id && <span style={{ width: 20, height: 2, background: NAVY, borderRadius: 1, animation: "fadeIn 0.15s ease" }} />}
+              {view === tab.id && <span style={{ position: "absolute", top: 0, left: "20%", right: "20%", height: 2, background: C.navy, borderRadius: "0 0 2px 2px" }} />}
+              <span style={{ fontSize: "1.1rem" }}>{tab.icon}</span>
+              <span style={{ fontFamily: "system-ui, sans-serif", fontSize: "0.6rem", fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: view === tab.id ? C.navy : C.faint, transition: "color 0.15s" }}>{tab.label}</span>
             </button>
           ))}
         </div>
