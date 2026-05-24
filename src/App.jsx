@@ -302,32 +302,38 @@ function ReadingView({ story, onBack }) {
 function AboutView() {
   return (
     <div style={{ animation: "fadeIn 0.2s ease" }}>
-      <div style={{ paddingBottom: 24, borderBottom: `1px solid ${C.border}`, marginBottom: 28 }}>
-        <h2 style={{ margin: "0 0 6px", fontFamily: "Georgia, serif", fontSize: "1.35rem", color: C.navy, fontWeight: 700 }}>Faoi Daily Scéal</h2>
-        <p style={{ margin: 0, fontFamily: "system-ui, sans-serif", fontSize: "0.82rem", color: C.muted }}>Foghlaim Gaeilge gach lá · Learn Irish every day</p>
+      <div style={{ paddingBottom: 28, borderBottom: `1px solid ${C.border}`, marginBottom: 28 }}>
+        <h2 style={{ margin: "0 0 10px", fontFamily: "Georgia, serif", fontSize: "1.5rem", color: C.navy, fontWeight: 700, letterSpacing: "-0.01em" }}>Faoi Daily Scéal</h2>
+        <p style={{ margin: 0, fontFamily: "Georgia, serif", fontSize: "1rem", color: C.muted, lineHeight: 1.7, fontStyle: "italic" }}>
+          Gaeilge as it appears in the real world, every morning.
+        </p>
       </div>
 
-      {[
-        { t: "Cad é Daily Scéal?", b: "Real Irish news from RTÉ, with a slider that controls how much of each article is in Irish. Read as much or as little Gaeilge as you like. No account required." },
-        { t: "Conas a oibríonn sé?", b: "Tap a story, pick a level, and read. Blue words are in Irish — tap any of them to see the English and hear it said aloud. Beginner keeps most of the text in English with a handful of Irish words. As Gaeilge is the full thing." },
-        { t: "An Ionchur Intuigthe", b: "There is a well-established idea in language learning that you absorb a language best when you can follow most of what you are reading but encounter enough unfamiliar words to learn from. The slider is a practical way of putting that into practice." },
-        { t: "Foinse Oscailte · Open Source", b: "Daily Scéal is a free project built by Joe Luca Dooley. The source code is publicly available on GitHub." },
-      ].map(({ t, b }, i, arr) => (
-        <div key={t} style={{ marginBottom: i < arr.length - 1 ? 24 : 20 }}>
-          <div style={{ fontFamily: "Georgia, serif", fontWeight: 700, fontSize: "0.95rem", color: C.navy, marginBottom: 6 }}>{t}</div>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: "0.82rem", color: C.muted, lineHeight: 1.7 }}>{b}</div>
-        </div>
-      ))}
+      <div style={{ fontFamily: "Georgia, serif", fontSize: "0.95rem", color: "#333", lineHeight: 1.85, marginBottom: 28 }}>
+        <p style={{ margin: "0 0 16px" }}>
+          Daily Scéal takes real news from RTÉ and lets you read it at whatever level of Irish you like. A slider moves the balance from mostly English at one end to fully Irish at the other. Tap any blue word to see what it means and hear it spoken.
+        </p>
+        <p style={{ margin: "0 0 16px" }}>
+          The idea behind the slider comes from research into how people actually acquire languages. You learn best when you understand most of what you are reading but still encounter enough unfamiliar words to stretch you. The five levels are designed around that principle.
+        </p>
+        <p style={{ margin: 0 }}>
+          No account. No tracking. No ads. Stories arrive every morning at 6:30am.
+        </p>
+      </div>
 
-      <div style={{ paddingTop: 20, borderTop: `1px solid ${C.border}` }}>
+      <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 24, marginBottom: 24 }}>
+        <div style={{ fontFamily: "Georgia, serif", fontWeight: 700, fontSize: "0.95rem", color: C.navy, marginBottom: 8 }}>Foinse Oscailte</div>
+        <p style={{ margin: "0 0 16px", fontFamily: "Georgia, serif", fontSize: "0.9rem", color: C.muted, lineHeight: 1.7 }}>
+          Daily Scéal is a free, open source project built by Joe Luca Dooley. The full code is on GitHub.
+        </p>
         <a href="https://github.com/joelucadooley/daily-sceal" target="_blank" rel="noopener noreferrer"
-          style={{ display: "inline-block", background: C.navy, color: "#fff", borderRadius: 8, padding: "10px 18px", fontFamily: "system-ui, sans-serif", fontSize: "0.8rem", fontWeight: 600, textDecoration: "none", letterSpacing: "0.01em" }}>
+          style={{ display: "inline-block", background: C.navy, color: "#fff", borderRadius: 8, padding: "10px 18px", fontFamily: "system-ui, sans-serif", fontSize: "0.8rem", fontWeight: 600, textDecoration: "none" }}>
           View on GitHub →
         </a>
       </div>
 
-      <div style={{ marginTop: 32, fontFamily: "system-ui, sans-serif", fontSize: "0.7rem", color: C.faint, lineHeight: 1.9 }}>
-        News sourced from RTÉ · Updated daily at 6:30am
+      <div style={{ fontFamily: "system-ui, sans-serif", fontSize: "0.7rem", color: C.faint, lineHeight: 1.9, paddingBottom: 8 }}>
+        News sourced from RTÉ
       </div>
     </div>
   );
@@ -359,6 +365,7 @@ export default function DailySceal() {
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+        html, body { margin: 0; padding: 0; }
         * { box-sizing: border-box; }
         input[type=range] { -webkit-appearance: none; appearance: none; height: 3px; background: ${C.border}; border-radius: 2px; outline: none; }
         input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; background: ${C.navy}; border-radius: 50%; cursor: pointer; border: 2px solid #fff; box-shadow: 0 1px 6px rgba(13,33,55,0.2); }
@@ -380,8 +387,7 @@ export default function DailySceal() {
       </header>
 
       {/* Content */}
-      <main style={{ maxWidth: 640, margin: "0 auto", padding: "0 20px 100px" }}>
-        {/* Inner container with white bg for feed/reading */}
+      <main style={{ maxWidth: 640, margin: "0 auto", padding: "0 20px 120px" }}>
         <div style={{ background: view === "about" ? "transparent" : C.card, borderLeft: `1px solid ${C.border}`, borderRight: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}`, borderRadius: "0 0 12px 12px", padding: "0 20px", minHeight: 400 }}>
           {view === "feed" && <FeedView stories={stories} loading={loading} onStoryClick={openStory} />}
           {view === "reading" && activeStory && (
@@ -402,7 +408,7 @@ export default function DailySceal() {
         <div style={{ maxWidth: 640, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr" }}>
           {[
             { id: "feed", label: "Nuacht", icon: "📰" },
-            { id: "about", label: "Faoi", icon: "ℹ️" },
+            { id: "about", label: "Faoi", icon: "🍀" },
           ].map(tab => (
             <button key={tab.id} onClick={() => setView(tab.id)}
               style={{ background: "none", border: "none", padding: "11px 0 9px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 3, position: "relative" }}
