@@ -1,10 +1,10 @@
-# Daily Scéal 📰
+# Daily Scéal
 
 **Foghlaim Gaeilge gach lá · Learn Irish every day**
 
-[🌐 Live site](https://joelucadooley.github.io/daily-sceal)
+[Live site](https://joelucadooley.github.io/daily-sceal)
 
-Daily Scéal brings you real Irish news stories every day, with a simple slider to control how much of each article is in Irish. Start with just a few key words and work your way up at your own pace. No account, no pressure, no gamification — just read and pick up the language naturally.
+Daily Scéal takes real news from RTÉ and lets you read it at whatever level of Irish you like. A slider moves the balance from mostly English at one end to fully Irish at the other. Tap any blue word to see what it means and hear it spoken.
 
 ---
 
@@ -14,36 +14,33 @@ Each morning at 6:30am Irish time, a GitHub Action automatically:
 
 1. Fetches the top stories from RTÉ News
 2. Scrapes the full article text from each story page
-3. Translates key words into Irish at 5 preset levels using the free [MyMemory](https://mymemory.translated.net/) translation API
+3. Translates key words into Irish at five preset levels using the free [MyMemory](https://mymemory.translated.net/) translation API
 4. Saves everything as a static `today.json` file
 5. Deploys the updated site to GitHub Pages
 
-Every user gets the same pre-generated content — no AI calls per user, no ongoing cost.
+Every user gets the same pre-generated content. No AI calls per user, no ongoing cost.
 
-## The slider levels
+## Levels
 
-| Level | % Irish | What's translated |
-|-------|---------|-------------------|
+| Level | Irish | What gets translated |
+|-------|-------|----------------------|
 | Beginner | 10% | Key nouns only |
 | Elementary | 25% | Nouns and verbs |
 | Intermediate | 50% | Most content words |
 | Advanced | 75% | Near-fluent |
-| As Gaeilge | 100% | Full immersion |
-
-Tap any blue underlined word to see its English translation and hear it spoken aloud.
+| As Gaeilge | 100% | Full Irish |
 
 ## The method
 
-This approach is based on **comprehensible input** — a well-researched language learning theory that says we acquire language fastest when we understand most of what we're reading but are stretched just enough. The slider puts you in that sweet spot, wherever that is for you today.
+The approach draws on a well-established idea in language learning: you absorb a language best when you can follow most of what you are reading but encounter enough unfamiliar words to learn from. The five levels are designed around that principle.
 
 ## Tech stack
 
-- [React](https://react.dev/) + [Vite](https://vitejs.dev/)
+- [React](https://react.dev/) and [Vite](https://vitejs.dev/)
 - [GitHub Actions](https://github.com/features/actions) for daily generation
 - [GitHub Pages](https://pages.github.com/) for hosting
-- [MyMemory](https://mymemory.translated.net/) for free Irish translation
+- [MyMemory](https://mymemory.translated.net/) for Irish translation
 - News sourced from [RTÉ News](https://www.rte.ie/news/)
-- Zero cost to run · No user accounts · No tracking
 
 ## Project structure
 
@@ -56,7 +53,7 @@ daily-sceal/
 │   └── generate.js      # Daily story generation script
 ├── public/
 │   └── data/
-│       └── today.json   # Generated daily — do not edit manually
+│       └── today.json   # Generated daily, do not edit manually
 ├── .github/
 │   └── workflows/
 │       ├── daily.yml    # Runs generate.js every morning at 6:30am IST
@@ -73,16 +70,12 @@ npm install
 npm run dev
 ```
 
-To generate fresh stories locally (requires internet access):
+To generate fresh stories locally:
 
 ```bash
 npm install @xmldom/xmldom
 node scripts/generate.js
 ```
-
-## About the Irish language
-
-Irish (Gaeilge) is a Celtic language spoken natively in Gaeltacht communities along Ireland's western coast, and by communities worldwide. It is one of the oldest written languages in Europe, with a literary tradition stretching back 1,500 years. Despite centuries of decline, the language is experiencing a genuine revival — particularly among younger generations.
 
 ---
 
