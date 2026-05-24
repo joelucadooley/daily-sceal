@@ -8,7 +8,7 @@
 import { writeFileSync, mkdirSync } from "fs";
 import { DOMParser } from "@xmldom/xmldom";
 
-const RSS_URL = "https://www.rte.ie/news/rss/";
+const RSS_URL = "https://www.rte.ie/feeds/rss/?index=/news";
 const LEVELS = [10, 25, 50, 75, 100];
 const STORY_COUNT = 6;
 
