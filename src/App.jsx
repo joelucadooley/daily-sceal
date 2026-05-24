@@ -211,6 +211,7 @@ function FeedView({ stories, loading, onStoryClick }) {
       <div style={{ paddingTop: 32, textAlign: "center", fontFamily: "system-ui, sans-serif", fontSize: "0.7rem", color: C.faint, lineHeight: 1.9 }}>
         <div>News from RTÉ · Updated daily</div>
         <div>Created by <a href="https://github.com/joelucadooley/daily-sceal" target="_blank" rel="noopener noreferrer" style={{ color: C.navy, textDecoration: "none", borderBottom: `1px solid ${C.border}` }}>Joe Luca Dooley</a></div>
+        <div>&nbsp;</div>
       </div>
     </div>
   );
@@ -317,7 +318,7 @@ function AboutView() {
           The idea behind the slider comes from research into how people actually acquire languages. You learn best when you understand most of what you are reading but still encounter enough unfamiliar words to stretch you. The five levels are designed around that principle.
         </p>
         <p style={{ margin: 0 }}>
-          No account. No tracking. No ads. Stories arrive every morning at 6:30am.
+          Stories arrive every morning at 6:30am.
         </p>
       </div>
 
@@ -382,7 +383,7 @@ export default function DailySceal() {
             </div>
             <div style={{ fontSize: "0.62rem", color: "rgba(255,255,255,0.4)", fontFamily: "system-ui, sans-serif", marginTop: 3, letterSpacing: "0.03em" }}>{todayFmt}</div>
           </div>
-          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: "0.7rem", color: "rgba(255,255,255,0.35)", letterSpacing: "0.03em" }}>Foghlaim Gaeilge</div>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: "0.7rem", color: "rgba(255,255,255,0.35)", letterSpacing: "0.03em" }}>Cad é an scéal?</div>
         </div>
       </header>
 
