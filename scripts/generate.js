@@ -176,7 +176,7 @@ async function buildLevel(sentence, pct) {
       try {
         const irish = await translateCached(tok);
         if (isGoodTranslation(tok, irish)) {
-          result.push(`[[${irish.trim()}|${tok}]]`);
+                    result.push(`[[${irish.trim().replace(/^[.,;:!?]+|[.,;:!?]+$/g, "").trim()}|${tok}]]`);
         } else {
           result.push(tok);
         }
