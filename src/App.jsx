@@ -275,11 +275,20 @@ function ReadingView({ story, onBack }) {
               {l.label}
             </button>
           ))}
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", background: "#f9fafb", border: "1px dashed #e5e7eb", borderRadius: 6 }}>
-          <span style={{ fontSize: "0.75rem" }}>🔒</span>
-          <span style={{ fontFamily: "system-ui, sans-serif", fontSize: "0.62rem", color: "#9ca3af", fontWeight: 600 }}>As Gaeilge</span>
-          <span style={{ fontFamily: "system-ui, sans-serif", fontSize: "0.62rem", color: "#c4b5b0" }}>· Full Irish translation coming with funding</span>
+          <button
+            disabled
+            title="Full Irish translation coming with funding"
+            style={{
+              flex: "1 1 auto",
+              background: "#f9fafb",
+              color: "#d1d5db",
+              border: "1px dashed #e5e7eb",
+              borderRadius: 6, padding: "6px 2px", cursor: "not-allowed",
+              fontFamily: "system-ui, sans-serif", fontSize: "0.62rem", fontWeight: 600,
+              opacity: 0.6,
+            }}>
+            🔒 As Gaeilge
+          </button>
         </div>
       </div>
 
@@ -330,49 +339,18 @@ function AboutView() {
       <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 24, marginBottom: 24 }}>
         <div style={{ fontFamily: "Georgia, serif", fontWeight: 700, fontSize: "0.95rem", color: C.navy, marginBottom: 8 }}>Foinse Oscailte</div>
         <p style={{ margin: "0 0 16px", fontFamily: "Georgia, serif", fontSize: "0.9rem", color: C.muted, lineHeight: 1.7 }}>
-          Daily Scéal is a free, open source project built by Joe Luca Dooley. The full code is available on GitHub and you can support the project below.
+          Daily Scéal is a free, open source project built by Joe Luca Dooley. The full code is on GitHub.
         </p>
-<div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
-  {/* GitHub Button */}
-  <a 
-    href="https://github.com/joelucadooley/daily-sceal" 
-    target="_blank" 
-    rel="noopener noreferrer"
-    style={{ 
-      display: "inline-block", 
-      background: C.navy, // Your variable
-      color: "#fff", 
-      borderRadius: 8, 
-      padding: "10px 18px", 
-      fontFamily: "system-ui, sans-serif", 
-      fontSize: "0.8rem", 
-      fontWeight: 600, 
-      textDecoration: "none" 
-    }}
-  >
-    View on GitHub →
-  </a>
-
-  {/* Custom Ko-fi Button */}
-  <a 
-    href="https://ko-fi.com/joelucadooley" 
-    target="_blank" 
-    rel="noopener noreferrer"
-    style={{ 
-      display: "inline-block", 
-      background: "#e8951e",
-      color: "#fff", 
-      borderRadius: 8, 
-      padding: "10px 18px", 
-      fontFamily: "system-ui, sans-serif", 
-      fontSize: "0.8rem", 
-      fontWeight: 600, 
-      textDecoration: "none" 
-    }}
-  >
-    Support Joe Luca 🍻
-  </a>
-</div>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <a href="https://github.com/joelucadooley/daily-sceal" target="_blank" rel="noopener noreferrer"
+            style={{ display: "inline-block", background: C.navy, color: "#fff", borderRadius: 8, padding: "10px 18px", fontFamily: "system-ui, sans-serif", fontSize: "0.8rem", fontWeight: 600, textDecoration: "none" }}>
+            View on GitHub →
+          </a>
+          <a href="https://ko-fi.com/joelucadooley" target="_blank" rel="noopener noreferrer"
+            style={{ display: "inline-block", background: C.amber, color: "#fff", borderRadius: 8, padding: "10px 18px", fontFamily: "system-ui, sans-serif", fontSize: "0.8rem", fontWeight: 600, textDecoration: "none" }}>
+            Support Joe Luca 🍻
+          </a>
+        </div>
       </div>
 
       <div style={{ fontFamily: "system-ui, sans-serif", fontSize: "0.7rem", color: C.faint, lineHeight: 1.9, paddingBottom: 8 }}>
