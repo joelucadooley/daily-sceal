@@ -338,8 +338,8 @@ function ReadingView({ story, onBack }) {
           <div style={{ paddingTop: 14, borderTop: `1px solid ${C.border}`, fontFamily: "system-ui, sans-serif", fontSize: "0.73rem", color: C.faint }}>
             Tap any <span style={{ color: C.blue, fontWeight: 600 }}>blue word</span> to see the English and hear it spoken
           </div>
-          <div>&nbsp;</div>
         </div>
+        <div>&nbsp;</div>
       )}
     </div>
   );
