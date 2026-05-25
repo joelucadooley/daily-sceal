@@ -322,24 +322,26 @@ function ReadingView({ story, onBack }) {
           </div>
         </div>
       ) : (
-        <div style={{ background: C.card, borderRadius: 10, border: `1px solid ${C.border}`, padding: "22px 20px" }} key={pct}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18, paddingBottom: 14, borderBottom: `1px solid ${C.border}` }}>
-            <span style={{ fontFamily: "system-ui, sans-serif", fontSize: "0.72rem", color: C.muted }}>
-              <span style={{ color: C.blue, fontWeight: 600 }}>{irishCount} focal Gaeilge</span> sa scéal seo
-            </span>
-            <span style={{ fontFamily: "system-ui, sans-serif", fontSize: "0.68rem", color: C.faint }}>Tap to translate</span>
+        <>
+          <div style={{ background: C.card, borderRadius: 10, border: `1px solid ${C.border}`, padding: "22px 20px" }} key={pct}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18, paddingBottom: 14, borderBottom: `1px solid ${C.border}` }}>
+              <span style={{ fontFamily: "system-ui, sans-serif", fontSize: "0.72rem", color: C.muted }}>
+                <span style={{ color: C.blue, fontWeight: 600 }}>{irishCount} focal Gaeilge</span> sa scéal seo
+              </span>
+              <span style={{ fontFamily: "system-ui, sans-serif", fontSize: "0.68rem", color: C.faint }}>Tap to translate</span>
+            </div>
+            <div style={{ fontSize: "clamp(1rem,2.3vw,1.06rem)", lineHeight: 2, color: C.text, fontFamily: "Georgia, serif", marginBottom: 18 }}>
+              {parts.map((p, i) =>
+                p.t === "en" ? <span key={i}>{p.v}</span> :
+                  <WordChip key={i} part={p} active={activeWord === i} onToggle={() => setActiveWord(a => a === i ? null : i)} />
+              )}
+            </div>
+            <div style={{ paddingTop: 14, borderTop: `1px solid ${C.border}`, fontFamily: "system-ui, sans-serif", fontSize: "0.73rem", color: C.faint }}>
+              Tap any <span style={{ color: C.blue, fontWeight: 600 }}>blue word</span> to see the English and hear it spoken
+            </div>
           </div>
-          <div style={{ fontSize: "clamp(1rem,2.3vw,1.06rem)", lineHeight: 2, color: C.text, fontFamily: "Georgia, serif", marginBottom: 18 }}>
-            {parts.map((p, i) =>
-              p.t === "en" ? <span key={i}>{p.v}</span> :
-                <WordChip key={i} part={p} active={activeWord === i} onToggle={() => setActiveWord(a => a === i ? null : i)} />
-            )}
-          </div>
-          <div style={{ paddingTop: 14, borderTop: `1px solid ${C.border}`, fontFamily: "system-ui, sans-serif", fontSize: "0.73rem", color: C.faint }}>
-            Tap any <span style={{ color: C.blue, fontWeight: 600 }}>blue word</span> to see the English and hear it spoken
-          </div>
-        </div>
-        <div style={{ height: "1.5rem" }} />
+          <div style={{ height: "1.5rem" }} />
+        </>
       )}
     </div>
   );
