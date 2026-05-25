@@ -332,13 +332,41 @@ function AboutView() {
         <p style={{ margin: "0 0 16px", fontFamily: "Georgia, serif", fontSize: "0.9rem", color: C.muted, lineHeight: 1.7 }}>
           Daily Scéal is a free, open source project built by Joe Luca Dooley. The full code is available on GitHub and you can support the project below.
         </p>
-        <a href="https://github.com/joelucadooley/daily-sceal" target="_blank" rel="noopener noreferrer"
-          style={{ display: "inline-block", background: C.navy, color: "#fff", borderRadius: 8, padding: "10px 18px", fontFamily: "system-ui, sans-serif", fontSize: "0.8rem", fontWeight: 600, textDecoration: "none" }}>
-          View on GitHub →
-        </a>
-        <a href="https://ko-fi.com/joelucadooley" target="_blank" rel="noopener noreferrer">
-  <img src="https://ko-fi.com/img/githubbutton_sm.svg" alt="Support me on Ko-fi" />
-</a>
+      <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+  {/* GitHub Button */}
+  <a 
+    href="https://github.com/joelucadooley/daily-sceal" 
+    target="_blank" 
+    rel="noopener noreferrer"
+    style={{ 
+      display: "inline-block", 
+      background: C.navy, 
+      color: "#fff", 
+      borderRadius: 8, 
+      padding: "10px 18px", 
+      fontFamily: "system-ui, sans-serif", 
+      fontSize: "0.8rem", 
+      fontWeight: 600, 
+      textDecoration: "none" 
+    }}
+  >
+    View on GitHub →
+  </a>
+
+  {/* Ko-fi Button */}
+  <a 
+    href="https://ko-fi.com/joelucadooley" 
+    target="_blank" 
+    rel="noopener noreferrer"
+    style={{ display: "inline-flex", alignItems: "center" }}
+  >
+    <img 
+      src="https://ko-fi.com/img/githubbutton_sm.svg" 
+      alt="Support me on Ko-fi" 
+      style={{ height: "36px", display: "block" }} // Matches the visual height of your GitHub button
+    />
+  </a>
+</div>
       </div>
 
       <div style={{ fontFamily: "system-ui, sans-serif", fontSize: "0.7rem", color: C.faint, lineHeight: 1.9, paddingBottom: 8 }}>
