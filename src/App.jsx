@@ -313,7 +313,7 @@ function ReadingView({ story, onBack }) {
             <div style={{ fontSize: "1.5rem", marginBottom: 12 }}>🔒</div>
             <h3 style={{ margin: "0 0 10px", fontFamily: "Georgia, serif", fontSize: "1.05rem", color: C.navy, fontWeight: 700 }}>As Gaeilge</h3>
             <p style={{ margin: "0 0 16px", fontFamily: "Georgia, serif", fontSize: "0.88rem", color: C.muted, lineHeight: 1.7 }}>
-              Full Irish translation requires specialist linguistic resources that are currently beyond the scope of this project. This level is a goal — one we are actively seeking support to reach.
+              Full Irish translation requires specialist linguistic resources that are currently beyond the scope of this project. This level is a goal and one I am actively seeking support to reach.
             </p>
             <a href="https://ko-fi.com/joelucadooley" target="_blank" rel="noopener noreferrer"
               style={{ display: "inline-block", background: C.amber, color: "#fff", borderRadius: 8, padding: "10px 20px", fontFamily: "system-ui, sans-serif", fontSize: "0.82rem", fontWeight: 600, textDecoration: "none" }}>
@@ -338,6 +338,7 @@ function ReadingView({ story, onBack }) {
           <div style={{ paddingTop: 14, borderTop: `1px solid ${C.border}`, fontFamily: "system-ui, sans-serif", fontSize: "0.73rem", color: C.faint }}>
             Tap any <span style={{ color: C.blue, fontWeight: 600 }}>blue word</span> to see the English and hear it spoken
           </div>
+          <div>&nbsp;</div>
         </div>
       )}
     </div>
@@ -362,7 +363,7 @@ function AboutView() {
           The idea behind the slider comes from research into how people actually acquire languages. You learn best when you understand most of what you are reading but still encounter enough unfamiliar words to stretch you. The five levels are designed around that principle.
         </p>
         <p style={{ margin: 0 }}>
-          Stories arrive every morning at 6:30am.
+          New stories arrive daily.
         </p>
       </div>
 
