@@ -253,9 +253,14 @@ function ReadingView({ story, onBack }) {
           <span style={{ fontFamily: "system-ui, sans-serif", fontSize: "0.8rem", fontWeight: 700, color: level.color }}>{level.label}</span>
           <span style={{ fontFamily: "system-ui, sans-serif", fontSize: "0.72rem", color: C.faint }}>{level.tip}</span>
         </div>
-        <input type="range" min={0} max={3} step={1} value={SNAP_LEVELS.indexOf(pct)}
-          onChange={e => { setPct(SNAP_LEVELS[+e.target.value]); setActiveWord(null); }}
-          style={{ width: "100%", cursor: "pointer", marginBottom: 10 }} />
+        <div style={{ position: "relative", marginBottom: 10 }}>
+          <input type="range" min={0} max={3} step={1} value={SNAP_LEVELS.indexOf(pct)}
+            onChange={e => { setPct(SNAP_LEVELS[+e.target.value]); setActiveWord(null); }}
+            style={{ width: "80%", cursor: "pointer" }} />
+          <div style={{ position: "absolute", right: 0, top: "50%", transform: "translateY(-50%)", width: "18%", height: 3, background: "#f0ede8", borderRadius: 2, display: "flex", alignItems: "center", justifyContent: "flex-end" }}>
+            <span style={{ fontSize: "0.75rem", marginRight: 0 }}>🔒</span>
+          </div>
+        </div>
         <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "system-ui, sans-serif", fontSize: "0.63rem", color: C.faint, marginBottom: 12 }}>
           <span>More English</span><span>More Irish</span>
         </div>
