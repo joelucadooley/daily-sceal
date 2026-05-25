@@ -130,14 +130,16 @@ function shouldTranslate(tok, pct) {
   if (/^\d+$/.test(tok)) return false;
   if (tok.length <= 1) return false;
 
-  if (pct <= 50) {
+  if (pct <= 25) {
+    // Beginner and Foundation: content words only, no short words
     if (FUNCTION_WORDS.has(lower)) return false;
     if (tok.length <= 3) return false;
-  } else if (pct <= 75) {
+  } else if (pct <= 50) {
+    // Intermediate: content words, allow slightly shorter
     if (FUNCTION_WORDS.has(lower)) return false;
     if (tok.length <= 2) return false;
   }
-  // At 100%, function words like "there" and "said" are included
+  // Advanced (75%) and above: translate everything including function words
   return true;
 }
 
