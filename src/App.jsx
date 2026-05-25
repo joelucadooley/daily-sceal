@@ -253,21 +253,12 @@ function ReadingView({ story, onBack }) {
           <span style={{ fontFamily: "system-ui, sans-serif", fontSize: "0.8rem", fontWeight: 700, color: level.color }}>{level.label}</span>
           <span style={{ fontFamily: "system-ui, sans-serif", fontSize: "0.72rem", color: C.faint }}>{level.tip}</span>
         </div>
-        <div style={{ position: "relative", marginBottom: 10 }}>
+        <div style={{ position: "relative", marginBottom: 10, display: "flex", alignItems: "center" }}>
           <input type="range" min={0} max={3} step={1} value={SNAP_LEVELS.indexOf(pct)}
             onChange={e => { setPct(SNAP_LEVELS[+e.target.value]); setActiveWord(null); }}
             style={{ width: "100%", cursor: "pointer" }}
             className="sceal-range" />
-          <div style={{
-            position: "absolute", right: 0, top: "50%", transform: "translateY(-50%)",
-            width: "20%", height: 3,
-            background: "linear-gradient(to right, #e8e2d9, #f0ede8)",
-            borderRadius: "0 2px 2px 0",
-            display: "flex", alignItems: "center", justifyContent: "flex-end",
-            pointerEvents: "none",
-          }}>
-            <span style={{ fontSize: "0.7rem" }}>🔒</span>
-          </div>
+          <span style={{ fontSize: "0.7rem", marginLeft: 6, flexShrink: 0 }}>🔒</span>
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "system-ui, sans-serif", fontSize: "0.63rem", color: C.faint, marginBottom: 12 }}>
           <span>More English</span><span>More Irish</span>
@@ -403,7 +394,7 @@ export default function DailySceal() {
         * { box-sizing: border-box; }
         input[type=range] { -webkit-appearance: none; appearance: none; height: 3px; background: ${C.border}; border-radius: 2px; outline: none; }
         input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; background: ${C.navy}; border-radius: 50%; cursor: pointer; border: 2px solid #fff; box-shadow: 0 1px 6px rgba(13,33,55,0.2); }
-        .sceal-range { width: 80% !important; }
+        .sceal-range { background: linear-gradient(to right, ${C.border} 0%, ${C.border} 80%, #ede8e0 80%, #f0ede8 100%) !important; width: calc(100% - 28px) !important; }
         button:active { opacity: 0.7; }
         a:hover { opacity: 0.75; }
       `}</style>
