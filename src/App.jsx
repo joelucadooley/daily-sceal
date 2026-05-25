@@ -360,7 +360,7 @@ function AboutView() {
     rel="noopener noreferrer"
     style={{ 
       display: "inline-block", 
-      background: "#FF5E5B", // Official Ko-fi Red/Coral
+      background: "#e8951e",
       color: "#fff", 
       borderRadius: 8, 
       padding: "10px 18px", 
