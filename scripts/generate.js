@@ -144,6 +144,11 @@ function shouldTranslate(tok, pct) {
 }
 
 async function buildLevel(sentence, pct) {
+  // For Advanced (75%), translate the whole sentence at once for much better Irish density
+  if (pct >= 75) {
+    return await buildAdvancedLevel(sentence);
+  }
+
   const tokens = sentence.match(/(\w[\w']*|[^\w\s]|\s+)/g) || [];
 
   const candidates = tokens
@@ -174,6 +179,99 @@ async function buildLevel(sentence, pct) {
     } else {
       result.push(tok);
     }
+  }
+  return result.join("");
+}
+
+// Translate a full sentence to Irish, then pair each translated word with its English source
+async function buildAdvancedLevel(sentence) {
+  try {
+    // Split into manageable chunks at sentence boundaries
+    const chunks = sentence.match(/[^.!?]+[.!?]*/g) || [sentence];
+    const resultParts = [];
+
+    for (const chunk of chunks) {
+      await sleep(400);
+      const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(chunk.trim())}&langpair=en|ga`;
+      const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
+      const data = await res.json();
+
+      if (data.responseStatus !== 200) {
+        resultParts.push(chunk);
+        continue;
+      }
+
+      const irishSentence = data.responseData.translatedText;
+
+      // Check it's actually Irish and not garbage
+      if (!irishSentence || irishSentence.toLowerCase() === chunk.toLowerCase()) {
+        resultParts.push(chunk);
+        continue;
+      }
+
+      // Align English words with Irish words to create [[irish|english]] pairs
+      const englishWords = chunk.trim().split(/\s+/);
+      const irishWords = irishSentence.trim().split(/\s+/);
+
+      // If word counts are similar, pair them up
+      if (irishWords.length >= englishWords.length * 0.6 && irishWords.length <= englishWords.length * 1.8) {
+        const paired = [];
+        const maxLen = Math.max(englishWords.length, irishWords.length);
+        for (let i = 0; i < englishWords.length; i++) {
+          const eng = englishWords[i];
+          const ire = irishWords[i];
+          // Keep proper nouns, numbers, punctuation-only tokens in English
+          if (!ire || /^[A-Z]/.test(eng) || /^\d/.test(eng) || !/\w/.test(eng)) {
+            paired.push(eng);
+          } else {
+            const cleanEng = eng.replace(/[.,;:!?"]/g, "");
+            const cleanIre = ire.replace(/[.,;:!?"]/g, "");
+            const punct = eng.match(/[.,;:!?"]+$/)?.[0] || "";
+            if (cleanIre && cleanIre.toLowerCase() !== cleanEng.toLowerCase()) {
+              paired.push(`[[${cleanIre}|${cleanEng}]]${punct}`);
+            } else {
+              paired.push(eng);
+            }
+          }
+        }
+        resultParts.push(paired.join(" "));
+      } else {
+        // Word counts too different — just use the full Irish sentence without word markers
+        // so at least the sentence is in Irish even if untappable
+        resultParts.push(irishSentence);
+      }
+    }
+
+    return resultParts.join(" ");
+  } catch (e) {
+    console.warn(`  Advanced translation failed: ${e.message}, falling back to word-by-word`);
+    // Fall back to aggressive word-by-word
+    return buildLevelWordByWord(sentence, 75);
+  }
+}
+
+async function buildLevelWordByWord(sentence, pct) {
+  const tokens = sentence.match(/(\w[\w']*|[^\w\s]|\s+)/g) || [];
+  const candidates = tokens
+    .map((tok, i) => ({ tok, i, isWord: /^\w/.test(tok) }))
+    .filter(({ tok, isWord }) => isWord && shouldTranslate(tok, pct));
+  const targetCount = Math.ceil(candidates.length * (pct / 100));
+  const step = candidates.length / Math.max(targetCount, 1);
+  const toTranslateIndices = new Set(
+    Array.from({ length: targetCount }, (_, k) =>
+      candidates[Math.min(Math.round(k * step), candidates.length - 1)]?.i
+    ).filter(i => i !== undefined)
+  );
+  const result = [];
+  for (const { tok, i, isWord } of tokens.map((tok, i) => ({ tok, i, isWord: /^\w/.test(tok) }))) {
+    if (isWord && toTranslateIndices.has(i)) {
+      try {
+        const irish = await translateCached(tok);
+        if (isGoodTranslation(tok, irish)) {
+          result.push(`[[${cleanTranslation(irish)}|${tok}]]`);
+        } else { result.push(tok); }
+      } catch { result.push(tok); }
+    } else { result.push(tok); }
   }
   return result.join("");
 }
