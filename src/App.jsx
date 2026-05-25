@@ -210,7 +210,7 @@ function FeedView({ stories, loading, onStoryClick }) {
       <div style={{ paddingTop: 32, textAlign: "center", fontFamily: "system-ui, sans-serif", fontSize: "0.7rem", color: C.faint, lineHeight: 1.9 }}>
         <div>News from RTÉ · Updated daily</div>
         <div>Created by <a href="https://github.com/joelucadooley/daily-sceal" target="_blank" rel="noopener noreferrer" style={{ color: C.navy, textDecoration: "none", borderBottom: `1px solid ${C.border}` }}>Joe Luca Dooley</a></div>
-        <div>&nbsp;</div>
+        <div style={{ height: "1rem" }} />
       </div>
     </div>
   );
@@ -339,7 +339,7 @@ function ReadingView({ story, onBack }) {
             Tap any <span style={{ color: C.blue, fontWeight: 600 }}>blue word</span> to see the English and hear it spoken
           </div>
         </div>
-        <div>&nbsp;</div>
+        <div style={{ height: "1.5rem" }} />
       )}
     </div>
   );
