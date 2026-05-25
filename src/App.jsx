@@ -250,20 +250,23 @@ function ReadingView({ story, onBack }) {
       {/* Level selector */}
       <div style={{ background: C.card, borderRadius: 10, border: `1px solid ${C.border}`, padding: "16px 18px", marginBottom: 20 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-          <span style={{ fontFamily: "system-ui, sans-serif", fontSize: "0.8rem", fontWeight: 700, color: level.color }}>{level.label}</span>
-          <span style={{ fontFamily: "system-ui, sans-serif", fontSize: "0.72rem", color: C.faint }}>{level.tip}</span>
+          <span style={{ fontFamily: "system-ui, sans-serif", fontSize: "0.8rem", fontWeight: 700, color: pct === 100 ? "#9ca3af" : level.color }}>{pct === 100 ? "As Gaeilge" : level.label}</span>
+          <span style={{ fontFamily: "system-ui, sans-serif", fontSize: "0.72rem", color: C.faint }}>{pct === 100 ? "Coming soon" : level.tip}</span>
         </div>
         <div style={{ position: "relative", marginBottom: 10, display: "flex", alignItems: "center" }}>
-          <input type="range" min={0} max={3} step={1} value={SNAP_LEVELS.indexOf(pct)}
-            onChange={e => { setPct(SNAP_LEVELS[+e.target.value]); setActiveWord(null); }}
+          <input type="range" min={0} max={4} step={1} value={pct === 100 ? 4 : SNAP_LEVELS.indexOf(pct)}
+            onChange={e => {
+              const val = +e.target.value;
+              if (val === 4) { setPct(100); setActiveWord(null); }
+              else { setPct(SNAP_LEVELS[val]); setActiveWord(null); }
+            }}
             style={{ width: "100%", cursor: "pointer" }}
             className="sceal-range" />
-          <span style={{ fontSize: "0.7rem", marginLeft: 6, flexShrink: 0 }}>🔒</span>
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "system-ui, sans-serif", fontSize: "0.63rem", color: C.faint, marginBottom: 12 }}>
           <span>More English</span><span>More Irish</span>
         </div>
-        <div style={{ display: "flex", gap: 4, marginBottom: 8 }}>
+        <div style={{ display: "flex", gap: 4 }}>
           {LEVELS_CONFIG.map(l => (
             <button key={l.pct}
               onClick={() => { setPct(l.pct); setActiveWord(null); }}
@@ -280,16 +283,15 @@ function ReadingView({ story, onBack }) {
             </button>
           ))}
           <button
-            disabled
-            title="Full Irish translation coming with funding"
+            onClick={() => { setPct(100); setActiveWord(null); }}
             style={{
               flex: "1 1 auto",
-              background: "#f9fafb",
-              color: "#d1d5db",
-              border: "1px dashed #e5e7eb",
-              borderRadius: 6, padding: "6px 2px", cursor: "not-allowed",
+              background: pct === 100 ? "#f3f4f6" : "transparent",
+              color: pct === 100 ? "#6b7280" : "#d1d5db",
+              border: `1px dashed ${pct === 100 ? "#9ca3af" : "#e5e7eb"}`,
+              borderRadius: 6, padding: "6px 2px", cursor: "pointer",
               fontFamily: "system-ui, sans-serif", fontSize: "0.62rem", fontWeight: 600,
-              opacity: 0.6,
+              transition: "all 0.12s",
             }}>
             🔒 As Gaeilge
           </button>
@@ -297,23 +299,47 @@ function ReadingView({ story, onBack }) {
       </div>
 
       {/* Article */}
-      <div style={{ background: C.card, borderRadius: 10, border: `1px solid ${C.border}`, padding: "22px 20px" }} key={pct}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18, paddingBottom: 14, borderBottom: `1px solid ${C.border}` }}>
-          <span style={{ fontFamily: "system-ui, sans-serif", fontSize: "0.72rem", color: C.muted }}>
-            <span style={{ color: C.blue, fontWeight: 600 }}>{irishCount} focal Gaeilge</span> sa scéal seo
-          </span>
-          <span style={{ fontFamily: "system-ui, sans-serif", fontSize: "0.68rem", color: C.faint }}>Tap to translate</span>
+      {pct === 100 ? (
+        <div style={{ background: C.card, borderRadius: 10, border: `1px solid ${C.border}`, overflow: "hidden" }}>
+          <div style={{ padding: "22px 20px", filter: "blur(4px)", userSelect: "none", pointerEvents: "none", opacity: 0.5 }}>
+            <div style={{ fontSize: "clamp(1rem,2.3vw,1.06rem)", lineHeight: 2, color: C.text, fontFamily: "Georgia, serif" }}>
+              {parseText(story.levels[75] || story.summary).map((p, i) =>
+                p.t === "en" ? <span key={i}>{p.v}</span> :
+                  <span key={i} style={{ color: C.blue, fontWeight: 600 }}>{p.irish}</span>
+              )}
+            </div>
+          </div>
+          <div style={{ padding: "24px 24px 28px", borderTop: `1px solid ${C.border}`, textAlign: "center" }}>
+            <div style={{ fontSize: "1.5rem", marginBottom: 12 }}>🔒</div>
+            <h3 style={{ margin: "0 0 10px", fontFamily: "Georgia, serif", fontSize: "1.05rem", color: C.navy, fontWeight: 700 }}>As Gaeilge</h3>
+            <p style={{ margin: "0 0 16px", fontFamily: "Georgia, serif", fontSize: "0.88rem", color: C.muted, lineHeight: 1.7 }}>
+              Full Irish translation requires specialist linguistic resources that are currently beyond the scope of this project. This level is a goal — one we are actively seeking support to reach.
+            </p>
+            <a href="https://ko-fi.com/joelucadooley" target="_blank" rel="noopener noreferrer"
+              style={{ display: "inline-block", background: C.amber, color: "#fff", borderRadius: 8, padding: "10px 20px", fontFamily: "system-ui, sans-serif", fontSize: "0.82rem", fontWeight: 600, textDecoration: "none" }}>
+              Support the project
+            </a>
+          </div>
         </div>
-        <div style={{ fontSize: "clamp(1rem,2.3vw,1.06rem)", lineHeight: 2, color: C.text, fontFamily: "Georgia, serif", marginBottom: 18 }}>
-          {parts.map((p, i) =>
-            p.t === "en" ? <span key={i}>{p.v}</span> :
-              <WordChip key={i} part={p} active={activeWord === i} onToggle={() => setActiveWord(a => a === i ? null : i)} />
-          )}
+      ) : (
+        <div style={{ background: C.card, borderRadius: 10, border: `1px solid ${C.border}`, padding: "22px 20px" }} key={pct}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18, paddingBottom: 14, borderBottom: `1px solid ${C.border}` }}>
+            <span style={{ fontFamily: "system-ui, sans-serif", fontSize: "0.72rem", color: C.muted }}>
+              <span style={{ color: C.blue, fontWeight: 600 }}>{irishCount} focal Gaeilge</span> sa scéal seo
+            </span>
+            <span style={{ fontFamily: "system-ui, sans-serif", fontSize: "0.68rem", color: C.faint }}>Tap to translate</span>
+          </div>
+          <div style={{ fontSize: "clamp(1rem,2.3vw,1.06rem)", lineHeight: 2, color: C.text, fontFamily: "Georgia, serif", marginBottom: 18 }}>
+            {parts.map((p, i) =>
+              p.t === "en" ? <span key={i}>{p.v}</span> :
+                <WordChip key={i} part={p} active={activeWord === i} onToggle={() => setActiveWord(a => a === i ? null : i)} />
+            )}
+          </div>
+          <div style={{ paddingTop: 14, borderTop: `1px solid ${C.border}`, fontFamily: "system-ui, sans-serif", fontSize: "0.73rem", color: C.faint }}>
+            Tap any <span style={{ color: C.blue, fontWeight: 600 }}>blue word</span> to see the English and hear it spoken
+          </div>
         </div>
-        <div style={{ paddingTop: 14, borderTop: `1px solid ${C.border}`, fontFamily: "system-ui, sans-serif", fontSize: "0.73rem", color: C.faint }}>
-          Tap any <span style={{ color: C.blue, fontWeight: 600 }}>blue word</span> to see the English and hear it spoken
-        </div>
-      </div>
+      )}
     </div>
   );
 }
@@ -394,7 +420,7 @@ export default function DailySceal() {
         * { box-sizing: border-box; }
         input[type=range] { -webkit-appearance: none; appearance: none; height: 3px; background: ${C.border}; border-radius: 2px; outline: none; }
         input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; background: ${C.navy}; border-radius: 50%; cursor: pointer; border: 2px solid #fff; box-shadow: 0 1px 6px rgba(13,33,55,0.2); }
-        .sceal-range { background: linear-gradient(to right, ${C.border} 0%, ${C.border} 80%, #ede8e0 80%, #f0ede8 100%) !important; width: calc(100% - 28px) !important; }
+        .sceal-range { background: linear-gradient(to right, ${C.border} 0%, ${C.border} 80%, #ede8e0 80%, #f0ede8 100%) !important; }
         button:active { opacity: 0.7; }
         a:hover { opacity: 0.75; }
       `}</style>
