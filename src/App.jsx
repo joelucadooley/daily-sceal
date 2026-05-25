@@ -105,10 +105,10 @@ const LEVELS_CONFIG = [
   { pct: 25, label: "Elementary", color: "#2563eb", bg: "#eff6ff", tip: "Nouns and verbs" },
   { pct: 50, label: "Intermediate", color: "#d97706", bg: "#fffbeb", tip: "Most content words" },
   { pct: 75, label: "Advanced", color: "#7c3aed", bg: "#faf5ff", tip: "Near-fluent" },
-  { pct: 100, label: "As Gaeilge", color: "#0d2137", bg: "#f0f4f8", tip: "Full Irish" },
+  { pct: 100, label: "As Gaeilge", color: "#9ca3af", bg: "#f9fafb", tip: "Coming soon", disabled: true },
 ];
 
-const getLevel = pct => LEVELS_CONFIG.find(l => l.pct === pct) || LEVELS_CONFIG[0];
+const getLevel = pct => LEVELS_CONFIG.find(l => l.pct === Math.min(pct, 75)) || LEVELS_CONFIG[0];
 const getIrCat = c => { if (!c) return "Nuacht"; const l = c.toLowerCase(); for (const [k, v] of Object.entries(CAT_MAP)) if (l.includes(k)) return v; return "Nuacht"; };
 const msAgo = d => { const m = Math.floor((Date.now() - d) / 60000); return m < 60 ? `${m}m ago` : m < 1440 ? `${Math.floor(m / 60)}h ago` : `${Math.floor(m / 1440)}d ago`; };
 
@@ -254,7 +254,7 @@ function ReadingView({ story, onBack }) {
           <span style={{ fontFamily: "system-ui, sans-serif", fontSize: "0.8rem", fontWeight: 700, color: level.color }}>{level.label}</span>
           <span style={{ fontFamily: "system-ui, sans-serif", fontSize: "0.72rem", color: C.faint }}>{level.tip}</span>
         </div>
-        <input type="range" min={0} max={4} step={1} value={SNAP_LEVELS.indexOf(pct)}
+        <input type="range" min={0} max={3} step={1} value={Math.min(SNAP_LEVELS.indexOf(pct), 3)}
           onChange={e => { setPct(SNAP_LEVELS[+e.target.value]); setActiveWord(null); }}
           style={{ width: "100%", cursor: "pointer", marginBottom: 10 }} />
         <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "system-ui, sans-serif", fontSize: "0.63rem", color: C.faint, marginBottom: 12 }}>
@@ -262,15 +262,17 @@ function ReadingView({ story, onBack }) {
         </div>
         <div style={{ display: "flex", gap: 4 }}>
           {LEVELS_CONFIG.map(l => (
-            <button key={l.pct} onClick={() => { setPct(l.pct); setActiveWord(null); }}
+            <button key={l.pct}
+              onClick={() => { if (!l.disabled) { setPct(l.pct); setActiveWord(null); } }}
+              title={l.disabled ? "Full Irish translation coming soon" : l.tip}
               style={{
                 flex: "1 1 auto",
-                background: pct === l.pct ? l.bg : "transparent",
-                color: pct === l.pct ? l.color : C.faint,
-                border: `1px solid ${pct === l.pct ? l.color + "60" : C.border}`,
-                borderRadius: 6, padding: "6px 2px", cursor: "pointer",
+                background: l.disabled ? "#f3f4f6" : pct === l.pct ? l.bg : "transparent",
+                color: l.disabled ? "#d1d5db" : pct === l.pct ? l.color : C.faint,
+                border: `1px solid ${l.disabled ? "#e5e7eb" : pct === l.pct ? l.color + "60" : C.border}`,
+                borderRadius: 6, padding: "6px 2px", cursor: l.disabled ? "not-allowed" : "pointer",
                 fontFamily: "system-ui, sans-serif", fontSize: "0.62rem", fontWeight: 600,
-                transition: "all 0.12s",
+                transition: "all 0.12s", opacity: l.disabled ? 0.5 : 1,
               }}>
               {l.label}
             </button>
