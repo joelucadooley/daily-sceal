@@ -19,7 +19,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "24"
+          node-version: "20"
 
       - name: Install dependencies
         run: npm install && npm install @xmldom/xmldom
@@ -34,7 +34,7 @@ jobs:
           git stash
           git pull origin main
           git stash pop
-          git add public/data/today.json
+          git add public/data
           git commit -m "📰 Daily stories $(date '+%Y-%m-%d %H:%M:%S')" --allow-empty
           git push origin main
 
