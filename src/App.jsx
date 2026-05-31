@@ -522,26 +522,23 @@ function AboutView() {
       <div style={{ paddingBottom: 28, borderBottom: `1px solid ${C.border}`, marginBottom: 28 }}>
         <h2 style={{ margin: "0 0 10px", fontFamily: "Georgia, serif", fontSize: "1.5rem", color: C.navy, fontWeight: 700, letterSpacing: "-0.01em" }}>Faoi Daily Scéal</h2>
         <p style={{ margin: 0, fontFamily: "Georgia, serif", fontSize: "1rem", color: C.muted, lineHeight: 1.7, fontStyle: "italic" }}>
-          Gaeilge as it appears in the real world, every morning.
+          Irish as it appears in the real world, every morning.
         </p>
       </div>
 
       <div style={{ fontFamily: "Georgia, serif", fontSize: "0.95rem", color: "#333", lineHeight: 1.85, marginBottom: 28 }}>
         <p style={{ margin: "0 0 16px" }}>
-          Daily Scéal takes real news from RTÉ and lets you read it at whatever level of Irish you like. A slider moves the balance from mostly English at one end to fully Irish at the other. Tap any blue word to see what it means and hear it spoken.
-        </p>
-        <p style={{ margin: "0 0 16px" }}>
-          The idea behind the slider comes from research into how people actually acquire languages. You learn best when you understand most of what you are reading but still encounter enough unfamiliar words to stretch you. The five levels are designed around that principle.
+          Daily Scéal takes real news from RTÉ and lets you read it at whatever level of Irish you like. A slider moves the balance from mostly English at one end towards fully Irish at the other. Tap any blue word to see what it means and hear it spoken.
         </p>
         <p style={{ margin: 0 }}>
-          New stories arrive daily.
+          The idea behind the slider comes from research into how people pick up languages. You learn best when you can follow most of what you are reading but still meet enough new words to stretch you. Each level is built around that.
         </p>
       </div>
 
       <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 24, marginBottom: 24 }}>
-        <div style={{ fontFamily: "Georgia, serif", fontWeight: 700, fontSize: "0.95rem", color: C.navy, marginBottom: 8 }}>Foinse Oscailte</div>
+        <div style={{ fontFamily: "Georgia, serif", fontWeight: 700, fontSize: "0.95rem", color: C.navy, marginBottom: 8 }}>Free and open</div>
         <p style={{ margin: "0 0 16px", fontFamily: "Georgia, serif", fontSize: "0.9rem", color: C.muted, lineHeight: 1.7 }}>
-          Daily Scéal is a free, open source project built by Joe Luca Dooley. The full code is on GitHub.
+          Daily Scéal is free to use and built by Joe Luca Dooley. The code is open for anyone to see on GitHub. If you would like to help it grow, you can support the project below.
         </p>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
           <a href="https://github.com/joelucadooley/daily-sceal" target="_blank" rel="noopener noreferrer"
@@ -556,7 +553,7 @@ function AboutView() {
       </div>
 
       <div style={{ fontFamily: "system-ui, sans-serif", fontSize: "0.7rem", color: C.faint, lineHeight: 1.9, paddingBottom: 8 }}>
-        News sourced from RTÉ
+        News sourced from RTÉ · New stories daily
       </div>
     </div>
   );
