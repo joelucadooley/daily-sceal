@@ -300,27 +300,30 @@ function ReadingView({ story, onBack }) {
 
       {/* Article */}
       {pct === 100 ? (
-        <div style={{ background: C.card, borderRadius: 10, border: `1px solid ${C.border}`, overflow: "hidden" }}>
-          <div style={{ padding: "24px 24px 28px", borderBottom: `1px solid ${C.border}`, textAlign: "center" }}>
-            <div style={{ fontSize: "1.5rem", marginBottom: 12 }}>🔒</div>
-            <h3 style={{ margin: "0 0 10px", fontFamily: "Georgia, serif", fontSize: "1.05rem", color: C.navy, fontWeight: 700 }}>As Gaeilge</h3>
-            <p style={{ margin: "0 0 16px", fontFamily: "Georgia, serif", fontSize: "0.88rem", color: C.muted, lineHeight: 1.7 }}>
-              Full Irish translation requires specialist linguistic resources that are currently beyond the scope of this project. This level is a goal and one I am actively seeking support to reach.
-            </p>
-            <a href="https://ko-fi.com/joelucadooley" target="_blank" rel="noopener noreferrer"
-              style={{ display: "inline-block", background: C.amber, color: "#fff", borderRadius: 8, padding: "10px 20px", fontFamily: "system-ui, sans-serif", fontSize: "0.82rem", fontWeight: 600, textDecoration: "none" }}>
-              Support the project
-            </a>
-          </div>
-          <div style={{ padding: "22px 20px", filter: "blur(4px)", userSelect: "none", pointerEvents: "none", opacity: 0.5 }}>
-            <div style={{ fontSize: "clamp(1rem,2.3vw,1.06rem)", lineHeight: 2, color: C.text, fontFamily: "Georgia, serif" }}>
-              {parseText(story.levels[75] || story.summary).map((p, i) =>
-                p.t === "en" ? <span key={i}>{p.v}</span> :
-                  <span key={i} style={{ color: C.blue, fontWeight: 600 }}>{p.irish}</span>
-              )}
+        <>
+          <div style={{ background: C.card, borderRadius: 10, border: `1px solid ${C.border}`, overflow: "hidden" }}>
+            <div style={{ padding: "16px 20px 0", filter: "blur(4px)", userSelect: "none", pointerEvents: "none", opacity: 0.5, maxHeight: "4.5rem", overflow: "hidden" }}>
+              <div style={{ fontSize: "clamp(1rem,2.3vw,1.06rem)", lineHeight: 2, color: C.text, fontFamily: "Georgia, serif" }}>
+                {parseText(story.levels[75] || story.summary).map((p, i) =>
+                  p.t === "en" ? <span key={i}>{p.v}</span> :
+                    <span key={i} style={{ color: C.blue, fontWeight: 600 }}>{p.irish}</span>
+                )}
+              </div>
+            </div>
+            <div style={{ padding: "24px 24px 28px", borderTop: `1px solid ${C.border}`, textAlign: "center" }}>
+              <div style={{ fontSize: "1.5rem", marginBottom: 12 }}>🔒</div>
+              <h3 style={{ margin: "0 0 10px", fontFamily: "Georgia, serif", fontSize: "1.05rem", color: C.navy, fontWeight: 700 }}>As Gaeilge</h3>
+              <p style={{ margin: "0 0 16px", fontFamily: "Georgia, serif", fontSize: "0.88rem", color: C.muted, lineHeight: 1.7 }}>
+                Full Irish translation requires specialist linguistic resources that are currently beyond the scope of this project. This level is a goal and one I am actively seeking support to reach.
+              </p>
+              <a href="https://ko-fi.com/joelucadooley" target="_blank" rel="noopener noreferrer"
+                style={{ display: "inline-block", background: C.amber, color: "#fff", borderRadius: 8, padding: "10px 20px", fontFamily: "system-ui, sans-serif", fontSize: "0.82rem", fontWeight: 600, textDecoration: "none" }}>
+                Support the project
+              </a>
             </div>
           </div>
-        </div>
+          <div style={{ height: "1.5rem" }} />
+        </>
       ) : (
         <>
           <div style={{ background: C.card, borderRadius: 10, border: `1px solid ${C.border}`, padding: "22px 20px" }} key={pct}>
