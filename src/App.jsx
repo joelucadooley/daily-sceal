@@ -473,6 +473,16 @@ function ReadingView({ story, onBack }) {
               Tap any <span style={{ color: C.blue, fontWeight: 600 }}>blue word</span> to see the English and hear it spoken
             </div>
           </div>
+          <button onClick={handleShare} disabled={shareLoading}
+            style={{ width: "100%", marginTop: 14, background: C.navy, color: "#fff", border: "none", borderRadius: 8, padding: "13px", fontFamily: "system-ui, sans-serif", fontSize: "0.88rem", fontWeight: 600, cursor: shareLoading ? "wait" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: shareLoading ? 0.6 : 1 }}>
+            {shareLoading ? "Ag ullmhú..." : "Roinn · Share ↗"}
+          </button>
+          {story.link && (
+            <a href={story.link} target="_blank" rel="noopener noreferrer"
+              style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 10, color: C.muted, fontFamily: "system-ui, sans-serif", fontSize: "0.78rem", textDecoration: "none" }}>
+              Léigh ar RTÉ →
+            </a>
+          )}
           <div style={{ height: "1.5rem" }} />
         </>
       )}
