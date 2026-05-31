@@ -597,15 +597,18 @@ export default function DailySceal() {
           {[
             { id: "feed", label: "Nuacht", icon: "📰" },
             { id: "about", label: "Faoi", icon: "🍀" },
-          ].map(tab => (
+          ].map(tab => {
+            const active = view === tab.id || (tab.id === "feed" && view === "reading");
+            return (
             <button key={tab.id} onClick={() => setView(tab.id)}
               style={{ background: "none", border: "none", padding: "11px 0 9px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 3, position: "relative" }}
             >
-              {view === tab.id && <span style={{ position: "absolute", top: 0, left: "20%", right: "20%", height: 2, background: C.navy, borderRadius: "0 0 2px 2px" }} />}
+              {active && <span style={{ position: "absolute", top: 0, left: "20%", right: "20%", height: 2, background: C.navy, borderRadius: "0 0 2px 2px" }} />}
               <span style={{ fontSize: "1.1rem" }}>{tab.icon}</span>
-              <span style={{ fontFamily: "system-ui, sans-serif", fontSize: "0.6rem", fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: view === tab.id ? C.navy : C.faint, transition: "color 0.15s" }}>{tab.label}</span>
+              <span style={{ fontFamily: "system-ui, sans-serif", fontSize: "0.6rem", fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: active ? C.navy : C.faint, transition: "color 0.15s" }}>{tab.label}</span>
             </button>
-          ))}
+            );
+          })}
         </div>
       </nav>
     </div>
