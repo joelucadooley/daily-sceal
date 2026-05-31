@@ -1,4 +1,4 @@
-import { writeFileSync, mkdirSync } from "fs";
+import { writeFileSync, readFileSync, mkdirSync } from "fs";
 import { DOMParser } from "@xmldom/xmldom";
 
 const RSS_URL = "https://www.rte.ie/feeds/rss/?index=/news";
@@ -335,6 +335,29 @@ async function main() {
     mkdirSync("public/data", { recursive: true });
     writeFileSync("public/data/today.json", JSON.stringify(output, null, 2));
     console.log(`\n✓ Written public/data/today.json with ${processed.length} stories`);
+
+    // Archive — save a dated copy and update the index.
+    // Wrapped separately so any archive problem can never break today.json or the site.
+    try {
+      mkdirSync("public/data/archive", { recursive: true });
+      writeFileSync(`public/data/archive/${output.date}.json`, JSON.stringify(output, null, 2));
+
+      const indexPath = "public/data/archive/index.json";
+      let index = [];
+      try { index = JSON.parse(readFileSync(indexPath, "utf-8")); } catch { index = []; }
+      if (!Array.isArray(index)) index = [];
+      // Remove any existing entry for this date (handles re-runs), then add newest first
+      index = index.filter(e => e.date !== output.date);
+      index.unshift({
+        date: output.date,
+        generated: output.generated,
+        stories: output.stories.map(s => ({ title: s.title, category: s.categoryIr })),
+      });
+      writeFileSync(indexPath, JSON.stringify(index, null, 2));
+      console.log(`✓ Archived ${output.date} (${index.length} days in archive)`);
+    } catch (archiveErr) {
+      console.warn(`Archive step failed (site unaffected): ${archiveErr.message}`);
+    }
   } catch (err) {
     console.error("Generation failed:", err);
     process.exit(1);
