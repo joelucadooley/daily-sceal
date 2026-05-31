@@ -216,6 +216,115 @@ function FeedView({ stories, loading, onStoryClick }) {
   );
 }
 
+function wrapCanvasText(ctx, text, maxWidth) {
+  const words = text.split(" ");
+  const lines = [];
+  let line = "";
+  for (const word of words) {
+    const test = line ? `${line} ${word}` : word;
+    if (ctx.measureText(test).width > maxWidth && line) { lines.push(line); line = word; }
+    else line = test;
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
+// Standalone share-card generator, used by both the article page and the export page
+function makeShareCanvas(story, parts, levelLabel) {
+  const W = 1080, H = 1080;
+  const canvas = document.createElement("canvas");
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext("2d");
+
+  ctx.fillStyle = "#0d2137";
+  ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = "#e8951e";
+  ctx.fillRect(0, 0, W, 10);
+
+  ctx.font = "bold 56px Georgia, serif";
+  ctx.fillStyle = "#ffffff";
+  ctx.fillText("Daily ", 80, 118);
+  const dw = ctx.measureText("Daily ").width;
+  ctx.fillStyle = "#e8951e";
+  ctx.fillText("Scéal", 80 + dw, 118);
+
+  const dateStr = new Date().toLocaleDateString("en-IE", { weekday: "long", day: "numeric", month: "long" });
+  ctx.font = "30px Arial, sans-serif";
+  ctx.fillStyle = "rgba(255,255,255,0.35)";
+  ctx.fillText(dateStr, 80, 162);
+
+  ctx.textAlign = "right";
+  ctx.font = "italic 28px Georgia, serif";
+  ctx.fillStyle = "rgba(255,255,255,0.4)";
+  ctx.fillText("Cad é an scéal?", W - 80, 110);
+  ctx.textAlign = "left";
+
+  ctx.fillStyle = "rgba(255,255,255,0.08)";
+  ctx.fillRect(80, 188, W - 160, 1);
+
+  ctx.font = "bold 26px Arial, sans-serif";
+  ctx.fillStyle = "#e8951e";
+  ctx.fillText((story.categoryIr || "Nuacht").toUpperCase(), 80, 244);
+
+  ctx.font = "bold 60px Georgia, serif";
+  ctx.fillStyle = "#ffffff";
+  const headLines = wrapCanvasText(ctx, story.title, W - 160);
+  headLines.slice(0, 3).forEach((l, i) => ctx.fillText(l, 80, 316 + i * 74));
+  const headBottom = 316 + Math.min(headLines.length, 3) * 74;
+
+  ctx.fillStyle = "rgba(255,255,255,0.08)";
+  ctx.fillRect(80, headBottom + 14, W - 160, 1);
+
+  const textY = headBottom + 60;
+  const lineH = 56;
+  const maxLines = Math.floor((H - textY - 150) / lineH);
+  ctx.font = "36px Georgia, serif";
+
+  const words = [];
+  for (const part of parts) {
+    const isIrish = part.t === "ir";
+    const raw = isIrish ? part.irish : (part.v || "");
+    for (const token of raw.split(/(\s+)/)) {
+      if (!token || /^\s+$/.test(token)) continue;
+      words.push({ token, isIrish });
+    }
+  }
+
+  let fitCount = 0, simX = 80, simLines = 0;
+  for (let i = 0; i < words.length; i++) {
+    const w = ctx.measureText(words[i].token + " ").width;
+    if (simX + w > W - 80) { simX = 80; simLines++; if (simLines >= maxLines) break; }
+    simX += w;
+    fitCount = i + 1;
+  }
+
+  let endIndex = fitCount;
+  for (let i = fitCount - 1; i >= 0; i--) {
+    if (/[.!?]$/.test(words[i].token)) { endIndex = i + 1; break; }
+  }
+
+  let x = 80, y = textY;
+  for (let i = 0; i < endIndex; i++) {
+    const { token, isIrish } = words[i];
+    const w = ctx.measureText(token + " ").width;
+    if (x + ctx.measureText(token).width > W - 80) { x = 80; y += lineH; }
+    ctx.fillStyle = isIrish ? "#e8951e" : "rgba(255,255,255,0.82)";
+    ctx.fillText(token, x, y);
+    x += w;
+  }
+
+  ctx.font = "bold 26px Arial, sans-serif";
+  ctx.fillStyle = "rgba(255,255,255,0.45)";
+  ctx.fillText(levelLabel, 80, H - 72);
+  ctx.textAlign = "right";
+  ctx.font = "26px Arial, sans-serif";
+  ctx.fillStyle = "rgba(255,255,255,0.3)";
+  ctx.fillText("joelucadooley.github.io/daily-sceal", W - 80, H - 72);
+  ctx.textAlign = "left";
+
+  return canvas;
+}
+
 function ReadingView({ story, onBack }) {
   const [pct, setPct] = useState(10);
   const [activeWord, setActiveWord] = useState(null);
@@ -224,132 +333,9 @@ function ReadingView({ story, onBack }) {
   const parts = parseText(story.levels[pct] || story.summary);
   const irishCount = parts.filter(p => p.t === "ir").length;
 
-  function wrapText(ctx, text, maxWidth) {
-    const words = text.split(" ");
-    const lines = [];
-    let line = "";
-    for (const word of words) {
-      const test = line ? `${line} ${word}` : word;
-      if (ctx.measureText(test).width > maxWidth && line) { lines.push(line); line = word; }
-      else line = test;
-    }
-    if (line) lines.push(line);
-    return lines;
-  }
-
   async function generateShareImage() {
-    const W = 1080, H = 1080;
-    const canvas = document.createElement("canvas");
-    canvas.width = W; canvas.height = H;
-    const ctx = canvas.getContext("2d");
-
-    // Background
-    ctx.fillStyle = "#0d2137";
-    ctx.fillRect(0, 0, W, H);
-
-    // Amber top bar
-    ctx.fillStyle = "#e8951e";
-    ctx.fillRect(0, 0, W, 10);
-
-    // Logo
-    ctx.font = "bold 56px Georgia, serif";
-    ctx.fillStyle = "#ffffff";
-    ctx.fillText("Daily ", 80, 118);
-    const dw = ctx.measureText("Daily ").width;
-    ctx.fillStyle = "#e8951e";
-    ctx.fillText("Scéal", 80 + dw, 118);
-
-    // Date below logo
-    const dateStr = new Date().toLocaleDateString("en-IE", { weekday: "long", day: "numeric", month: "long" });
-    ctx.font = "30px Arial, sans-serif";
-    ctx.fillStyle = "rgba(255,255,255,0.35)";
-    ctx.fillText(dateStr, 80, 162);
-
-    // "Cad é an scéal?" top right
-    ctx.textAlign = "right";
-    ctx.font = "italic 28px Georgia, serif";
-    ctx.fillStyle = "rgba(255,255,255,0.4)";
-    ctx.fillText("Cad é an scéal?", W - 80, 110);
-    ctx.textAlign = "left";
-
-    // Divider
-    ctx.fillStyle = "rgba(255,255,255,0.08)";
-    ctx.fillRect(80, 188, W - 160, 1);
-
-    // Category
-    ctx.font = "bold 26px Arial, sans-serif";
-    ctx.fillStyle = "#e8951e";
-    ctx.fillText((story.categoryIr || "Nuacht").toUpperCase(), 80, 244);
-
-    // Headline
-    ctx.font = "bold 60px Georgia, serif";
-    ctx.fillStyle = "#ffffff";
-    const headLines = wrapText(ctx, story.title, W - 160);
-    headLines.slice(0, 3).forEach((l, i) => ctx.fillText(l, 80, 316 + i * 74));
-    const headBottom = 316 + Math.min(headLines.length, 3) * 74;
-
-    // Divider
-    ctx.fillStyle = "rgba(255,255,255,0.08)";
-    ctx.fillRect(80, headBottom + 14, W - 160, 1);
-
-    // Article text with Irish words in amber — use the first 1-2 complete sentences
-    const textY = headBottom + 60;
-    const lineH = 56;
-    const maxLines = Math.floor((H - textY - 150) / lineH);
-    ctx.font = "36px Georgia, serif";
-
-    // Build a flat word list with colour, then cut at a sentence end that fits
-    const words = [];
-    for (const part of parts) {
-      const isIrish = part.t === "ir";
-      const raw = isIrish ? part.irish : (part.v || "");
-      for (const token of raw.split(/(\s+)/)) {
-        if (!token || /^\s+$/.test(token)) continue;
-        words.push({ token, isIrish });
-      }
-    }
-
-    // Figure out how many words fit in maxLines
-    let fitCount = 0, simX = 80, simLines = 0;
-    for (let i = 0; i < words.length; i++) {
-      const w = ctx.measureText(words[i].token + " ").width;
-      if (simX + w > W - 80) { simX = 80; simLines++; if (simLines >= maxLines) break; }
-      simX += w;
-      fitCount = i + 1;
-    }
-
-    // Walk back to the last word ending in sentence punctuation
-    let endIndex = fitCount;
-    for (let i = fitCount - 1; i >= 0; i--) {
-      if (/[.!?]$/.test(words[i].token)) { endIndex = i + 1; break; }
-    }
-    // If no sentence end found in range, just use what fits
-    if (endIndex === fitCount && fitCount < words.length) {
-      // add an ellipsis to the last fitting word
-    }
-
-    let x = 80, y = textY;
-    for (let i = 0; i < endIndex; i++) {
-      const { token, isIrish } = words[i];
-      const w = ctx.measureText(token + " ").width;
-      if (x + ctx.measureText(token).width > W - 80) { x = 80; y += lineH; }
-      ctx.fillStyle = isIrish ? "#e8951e" : "rgba(255,255,255,0.82)";
-      ctx.fillText(token, x, y);
-      x += w;
-    }
-
-    // Level & URL
     const levelName = pct === 100 ? "As Gaeilge" : (level?.label || "Beginner");
-    ctx.font = "bold 26px Arial, sans-serif";
-    ctx.fillStyle = "rgba(255,255,255,0.45)";
-    ctx.fillText(levelName, 80, H - 72);
-    ctx.textAlign = "right";
-    ctx.font = "26px Arial, sans-serif";
-    ctx.fillStyle = "rgba(255,255,255,0.3)";
-    ctx.fillText("joelucadooley.github.io/daily-sceal", W - 80, H - 72);
-    ctx.textAlign = "left";
-
-    return canvas;
+    return makeShareCanvas(story, parts, levelName);
   }
 
   async function handleShare() {
@@ -536,6 +522,17 @@ function AboutView() {
       </div>
 
       <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 24, marginBottom: 24 }}>
+        <div style={{ fontFamily: "Georgia, serif", fontWeight: 700, fontSize: "0.95rem", color: C.navy, marginBottom: 8 }}>Lean ar Instagram</div>
+        <p style={{ margin: "0 0 16px", fontFamily: "Georgia, serif", fontSize: "0.9rem", color: C.muted, lineHeight: 1.7 }}>
+          A story from the day, as Gaeilge, posted daily. Follow along for a little Irish in your feed.
+        </p>
+        <a href="https://instagram.com/dailysceal" target="_blank" rel="noopener noreferrer"
+          style={{ display: "inline-block", background: C.navy, color: "#fff", borderRadius: 8, padding: "10px 18px", fontFamily: "system-ui, sans-serif", fontSize: "0.8rem", fontWeight: 600, textDecoration: "none" }}>
+          @dailysceal →
+        </a>
+      </div>
+
+      <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 24, marginBottom: 24 }}>
         <div style={{ fontFamily: "Georgia, serif", fontWeight: 700, fontSize: "0.95rem", color: C.navy, marginBottom: 8 }}>Free and open</div>
         <p style={{ margin: "0 0 16px", fontFamily: "Georgia, serif", fontSize: "0.9rem", color: C.muted, lineHeight: 1.7 }}>
           Daily Scéal is free to use and built by Joe Luca Dooley. The code is open for anyone to see on GitHub. If you would like to help it grow, you can support the project below.
@@ -559,11 +556,65 @@ function AboutView() {
   );
 }
 
+function ExportView({ stories }) {
+  const [pct, setPct] = useState(10);
+  const [images, setImages] = useState([]);
+  const [busy, setBusy] = useState(false);
+  const levelLabel = LEVELS_CONFIG.find(l => l.pct === pct)?.label || "Beginner";
+
+  function generateAll() {
+    setBusy(true);
+    setImages([]);
+    setTimeout(() => {
+      const out = stories.map(story => {
+        const parts = parseText(story.levels[pct] || story.summary);
+        const canvas = makeShareCanvas(story, parts, levelLabel);
+        return { id: story.id, title: story.title, url: canvas.toDataURL("image/png") };
+      });
+      setImages(out);
+      setBusy(false);
+    }, 50);
+  }
+
+  return (
+    <div style={{ padding: "20px 0 40px", fontFamily: "system-ui, sans-serif" }}>
+      <h2 style={{ fontFamily: "Georgia, serif", color: C.navy, fontSize: "1.3rem", margin: "0 0 4px" }}>Card Export</h2>
+      <p style={{ color: C.muted, fontSize: "0.82rem", margin: "0 0 18px" }}>Private tool. Generate share cards for all of today's stories, then long-press each to save.</p>
+
+      <div style={{ display: "flex", gap: 4, marginBottom: 14 }}>
+        {LEVELS_CONFIG.map(l => (
+          <button key={l.pct} onClick={() => setPct(l.pct)}
+            style={{ flex: "1 1 auto", background: pct === l.pct ? l.bg : "transparent", color: pct === l.pct ? l.color : C.faint, border: `1px solid ${pct === l.pct ? l.color + "60" : C.border}`, borderRadius: 6, padding: "7px 2px", cursor: "pointer", fontSize: "0.66rem", fontWeight: 600 }}>
+            {l.label}
+          </button>
+        ))}
+      </div>
+
+      <button onClick={generateAll} disabled={busy}
+        style={{ width: "100%", background: C.navy, color: "#fff", border: "none", borderRadius: 8, padding: "13px", fontSize: "0.88rem", fontWeight: 600, cursor: busy ? "wait" : "pointer", marginBottom: 24, opacity: busy ? 0.6 : 1 }}>
+        {busy ? "Generating..." : `Generate ${levelLabel} cards`}
+      </button>
+
+      {images.map((img, i) => (
+        <div key={img.id} style={{ marginBottom: 24 }}>
+          <div style={{ fontSize: "0.7rem", color: C.faint, marginBottom: 6 }}>{i + 1}. {img.title}</div>
+          <img src={img.url} alt={img.title} style={{ width: "100%", borderRadius: 10, border: `1px solid ${C.border}` }} />
+          <a href={img.url} download={`daily-sceal-${pct}-${i + 1}.png`}
+            style={{ display: "inline-block", marginTop: 8, color: C.navy, fontSize: "0.78rem", fontWeight: 600, textDecoration: "none", borderBottom: `1px solid ${C.border}` }}>
+            Download card {i + 1} ↓
+          </a>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function DailySceal() {
   const [view, setView] = useState("feed");
   const [stories, setStories] = useState(FALLBACK_STORIES);
   const [loading, setLoading] = useState(true);
   const [activeStory, setActiveStory] = useState(null);
+  const isExport = typeof window !== "undefined" && (window.location.hash === "#export" || window.location.search.includes("export=1"));
 
   useEffect(() => {
     fetchTodayContent()
@@ -609,14 +660,15 @@ export default function DailySceal() {
 
       {/* Content */}
       <main style={{ maxWidth: 640, margin: "0 auto", padding: "0 20px 120px" }}>
-        <div style={{ background: view === "about" ? "transparent" : C.card, borderLeft: `1px solid ${C.border}`, borderRight: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}`, borderRadius: "0 0 12px 12px", padding: "0 20px", minHeight: 400 }}>
-          {view === "feed" && <FeedView stories={stories} loading={loading} onStoryClick={openStory} />}
-          {view === "reading" && activeStory && (
+        <div style={{ background: view === "about" || isExport ? "transparent" : C.card, borderLeft: isExport ? "none" : `1px solid ${C.border}`, borderRight: isExport ? "none" : `1px solid ${C.border}`, borderBottom: isExport ? "none" : `1px solid ${C.border}`, borderRadius: "0 0 12px 12px", padding: "0 20px", minHeight: 400 }}>
+          {isExport && <ExportView stories={stories} />}
+          {!isExport && view === "feed" && <FeedView stories={stories} loading={loading} onStoryClick={openStory} />}
+          {!isExport && view === "reading" && activeStory && (
             <div style={{ paddingTop: 20 }}>
               <ReadingView story={activeStory} onBack={() => setView("feed")} />
             </div>
           )}
-          {view === "about" && (
+          {!isExport && view === "about" && (
             <div style={{ paddingTop: 28 }}>
               <AboutView />
             </div>
