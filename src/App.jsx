@@ -485,9 +485,9 @@ function ReadingView({ story, onBack }) {
           <div style={{ background: C.card, borderRadius: 10, border: `1px solid ${C.border}`, padding: "22px 20px" }} key={pct}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18, paddingBottom: 14, borderBottom: `1px solid ${C.border}` }}>
               <span style={{ fontFamily: "system-ui, sans-serif", fontSize: "0.72rem", color: C.muted }}>
-                <span style={{ color: C.blue, fontWeight: 600 }}>{irishCount} focal Gaeilge</span> sa scéal seo
+                <span style={{ color: C.blue, fontWeight: 600 }}>{irishCount}</span> Irish {irishCount === 1 ? "word" : "words"} in this story
               </span>
-              <span style={{ fontFamily: "system-ui, sans-serif", fontSize: "0.68rem", color: C.faint }}>Tap to translate</span>
+              <span style={{ fontFamily: "system-ui, sans-serif", fontSize: "0.68rem", color: C.faint, fontStyle: "italic" }}>focail Ghaeilge</span>
             </div>
             <div style={{ fontSize: "clamp(1rem,2.3vw,1.06rem)", lineHeight: 2, color: C.text, fontFamily: "Georgia, serif", marginBottom: 18 }}>
               {parts.map((p, i) =>
