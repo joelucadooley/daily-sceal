@@ -229,6 +229,112 @@ function wrapCanvasText(ctx, text, maxWidth) {
   return lines;
 }
 
+// Cover slide — opening card with date and the lead headline (keeps the grid varied)
+function makeCoverCanvas(leadStory) {
+  const W = 1080, H = 1080;
+  const canvas = document.createElement("canvas");
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext("2d");
+
+  ctx.fillStyle = "#0d2137";
+  ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = "#e8951e";
+  ctx.fillRect(0, 0, W, 10);
+
+  // Logo centred-ish near top
+  ctx.font = "bold 72px Georgia, serif";
+  ctx.fillStyle = "#ffffff";
+  const d1 = ctx.measureText("Daily ").width;
+  const d2 = ctx.measureText("Scéal").width;
+  const totalW = d1 + d2;
+  const startX = (W - totalW) / 2;
+  ctx.fillText("Daily ", startX, 170);
+  ctx.fillStyle = "#e8951e";
+  ctx.fillText("Scéal", startX + d1, 170);
+
+  // Date, centred
+  const dateStr = new Date().toLocaleDateString("en-IE", { weekday: "long", day: "numeric", month: "long" });
+  ctx.textAlign = "center";
+  ctx.font = "32px Arial, sans-serif";
+  ctx.fillStyle = "rgba(255,255,255,0.4)";
+  ctx.fillText(dateStr, W / 2, 220);
+
+  // "Príomhscéalta an lae" heading
+  ctx.font = "italic 40px Georgia, serif";
+  ctx.fillStyle = "#e8951e";
+  ctx.fillText("Príomhscéalta an lae", W / 2, 330);
+  ctx.font = "26px Arial, sans-serif";
+  ctx.fillStyle = "rgba(255,255,255,0.35)";
+  ctx.fillText("Today's top stories, as Gaeilge", W / 2, 372);
+  ctx.textAlign = "left";
+
+  // Divider
+  ctx.fillStyle = "rgba(255,255,255,0.08)";
+  ctx.fillRect(80, 430, W - 160, 1);
+
+  // Lead headline (large, this is what makes each cover different in the grid)
+  ctx.font = "bold 58px Georgia, serif";
+  ctx.fillStyle = "#ffffff";
+  const headLines = wrapCanvasText(ctx, leadStory.title, W - 160);
+  const startY = 540;
+  headLines.slice(0, 5).forEach((l, i) => ctx.fillText(l, 80, startY + i * 74));
+
+  // Swipe hint bottom
+  ctx.textAlign = "center";
+  ctx.font = "bold 30px Arial, sans-serif";
+  ctx.fillStyle = "#e8951e";
+  ctx.fillText("Swipe to read  →", W / 2, H - 90);
+  ctx.textAlign = "left";
+
+  return canvas;
+}
+
+// Closing slide — single call to action
+function makeClosingCanvas() {
+  const W = 1080, H = 1080;
+  const canvas = document.createElement("canvas");
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext("2d");
+
+  ctx.fillStyle = "#0d2137";
+  ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = "#e8951e";
+  ctx.fillRect(0, 0, W, 10);
+
+  ctx.textAlign = "center";
+
+  // Logo
+  ctx.font = "bold 72px Georgia, serif";
+  const d1 = ctx.measureText("Daily ").width;
+  const d2 = ctx.measureText("Scéal").width;
+  const startX = (W - (d1 + d2)) / 2;
+  ctx.textAlign = "left";
+  ctx.fillStyle = "#ffffff";
+  ctx.fillText("Daily ", startX, 360);
+  ctx.fillStyle = "#e8951e";
+  ctx.fillText("Scéal", startX + d1, 360);
+  ctx.textAlign = "center";
+
+  // Main CTA
+  ctx.font = "44px Georgia, serif";
+  ctx.fillStyle = "#ffffff";
+  ctx.fillText("Read the full stories at", W / 2, 500);
+  ctx.fillText("your own level of Irish.", W / 2, 560);
+
+  // URL pill
+  ctx.font = "bold 38px Arial, sans-serif";
+  ctx.fillStyle = "#e8951e";
+  ctx.fillText("joelucadooley.github.io/daily-sceal", W / 2, 680);
+
+  // Follow line
+  ctx.font = "30px Arial, sans-serif";
+  ctx.fillStyle = "rgba(255,255,255,0.4)";
+  ctx.fillText("Follow @dailysceal for a little Irish each day", W / 2, 780);
+
+  ctx.textAlign = "left";
+  return canvas;
+}
+
 // Standalone share-card generator, used by both the article page and the export page
 function makeShareCanvas(story, parts, levelLabel) {
   const W = 1080, H = 1080;
@@ -560,17 +666,25 @@ function ExportView({ stories }) {
   const [pct, setPct] = useState(10);
   const [images, setImages] = useState([]);
   const [busy, setBusy] = useState(false);
+  const [coverIndex, setCoverIndex] = useState(0);
   const levelLabel = LEVELS_CONFIG.find(l => l.pct === pct)?.label || "Beginner";
 
   function generateAll() {
+    if (!stories.length) return;
     setBusy(true);
     setImages([]);
     setTimeout(() => {
-      const out = stories.map(story => {
+      const out = [];
+      // Cover slide using the chosen story's headline
+      out.push({ id: "cover", title: "Cover slide", url: makeCoverCanvas(stories[coverIndex] || stories[0]).toDataURL("image/png") });
+      // Story slides
+      stories.forEach(story => {
         const parts = parseText(story.levels[pct] || story.summary);
         const canvas = makeShareCanvas(story, parts, levelLabel);
-        return { id: story.id, title: story.title, url: canvas.toDataURL("image/png") };
+        out.push({ id: story.id, title: story.title, url: canvas.toDataURL("image/png") });
       });
+      // Closing slide
+      out.push({ id: "closing", title: "Closing slide", url: makeClosingCanvas().toDataURL("image/png") });
       setImages(out);
       setBusy(false);
     }, 50);
@@ -579,7 +693,7 @@ function ExportView({ stories }) {
   return (
     <div style={{ padding: "20px 0 40px", fontFamily: "system-ui, sans-serif" }}>
       <h2 style={{ fontFamily: "Georgia, serif", color: C.navy, fontSize: "1.3rem", margin: "0 0 4px" }}>Card Export</h2>
-      <p style={{ color: C.muted, fontSize: "0.82rem", margin: "0 0 18px" }}>Private tool. Generate share cards for all of today's stories, then long-press each to save.</p>
+      <p style={{ color: C.muted, fontSize: "0.82rem", margin: "0 0 18px" }}>Private tool. Generates a full carousel for today: cover slide, one card per story at the chosen level, and a closing slide. Long-press each to save.</p>
 
       <div style={{ display: "flex", gap: 4, marginBottom: 14 }}>
         {LEVELS_CONFIG.map(l => (
@@ -589,6 +703,14 @@ function ExportView({ stories }) {
           </button>
         ))}
       </div>
+
+      <label style={{ display: "block", fontSize: "0.72rem", color: C.muted, marginBottom: 6, fontWeight: 600 }}>Cover story (shown on slide 1)</label>
+      <select value={coverIndex} onChange={e => setCoverIndex(+e.target.value)}
+        style={{ width: "100%", padding: "10px", borderRadius: 8, border: `1px solid ${C.border}`, fontSize: "0.8rem", marginBottom: 16, background: "#fff", color: C.text, fontFamily: "system-ui, sans-serif" }}>
+        {stories.map((s, i) => (
+          <option key={s.id} value={i}>{i + 1}. {s.title}</option>
+        ))}
+      </select>
 
       <button onClick={generateAll} disabled={busy}
         style={{ width: "100%", background: C.navy, color: "#fff", border: "none", borderRadius: 8, padding: "13px", fontSize: "0.88rem", fontWeight: 600, cursor: busy ? "wait" : "pointer", marginBottom: 24, opacity: busy ? 0.6 : 1 }}>
