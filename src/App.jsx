@@ -259,10 +259,18 @@ function ReadingView({ story, onBack }) {
     ctx.fillStyle = "#e8951e";
     ctx.fillText("Scéal", 80 + dw, 118);
 
-    // Tagline
+    // Date below logo
+    const dateStr = new Date().toLocaleDateString("en-IE", { weekday: "long", day: "numeric", month: "long" });
     ctx.font = "30px Arial, sans-serif";
     ctx.fillStyle = "rgba(255,255,255,0.35)";
-    ctx.fillText("Foghlaim Gaeilge gach lá", 80, 162);
+    ctx.fillText(dateStr, 80, 162);
+
+    // "Cad é an scéal?" top right
+    ctx.textAlign = "right";
+    ctx.font = "italic 28px Georgia, serif";
+    ctx.fillStyle = "rgba(255,255,255,0.4)";
+    ctx.fillText("Cad é an scéal?", W - 80, 110);
+    ctx.textAlign = "left";
 
     // Divider
     ctx.fillStyle = "rgba(255,255,255,0.08)";
