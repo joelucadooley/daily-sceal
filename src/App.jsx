@@ -284,29 +284,50 @@ function ReadingView({ story, onBack }) {
     ctx.fillStyle = "rgba(255,255,255,0.08)";
     ctx.fillRect(80, headBottom + 14, W - 160, 1);
 
-    // Article text with Irish words in amber
+    // Article text with Irish words in amber — use the first 1-2 complete sentences
     const textY = headBottom + 60;
     const lineH = 56;
     const maxLines = Math.floor((H - textY - 150) / lineH);
     ctx.font = "36px Georgia, serif";
-    let x = 80, y = textY, linesDrawn = 0;
-    outer: for (const part of parts) {
+
+    // Build a flat word list with colour, then cut at a sentence end that fits
+    const words = [];
+    for (const part of parts) {
       const isIrish = part.t === "ir";
       const raw = isIrish ? part.irish : (part.v || "");
       for (const token of raw.split(/(\s+)/)) {
-        if (!token) continue;
-        const isSpace = /^\s+$/.test(token);
-        const w = ctx.measureText(token).width;
-        if (!isSpace && x + w > W - 80) {
-          x = 80; y += lineH; linesDrawn++;
-          if (linesDrawn >= maxLines) break outer;
-        }
-        if (!isSpace) {
-          ctx.fillStyle = isIrish ? "#e8951e" : "rgba(255,255,255,0.82)";
-          ctx.fillText(token, x, y);
-        }
-        x += w;
+        if (!token || /^\s+$/.test(token)) continue;
+        words.push({ token, isIrish });
       }
+    }
+
+    // Figure out how many words fit in maxLines
+    let fitCount = 0, simX = 80, simLines = 0;
+    for (let i = 0; i < words.length; i++) {
+      const w = ctx.measureText(words[i].token + " ").width;
+      if (simX + w > W - 80) { simX = 80; simLines++; if (simLines >= maxLines) break; }
+      simX += w;
+      fitCount = i + 1;
+    }
+
+    // Walk back to the last word ending in sentence punctuation
+    let endIndex = fitCount;
+    for (let i = fitCount - 1; i >= 0; i--) {
+      if (/[.!?]$/.test(words[i].token)) { endIndex = i + 1; break; }
+    }
+    // If no sentence end found in range, just use what fits
+    if (endIndex === fitCount && fitCount < words.length) {
+      // add an ellipsis to the last fitting word
+    }
+
+    let x = 80, y = textY;
+    for (let i = 0; i < endIndex; i++) {
+      const { token, isIrish } = words[i];
+      const w = ctx.measureText(token + " ").width;
+      if (x + ctx.measureText(token).width > W - 80) { x = 80; y += lineH; }
+      ctx.fillStyle = isIrish ? "#e8951e" : "rgba(255,255,255,0.82)";
+      ctx.fillText(token, x, y);
+      x += w;
     }
 
     // Level & URL
@@ -356,9 +377,6 @@ function ReadingView({ story, onBack }) {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: 20, borderBottom: `1px solid ${C.border}`, marginBottom: 20 }}>
         <button onClick={onBack} style={{ background: "none", border: "none", color: C.muted, fontFamily: "system-ui, sans-serif", fontSize: "0.8rem", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", gap: 5 }}>
           ← Nuacht
-        </button>
-        <button onClick={handleShare} disabled={shareLoading} style={{ background: "none", border: `1px solid ${C.border}`, color: C.navy, fontFamily: "system-ui, sans-serif", fontSize: "0.75rem", fontWeight: 600, cursor: shareLoading ? "wait" : "pointer", borderRadius: 6, padding: "5px 11px", opacity: shareLoading ? 0.6 : 1 }}>
-          {shareLoading ? "Ag ullmhú..." : "Roinn ↗"}
         </button>
       </div>
 
