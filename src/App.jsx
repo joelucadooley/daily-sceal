@@ -229,6 +229,20 @@ function wrapCanvasText(ctx, text, maxWidth) {
   return lines;
 }
 
+// Find the largest font size (within a range) where the headline fits in maxLines
+function fitHeadline(ctx, text, maxWidth, maxLines, maxSize, minSize, weight = "bold") {
+  for (let size = maxSize; size >= minSize; size -= 2) {
+    ctx.font = `${weight} ${size}px Georgia, serif`;
+    const lines = wrapCanvasText(ctx, text, maxWidth);
+    if (lines.length <= maxLines) {
+      return { size, lines, lineHeight: Math.round(size * 1.18) };
+    }
+  }
+  // Doesn't fit even at min size — use min and clamp the lines
+  ctx.font = `${weight} ${minSize}px Georgia, serif`;
+  return { size: minSize, lines: wrapCanvasText(ctx, text, maxWidth).slice(0, maxLines), lineHeight: Math.round(minSize * 1.18) };
+}
+
 // Cover slide — opening card with date and the lead headline (keeps the grid varied)
 function makeCoverCanvas(leadStory) {
   const W = 1080, H = 1080;
@@ -273,11 +287,11 @@ function makeCoverCanvas(leadStory) {
   ctx.fillRect(80, 430, W - 160, 1);
 
   // Lead headline (large, this is what makes each cover different in the grid)
-  ctx.font = "bold 58px Georgia, serif";
   ctx.fillStyle = "#ffffff";
-  const headLines = wrapCanvasText(ctx, leadStory.title, W - 160);
+  const cf = fitHeadline(ctx, leadStory.title, W - 160, 5, 62, 40);
+  ctx.font = `bold ${cf.size}px Georgia, serif`;
   const startY = 540;
-  headLines.slice(0, 5).forEach((l, i) => ctx.fillText(l, 80, startY + i * 74));
+  cf.lines.forEach((l, i) => ctx.fillText(l, 80, startY + i * cf.lineHeight));
 
   // Swipe hint bottom
   ctx.textAlign = "center";
@@ -374,9 +388,10 @@ function makeShareCanvas(story, parts, levelLabel) {
 
   ctx.font = "bold 60px Georgia, serif";
   ctx.fillStyle = "#ffffff";
-  const headLines = wrapCanvasText(ctx, story.title, W - 160);
-  headLines.slice(0, 3).forEach((l, i) => ctx.fillText(l, 80, 316 + i * 74));
-  const headBottom = 316 + Math.min(headLines.length, 3) * 74;
+  const fitted = fitHeadline(ctx, story.title, W - 160, 4, 60, 38);
+  ctx.font = `bold ${fitted.size}px Georgia, serif`;
+  fitted.lines.forEach((l, i) => ctx.fillText(l, 80, 316 + i * fitted.lineHeight));
+  const headBottom = 316 + fitted.lines.length * fitted.lineHeight;
 
   ctx.fillStyle = "rgba(255,255,255,0.08)";
   ctx.fillRect(80, headBottom + 14, W - 160, 1);
