@@ -219,13 +219,135 @@ function FeedView({ stories, loading, onStoryClick }) {
 function ReadingView({ story, onBack }) {
   const [pct, setPct] = useState(10);
   const [activeWord, setActiveWord] = useState(null);
+  const [shareLoading, setShareLoading] = useState(false);
   const level = getLevel(pct);
   const parts = parseText(story.levels[pct] || story.summary);
   const irishCount = parts.filter(p => p.t === "ir").length;
 
+  function wrapText(ctx, text, maxWidth) {
+    const words = text.split(" ");
+    const lines = [];
+    let line = "";
+    for (const word of words) {
+      const test = line ? `${line} ${word}` : word;
+      if (ctx.measureText(test).width > maxWidth && line) { lines.push(line); line = word; }
+      else line = test;
+    }
+    if (line) lines.push(line);
+    return lines;
+  }
+
+  async function generateShareImage() {
+    const W = 1080, H = 1080;
+    const canvas = document.createElement("canvas");
+    canvas.width = W; canvas.height = H;
+    const ctx = canvas.getContext("2d");
+
+    // Background
+    ctx.fillStyle = "#0d2137";
+    ctx.fillRect(0, 0, W, H);
+
+    // Amber top bar
+    ctx.fillStyle = "#e8951e";
+    ctx.fillRect(0, 0, W, 10);
+
+    // Logo
+    ctx.font = "bold 56px Georgia, serif";
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText("Daily ", 80, 118);
+    const dw = ctx.measureText("Daily ").width;
+    ctx.fillStyle = "#e8951e";
+    ctx.fillText("Scéal", 80 + dw, 118);
+
+    // Tagline
+    ctx.font = "30px Arial, sans-serif";
+    ctx.fillStyle = "rgba(255,255,255,0.35)";
+    ctx.fillText("Foghlaim Gaeilge gach lá", 80, 162);
+
+    // Divider
+    ctx.fillStyle = "rgba(255,255,255,0.08)";
+    ctx.fillRect(80, 188, W - 160, 1);
+
+    // Category
+    ctx.font = "bold 26px Arial, sans-serif";
+    ctx.fillStyle = "#e8951e";
+    ctx.fillText((story.categoryIr || "Nuacht").toUpperCase(), 80, 244);
+
+    // Headline
+    ctx.font = "bold 60px Georgia, serif";
+    ctx.fillStyle = "#ffffff";
+    const headLines = wrapText(ctx, story.title, W - 160);
+    headLines.slice(0, 3).forEach((l, i) => ctx.fillText(l, 80, 316 + i * 74));
+    const headBottom = 316 + Math.min(headLines.length, 3) * 74;
+
+    // Divider
+    ctx.fillStyle = "rgba(255,255,255,0.08)";
+    ctx.fillRect(80, headBottom + 14, W - 160, 1);
+
+    // Article text with Irish words in amber
+    const textY = headBottom + 60;
+    const lineH = 56;
+    const maxLines = Math.floor((H - textY - 150) / lineH);
+    ctx.font = "36px Georgia, serif";
+    let x = 80, y = textY, linesDrawn = 0;
+    outer: for (const part of parts) {
+      const isIrish = part.t === "ir";
+      const raw = isIrish ? part.irish : (part.v || "");
+      for (const token of raw.split(/(\s+)/)) {
+        if (!token) continue;
+        const isSpace = /^\s+$/.test(token);
+        const w = ctx.measureText(token).width;
+        if (!isSpace && x + w > W - 80) {
+          x = 80; y += lineH; linesDrawn++;
+          if (linesDrawn >= maxLines) break outer;
+        }
+        if (!isSpace) {
+          ctx.fillStyle = isIrish ? "#e8951e" : "rgba(255,255,255,0.82)";
+          ctx.fillText(token, x, y);
+        }
+        x += w;
+      }
+    }
+
+    // Level & URL
+    const levelName = pct === 100 ? "As Gaeilge" : (level?.label || "Beginner");
+    ctx.font = "bold 26px Arial, sans-serif";
+    ctx.fillStyle = "rgba(255,255,255,0.45)";
+    ctx.fillText(levelName, 80, H - 72);
+    ctx.textAlign = "right";
+    ctx.font = "26px Arial, sans-serif";
+    ctx.fillStyle = "rgba(255,255,255,0.3)";
+    ctx.fillText("joelucadooley.github.io/daily-sceal", W - 80, H - 72);
+    ctx.textAlign = "left";
+
+    return canvas;
+  }
+
   async function handleShare() {
-    const data = { title: story.title, text: "Léigh as Gaeilge ar Daily Scéal", url: story.link || "https://joelucadooley.github.io/daily-sceal" };
-    try { if (navigator.share) await navigator.share(data); else await navigator.clipboard?.writeText(data.url); } catch {}
+    setShareLoading(true);
+    try {
+      const canvas = await generateShareImage();
+      const blob = await new Promise(res => canvas.toBlob(res, "image/png"));
+      const file = new File([blob], "daily-sceal.png", { type: "image/png" });
+
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: story.title });
+      } else {
+        // Desktop: download the image
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url; a.download = "daily-sceal.png"; a.click();
+        URL.revokeObjectURL(url);
+      }
+    } catch {
+      // Fallback to URL share
+      try {
+        if (navigator.share) await navigator.share({ title: story.title, url: story.link || "https://joelucadooley.github.io/daily-sceal" });
+        else await navigator.clipboard?.writeText(story.link || "https://joelucadooley.github.io/daily-sceal");
+      } catch {}
+    } finally {
+      setShareLoading(false);
+    }
   }
 
   return (
@@ -235,8 +357,8 @@ function ReadingView({ story, onBack }) {
         <button onClick={onBack} style={{ background: "none", border: "none", color: C.muted, fontFamily: "system-ui, sans-serif", fontSize: "0.8rem", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", gap: 5 }}>
           ← Nuacht
         </button>
-        <button onClick={handleShare} style={{ background: "none", border: `1px solid ${C.border}`, color: C.navy, fontFamily: "system-ui, sans-serif", fontSize: "0.75rem", fontWeight: 600, cursor: "pointer", borderRadius: 6, padding: "5px 11px" }}>
-          Roinn ↗
+        <button onClick={handleShare} disabled={shareLoading} style={{ background: "none", border: `1px solid ${C.border}`, color: C.navy, fontFamily: "system-ui, sans-serif", fontSize: "0.75rem", fontWeight: 600, cursor: shareLoading ? "wait" : "pointer", borderRadius: 6, padding: "5px 11px", opacity: shareLoading ? 0.6 : 1 }}>
+          {shareLoading ? "Ag ullmhú..." : "Roinn ↗"}
         </button>
       </div>
 
