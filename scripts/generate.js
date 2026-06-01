@@ -68,7 +68,22 @@ function isGoodTranslation(original, raw) {
   if (/\d/.test(t) && !/\d/.test(original)) return false;
   if (/[_/\\@#$%^&*=+|<>]/.test(t)) return false;
   if (tl.includes("http") || tl.includes("www")) return false;
+  // Reject suspiciously short results: a 1-2 char translation for a real word
+  // is almost always junk (e.g. "south" -> "D")
+  if (original.length >= 4 && t.replace(/[.,;:!?]/g, "").length <= 2) return false;
   return true;
+}
+
+// Match the casing of the original word so MyMemory can't randomly capitalise
+// a mid-sentence word (e.g. "tuar" coming back as "Tuar")
+function matchCase(original, translated) {
+  if (!translated) return translated;
+  // If the original starts lowercase, force the translation to start lowercase
+  if (/^[a-z]/.test(original) && /^[A-Z]/.test(translated)) {
+    return translated.charAt(0).toLowerCase() + translated.slice(1);
+  }
+  // If the original starts uppercase (sentence start / proper-ish), keep as-is
+  return translated;
 }
 
 function cleanTranslation(raw) {
@@ -169,7 +184,7 @@ async function buildLevel(sentence, pct) {
       try {
         const irish = await translateCached(tok);
         if (isGoodTranslation(tok, irish)) {
-          result.push(`[[${cleanTranslation(irish)}|${tok}]]`);
+          result.push(`[[${matchCase(tok, cleanTranslation(irish))}|${tok}]]`);
         } else {
           result.push(tok);
         }
@@ -228,7 +243,7 @@ async function buildAdvancedLevel(sentence) {
             const cleanIre = ire.replace(/[.,;:!?"]/g, "");
             const punct = eng.match(/[.,;:!?"]+$/)?.[0] || "";
             if (cleanIre && cleanIre.toLowerCase() !== cleanEng.toLowerCase()) {
-              paired.push(`[[${cleanIre}|${cleanEng}]]${punct}`);
+              paired.push(`[[${matchCase(cleanEng, cleanIre)}|${cleanEng}]]${punct}`);
             } else {
               paired.push(eng);
             }
@@ -268,7 +283,7 @@ async function buildLevelWordByWord(sentence, pct) {
       try {
         const irish = await translateCached(tok);
         if (isGoodTranslation(tok, irish)) {
-          result.push(`[[${cleanTranslation(irish)}|${tok}]]`);
+          result.push(`[[${matchCase(tok, cleanTranslation(irish))}|${tok}]]`);
         } else { result.push(tok); }
       } catch { result.push(tok); }
     } else { result.push(tok); }
