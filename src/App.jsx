@@ -245,7 +245,7 @@ function fitHeadline(ctx, text, maxWidth, maxLines, maxSize, minSize, weight = "
 
 // Cover slide — opening card with date and the lead headline (keeps the grid varied)
 function makeCoverCanvas(leadStory) {
-  const W = 1080, H = 1080;
+  const W = 1080, H = 1350;
   const canvas = document.createElement("canvas");
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext("2d");
@@ -262,42 +262,42 @@ function makeCoverCanvas(leadStory) {
   const d2 = ctx.measureText("Scéal").width;
   const totalW = d1 + d2;
   const startX = (W - totalW) / 2;
-  ctx.fillText("Daily ", startX, 170);
+  ctx.fillText("Daily ", startX, 200);
   ctx.fillStyle = "#e8951e";
-  ctx.fillText("Scéal", startX + d1, 170);
+  ctx.fillText("Scéal", startX + d1, 200);
 
   // Date, centred
   const dateStr = new Date().toLocaleDateString("en-IE", { weekday: "long", day: "numeric", month: "long" });
   ctx.textAlign = "center";
   ctx.font = "32px Arial, sans-serif";
   ctx.fillStyle = "rgba(255,255,255,0.4)";
-  ctx.fillText(dateStr, W / 2, 220);
+  ctx.fillText(dateStr, W / 2, 250);
 
   // "Príomhscéalta an lae" heading
   ctx.font = "italic 40px Georgia, serif";
   ctx.fillStyle = "#e8951e";
-  ctx.fillText("Príomhscéalta an lae", W / 2, 330);
+  ctx.fillText("Príomhscéalta an lae", W / 2, 370);
   ctx.font = "26px Arial, sans-serif";
   ctx.fillStyle = "rgba(255,255,255,0.35)";
-  ctx.fillText("Today's top stories, as Gaeilge", W / 2, 372);
+  ctx.fillText("Today's top stories, as Gaeilge", W / 2, 412);
   ctx.textAlign = "left";
 
   // Divider
   ctx.fillStyle = "rgba(255,255,255,0.08)";
-  ctx.fillRect(80, 430, W - 160, 1);
+  ctx.fillRect(80, 480, W - 160, 1);
 
   // Lead headline (large, this is what makes each cover different in the grid)
   ctx.fillStyle = "#ffffff";
-  const cf = fitHeadline(ctx, leadStory.title, W - 160, 5, 62, 40);
+  const cf = fitHeadline(ctx, leadStory.title, W - 160, 6, 66, 40);
   ctx.font = `bold ${cf.size}px Georgia, serif`;
-  const startY = 540;
+  const startY = 620;
   cf.lines.forEach((l, i) => ctx.fillText(l, 80, startY + i * cf.lineHeight));
 
   // Swipe hint bottom
   ctx.textAlign = "center";
   ctx.font = "bold 30px Arial, sans-serif";
   ctx.fillStyle = "#e8951e";
-  ctx.fillText("Swipe to read  →", W / 2, H - 90);
+  ctx.fillText("Swipe to read  →", W / 2, H - 110);
   ctx.textAlign = "left";
 
   return canvas;
@@ -305,7 +305,7 @@ function makeCoverCanvas(leadStory) {
 
 // Closing slide — single call to action
 function makeClosingCanvas() {
-  const W = 1080, H = 1080;
+  const W = 1080, H = 1350;
   const canvas = document.createElement("canvas");
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext("2d");
@@ -324,26 +324,26 @@ function makeClosingCanvas() {
   const startX = (W - (d1 + d2)) / 2;
   ctx.textAlign = "left";
   ctx.fillStyle = "#ffffff";
-  ctx.fillText("Daily ", startX, 360);
+  ctx.fillText("Daily ", startX, 480);
   ctx.fillStyle = "#e8951e";
-  ctx.fillText("Scéal", startX + d1, 360);
+  ctx.fillText("Scéal", startX + d1, 480);
   ctx.textAlign = "center";
 
   // Main CTA
   ctx.font = "44px Georgia, serif";
   ctx.fillStyle = "#ffffff";
-  ctx.fillText("Read the full stories at", W / 2, 500);
-  ctx.fillText("your own level of Irish.", W / 2, 560);
+  ctx.fillText("Read the full stories at", W / 2, 620);
+  ctx.fillText("your own level of Irish.", W / 2, 680);
 
-  // URL pill
+  // URL
   ctx.font = "bold 38px Arial, sans-serif";
   ctx.fillStyle = "#e8951e";
-  ctx.fillText("joelucadooley.github.io/daily-sceal", W / 2, 680);
+  ctx.fillText("joelucadooley.github.io/daily-sceal", W / 2, 800);
 
   // Follow line
   ctx.font = "30px Arial, sans-serif";
   ctx.fillStyle = "rgba(255,255,255,0.4)";
-  ctx.fillText("Follow @dailysceal for a little Irish each day", W / 2, 780);
+  ctx.fillText("Follow @dailysceal for a little Irish each day", W / 2, 900);
 
   ctx.textAlign = "left";
   return canvas;
@@ -351,7 +351,7 @@ function makeClosingCanvas() {
 
 // Standalone share-card generator, used by both the article page and the export page
 function makeShareCanvas(story, parts, levelLabel) {
-  const W = 1080, H = 1080;
+  const W = 1080, H = 1350;
   const canvas = document.createElement("canvas");
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext("2d");
