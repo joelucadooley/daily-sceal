@@ -74,16 +74,18 @@ function isGoodTranslation(original, raw) {
   return true;
 }
 
-// Match the casing of the original word so MyMemory can't randomly capitalise
-// a mid-sentence word (e.g. "tuar" coming back as "Tuar")
+// Match the casing of the original word so MyMemory can't randomly capitalise.
+// Handles both "Tuar" (wrong leading cap) and "tRIALACHA" (weird internal caps).
 function matchCase(original, translated) {
   if (!translated) return translated;
-  // If the original starts lowercase, force the translation to start lowercase
-  if (/^[a-z]/.test(original) && /^[A-Z]/.test(translated)) {
-    return translated.charAt(0).toLowerCase() + translated.slice(1);
+  // Original is a normal lowercase word: force the whole translation lowercase,
+  // since Irish mid-sentence words are lowercase and any caps here are junk.
+  if (/^[a-z]/.test(original)) {
+    return translated.toLowerCase();
   }
-  // If the original starts uppercase (sentence start / proper-ish), keep as-is
-  return translated;
+  // Original starts uppercase (sentence start): lowercase everything after the
+  // first letter, then capitalise the first, to fix mixed-case noise.
+  return translated.charAt(0).toUpperCase() + translated.slice(1).toLowerCase();
 }
 
 function cleanTranslation(raw) {
