@@ -419,6 +419,8 @@ function makeWeeklyWordsCanvas(words) {
 }
 
 
+// Standalone share-card generator, used by both the article page and the export page
+function makeShareCanvas(story, parts, levelLabel) {
   const W = 1080, H = 1350;
   const canvas = document.createElement("canvas");
   canvas.width = W; canvas.height = H;
