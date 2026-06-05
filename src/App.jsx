@@ -349,8 +349,76 @@ function makeClosingCanvas() {
   return canvas;
 }
 
-// Standalone share-card generator, used by both the article page and the export page
-function makeShareCanvas(story, parts, levelLabel) {
+// Weekly recap card — "Focail na Seachtaine" (words of the week)
+function makeWeeklyWordsCanvas(words) {
+  const W = 1080, H = 1350;
+  const canvas = document.createElement("canvas");
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext("2d");
+
+  ctx.fillStyle = "#0d2137";
+  ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = "#e8951e";
+  ctx.fillRect(0, 0, W, 10);
+
+  // Logo
+  ctx.font = "bold 56px Georgia, serif";
+  ctx.fillStyle = "#ffffff";
+  ctx.fillText("Daily ", 80, 118);
+  const dw = ctx.measureText("Daily ").width;
+  ctx.fillStyle = "#e8951e";
+  ctx.fillText("Scéal", 80 + dw, 118);
+
+  ctx.textAlign = "right";
+  ctx.font = "italic 28px Georgia, serif";
+  ctx.fillStyle = "rgba(255,255,255,0.4)";
+  ctx.fillText("Cad é an scéal?", W - 80, 110);
+  ctx.textAlign = "left";
+
+  ctx.fillStyle = "rgba(255,255,255,0.08)";
+  ctx.fillRect(80, 188, W - 160, 1);
+
+  // Heading
+  ctx.font = "italic 46px Georgia, serif";
+  ctx.fillStyle = "#e8951e";
+  ctx.fillText("Focail na Seachtaine", 80, 270);
+  ctx.font = "26px Arial, sans-serif";
+  ctx.fillStyle = "rgba(255,255,255,0.35)";
+  ctx.fillText("Words from this week's news", 80, 312);
+
+  // Words list — evenly spaced down the card
+  const list = words.filter(w => w.irish && w.english).slice(0, 7);
+  const top = 400;
+  const bottom = H - 130;
+  const gap = (bottom - top) / Math.max(list.length, 1);
+
+  list.forEach((w, i) => {
+    const y = top + gap * i + gap / 2;
+    // Irish word in amber
+    ctx.font = "bold 52px Georgia, serif";
+    ctx.fillStyle = "#e8951e";
+    ctx.fillText(w.irish, 80, y);
+    // English meaning in white, to the right of the Irish word
+    const iw = ctx.measureText(w.irish).width;
+    ctx.font = "36px Georgia, serif";
+    ctx.fillStyle = "rgba(255,255,255,0.85)";
+    ctx.fillText(`  ${w.english}`, 80 + iw + 10, y);
+    // thin divider
+    if (i < list.length - 1) {
+      ctx.fillStyle = "rgba(255,255,255,0.06)";
+      ctx.fillRect(80, y + gap / 2 - 4, W - 160, 1);
+    }
+  });
+
+  // Footer
+  ctx.font = "26px Arial, sans-serif";
+  ctx.fillStyle = "rgba(255,255,255,0.3)";
+  ctx.fillText("joelucadooley.github.io/daily-sceal", 80, H - 60);
+
+  return canvas;
+}
+
+
   const W = 1080, H = 1350;
   const canvas = document.createElement("canvas");
   canvas.width = W; canvas.height = H;
@@ -682,6 +750,8 @@ function ExportView({ stories }) {
   const [images, setImages] = useState([]);
   const [busy, setBusy] = useState(false);
   const [coverIndex, setCoverIndex] = useState(0);
+  const [weeklyText, setWeeklyText] = useState("");
+  const [weeklyImage, setWeeklyImage] = useState(null);
   const levelLabel = LEVELS_CONFIG.find(l => l.pct === pct)?.label || "Beginner";
 
   function generateAll() {
@@ -690,19 +760,26 @@ function ExportView({ stories }) {
     setImages([]);
     setTimeout(() => {
       const out = [];
-      // Cover slide using the chosen story's headline
       out.push({ id: "cover", title: "Cover slide", url: makeCoverCanvas(stories[coverIndex] || stories[0]).toDataURL("image/png") });
-      // Story slides
       stories.forEach(story => {
         const parts = parseText(story.levels[pct] || story.summary);
         const canvas = makeShareCanvas(story, parts, levelLabel);
         out.push({ id: story.id, title: story.title, url: canvas.toDataURL("image/png") });
       });
-      // Closing slide
       out.push({ id: "closing", title: "Closing slide", url: makeClosingCanvas().toDataURL("image/png") });
       setImages(out);
       setBusy(false);
     }, 50);
+  }
+
+  function generateWeekly() {
+    // Each line is "irish = english"
+    const words = weeklyText.split("\n").map(line => {
+      const [irish, english] = line.split("=").map(s => (s || "").trim());
+      return { irish, english };
+    }).filter(w => w.irish && w.english);
+    if (!words.length) return;
+    setWeeklyImage(makeWeeklyWordsCanvas(words).toDataURL("image/png"));
   }
 
   return (
@@ -742,6 +819,27 @@ function ExportView({ stories }) {
           </a>
         </div>
       ))}
+
+      <div style={{ marginTop: 40, paddingTop: 24, borderTop: `2px solid ${C.border}` }}>
+        <h2 style={{ fontFamily: "Georgia, serif", color: C.navy, fontSize: "1.15rem", margin: "0 0 4px" }}>Focail na Seachtaine</h2>
+        <p style={{ color: C.muted, fontSize: "0.8rem", margin: "0 0 14px" }}>Sunday recap card. One word per line, in the form <strong>irish = english</strong>. Up to seven.</p>
+        <textarea value={weeklyText} onChange={e => setWeeklyText(e.target.value)}
+          rows={7} placeholder={"rialtas = government\ntithíocht = housing\ncíosanna = rents"}
+          style={{ width: "100%", padding: "12px", borderRadius: 8, border: `1px solid ${C.border}`, fontSize: "0.85rem", fontFamily: "monospace", marginBottom: 12, resize: "vertical", boxSizing: "border-box" }} />
+        <button onClick={generateWeekly}
+          style={{ width: "100%", background: C.navy, color: "#fff", border: "none", borderRadius: 8, padding: "13px", fontSize: "0.88rem", fontWeight: 600, cursor: "pointer", marginBottom: 20 }}>
+          Generate weekly card
+        </button>
+        {weeklyImage && (
+          <div>
+            <img src={weeklyImage} alt="Focail na Seachtaine" style={{ width: "100%", borderRadius: 10, border: `1px solid ${C.border}` }} />
+            <a href={weeklyImage} download="daily-sceal-focail-na-seachtaine.png"
+              style={{ display: "inline-block", marginTop: 8, color: C.navy, fontSize: "0.78rem", fontWeight: 600, textDecoration: "none", borderBottom: `1px solid ${C.border}` }}>
+              Download weekly card ↓
+            </a>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
