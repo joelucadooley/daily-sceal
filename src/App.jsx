@@ -349,20 +349,20 @@ function makeClosingCanvas() {
   return canvas;
 }
 
-// Weekly recap — cover slide
+// Weekly recap — cover slide (cream background to distinguish from daily news)
 function makeWeeklyCoverCanvas() {
   const W = 1080, H = 1350;
   const canvas = document.createElement("canvas");
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext("2d");
 
-  ctx.fillStyle = "#0d2137";
+  ctx.fillStyle = "#f4f1ec";
   ctx.fillRect(0, 0, W, H);
   ctx.fillStyle = "#e8951e";
   ctx.fillRect(0, 0, W, 10);
 
   ctx.font = "bold 72px Georgia, serif";
-  ctx.fillStyle = "#ffffff";
+  ctx.fillStyle = "#0d2137";
   const d1 = ctx.measureText("Daily ").width;
   const d2 = ctx.measureText("Scéal").width;
   const startX = (W - (d1 + d2)) / 2;
@@ -375,11 +375,11 @@ function makeWeeklyCoverCanvas() {
   ctx.fillStyle = "#e8951e";
   ctx.fillText("Focail na Seachtaine", W / 2, 620);
   ctx.font = "34px Arial, sans-serif";
-  ctx.fillStyle = "rgba(255,255,255,0.55)";
+  ctx.fillStyle = "rgba(13,33,55,0.55)";
   ctx.fillText("Words from this week's news", W / 2, 685);
 
   ctx.font = "bold 30px Arial, sans-serif";
-  ctx.fillStyle = "#e8951e";
+  ctx.fillStyle = "#0d2137";
   ctx.fillText("Can you guess them?  →", W / 2, H - 120);
   ctx.textAlign = "left";
   return canvas;
@@ -392,14 +392,14 @@ function makeWordSlideCanvas(word, index, reveal) {
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext("2d");
 
-  ctx.fillStyle = "#0d2137";
+  ctx.fillStyle = "#f4f1ec";
   ctx.fillRect(0, 0, W, H);
   ctx.fillStyle = "#e8951e";
   ctx.fillRect(0, 0, W, 10);
 
   // Small logo top-left
   ctx.font = "bold 38px Georgia, serif";
-  ctx.fillStyle = "#ffffff";
+  ctx.fillStyle = "#0d2137";
   const d1 = ctx.measureText("Daily ").width;
   ctx.fillText("Daily ", 80, 90);
   ctx.fillStyle = "#e8951e";
@@ -408,7 +408,7 @@ function makeWordSlideCanvas(word, index, reveal) {
   // Word number top-right
   ctx.textAlign = "right";
   ctx.font = "28px Arial, sans-serif";
-  ctx.fillStyle = "rgba(255,255,255,0.35)";
+  ctx.fillStyle = "rgba(13,33,55,0.35)";
   ctx.fillText(`${index}`, W - 80, 88);
   ctx.textAlign = "center";
 
@@ -418,17 +418,17 @@ function makeWordSlideCanvas(word, index, reveal) {
   ctx.fillText(word.irish, W / 2, reveal ? 560 : 700);
 
   if (reveal) {
-    ctx.fillStyle = "rgba(255,255,255,0.1)";
+    ctx.fillStyle = "rgba(13,33,55,0.12)";
     ctx.fillRect(W / 2 - 120, 640, 240, 2);
     ctx.font = "60px Georgia, serif";
-    ctx.fillStyle = "#ffffff";
+    ctx.fillStyle = "#0d2137";
     ctx.fillText(word.english, W / 2, 760);
   } else {
     ctx.font = "32px Arial, sans-serif";
-    ctx.fillStyle = "rgba(255,255,255,0.4)";
+    ctx.fillStyle = "rgba(13,33,55,0.45)";
     ctx.fillText("What does it mean?", W / 2, 800);
     ctx.font = "bold 30px Arial, sans-serif";
-    ctx.fillStyle = "#e8951e";
+    ctx.fillStyle = "#0d2137";
     ctx.fillText("Swipe to reveal  →", W / 2, H - 120);
   }
 
@@ -436,21 +436,21 @@ function makeWordSlideCanvas(word, index, reveal) {
   return canvas;
 }
 
-// Weekly recap — closing slide
+// Weekly recap — closing slide (cream background)
 function makeWeeklyClosingCanvas() {
   const W = 1080, H = 1350;
   const canvas = document.createElement("canvas");
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext("2d");
 
-  ctx.fillStyle = "#0d2137";
+  ctx.fillStyle = "#f4f1ec";
   ctx.fillRect(0, 0, W, H);
   ctx.fillStyle = "#e8951e";
   ctx.fillRect(0, 0, W, 10);
 
   ctx.textAlign = "center";
   ctx.font = "bold 64px Georgia, serif";
-  ctx.fillStyle = "#ffffff";
+  ctx.fillStyle = "#0d2137";
   const d1 = ctx.measureText("Daily ").width;
   const d2 = ctx.measureText("Scéal").width;
   const startX = (W - (d1 + d2)) / 2;
@@ -461,12 +461,12 @@ function makeWeeklyClosingCanvas() {
   ctx.textAlign = "center";
 
   ctx.font = "44px Georgia, serif";
-  ctx.fillStyle = "#ffffff";
+  ctx.fillStyle = "#0d2137";
   ctx.fillText("A new story every day,", W / 2, 660);
   ctx.fillText("as Gaeilge.", W / 2, 720);
 
   ctx.font = "30px Arial, sans-serif";
-  ctx.fillStyle = "rgba(255,255,255,0.4)";
+  ctx.fillStyle = "rgba(13,33,55,0.5)";
   ctx.fillText("Follow @dailysceal · link in bio", W / 2, 840);
   ctx.textAlign = "left";
   return canvas;
