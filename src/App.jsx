@@ -349,8 +349,8 @@ function makeClosingCanvas() {
   return canvas;
 }
 
-// Weekly recap card — "Focail na Seachtaine" (words of the week)
-function makeWeeklyWordsCanvas(words) {
+// Weekly recap — cover slide
+function makeWeeklyCoverCanvas() {
   const W = 1080, H = 1350;
   const canvas = document.createElement("canvas");
   canvas.width = W; canvas.height = H;
@@ -361,60 +361,114 @@ function makeWeeklyWordsCanvas(words) {
   ctx.fillStyle = "#e8951e";
   ctx.fillRect(0, 0, W, 10);
 
-  // Logo
-  ctx.font = "bold 56px Georgia, serif";
+  ctx.font = "bold 72px Georgia, serif";
   ctx.fillStyle = "#ffffff";
-  ctx.fillText("Daily ", 80, 118);
-  const dw = ctx.measureText("Daily ").width;
+  const d1 = ctx.measureText("Daily ").width;
+  const d2 = ctx.measureText("Scéal").width;
+  const startX = (W - (d1 + d2)) / 2;
+  ctx.fillText("Daily ", startX, 200);
   ctx.fillStyle = "#e8951e";
-  ctx.fillText("Scéal", 80 + dw, 118);
+  ctx.fillText("Scéal", startX + d1, 200);
 
-  ctx.textAlign = "right";
-  ctx.font = "italic 28px Georgia, serif";
-  ctx.fillStyle = "rgba(255,255,255,0.4)";
-  ctx.fillText("Cad é an scéal?", W - 80, 110);
+  ctx.textAlign = "center";
+  ctx.font = "italic 56px Georgia, serif";
+  ctx.fillStyle = "#e8951e";
+  ctx.fillText("Focail na Seachtaine", W / 2, 620);
+  ctx.font = "34px Arial, sans-serif";
+  ctx.fillStyle = "rgba(255,255,255,0.55)";
+  ctx.fillText("Words from this week's news", W / 2, 685);
+
+  ctx.font = "bold 30px Arial, sans-serif";
+  ctx.fillStyle = "#e8951e";
+  ctx.fillText("Can you guess them?  →", W / 2, H - 120);
   ctx.textAlign = "left";
+  return canvas;
+}
 
-  ctx.fillStyle = "rgba(255,255,255,0.08)";
-  ctx.fillRect(80, 188, W - 160, 1);
+// Weekly recap — a "guess" slide (Irish word alone) or "reveal" slide (with English)
+function makeWordSlideCanvas(word, index, reveal) {
+  const W = 1080, H = 1350;
+  const canvas = document.createElement("canvas");
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext("2d");
 
-  // Heading
-  ctx.font = "italic 46px Georgia, serif";
+  ctx.fillStyle = "#0d2137";
+  ctx.fillRect(0, 0, W, H);
   ctx.fillStyle = "#e8951e";
-  ctx.fillText("Focail na Seachtaine", 80, 270);
-  ctx.font = "26px Arial, sans-serif";
+  ctx.fillRect(0, 0, W, 10);
+
+  // Small logo top-left
+  ctx.font = "bold 38px Georgia, serif";
+  ctx.fillStyle = "#ffffff";
+  const d1 = ctx.measureText("Daily ").width;
+  ctx.fillText("Daily ", 80, 90);
+  ctx.fillStyle = "#e8951e";
+  ctx.fillText("Scéal", 80 + d1, 90);
+
+  // Word number top-right
+  ctx.textAlign = "right";
+  ctx.font = "28px Arial, sans-serif";
   ctx.fillStyle = "rgba(255,255,255,0.35)";
-  ctx.fillText("Words from this week's news", 80, 312);
+  ctx.fillText(`${index}`, W - 80, 88);
+  ctx.textAlign = "center";
 
-  // Words list — evenly spaced down the card
-  const list = words.filter(w => w.irish && w.english).slice(0, 7);
-  const top = 400;
-  const bottom = H - 130;
-  const gap = (bottom - top) / Math.max(list.length, 1);
+  // The Irish word, large and centred
+  ctx.font = "bold 96px Georgia, serif";
+  ctx.fillStyle = "#e8951e";
+  ctx.fillText(word.irish, W / 2, reveal ? 560 : 700);
 
-  list.forEach((w, i) => {
-    const y = top + gap * i + gap / 2;
-    // Irish word in amber
-    ctx.font = "bold 52px Georgia, serif";
+  if (reveal) {
+    ctx.fillStyle = "rgba(255,255,255,0.1)";
+    ctx.fillRect(W / 2 - 120, 640, 240, 2);
+    ctx.font = "60px Georgia, serif";
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText(word.english, W / 2, 760);
+  } else {
+    ctx.font = "32px Arial, sans-serif";
+    ctx.fillStyle = "rgba(255,255,255,0.4)";
+    ctx.fillText("What does it mean?", W / 2, 800);
+    ctx.font = "bold 30px Arial, sans-serif";
     ctx.fillStyle = "#e8951e";
-    ctx.fillText(w.irish, 80, y);
-    // English meaning in white, to the right of the Irish word
-    const iw = ctx.measureText(w.irish).width;
-    ctx.font = "36px Georgia, serif";
-    ctx.fillStyle = "rgba(255,255,255,0.85)";
-    ctx.fillText(`  ${w.english}`, 80 + iw + 10, y);
-    // thin divider
-    if (i < list.length - 1) {
-      ctx.fillStyle = "rgba(255,255,255,0.06)";
-      ctx.fillRect(80, y + gap / 2 - 4, W - 160, 1);
-    }
-  });
+    ctx.fillText("Swipe to reveal  →", W / 2, H - 120);
+  }
 
-  // Footer
-  ctx.font = "26px Arial, sans-serif";
-  ctx.fillStyle = "rgba(255,255,255,0.3)";
-  ctx.fillText("joelucadooley.github.io/daily-sceal", 80, H - 60);
+  ctx.textAlign = "left";
+  return canvas;
+}
 
+// Weekly recap — closing slide
+function makeWeeklyClosingCanvas() {
+  const W = 1080, H = 1350;
+  const canvas = document.createElement("canvas");
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext("2d");
+
+  ctx.fillStyle = "#0d2137";
+  ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = "#e8951e";
+  ctx.fillRect(0, 0, W, 10);
+
+  ctx.textAlign = "center";
+  ctx.font = "bold 64px Georgia, serif";
+  ctx.fillStyle = "#ffffff";
+  const d1 = ctx.measureText("Daily ").width;
+  const d2 = ctx.measureText("Scéal").width;
+  const startX = (W - (d1 + d2)) / 2;
+  ctx.textAlign = "left";
+  ctx.fillText("Daily ", startX, 520);
+  ctx.fillStyle = "#e8951e";
+  ctx.fillText("Scéal", startX + d1, 520);
+  ctx.textAlign = "center";
+
+  ctx.font = "44px Georgia, serif";
+  ctx.fillStyle = "#ffffff";
+  ctx.fillText("A new story every day,", W / 2, 660);
+  ctx.fillText("as Gaeilge.", W / 2, 720);
+
+  ctx.font = "30px Arial, sans-serif";
+  ctx.fillStyle = "rgba(255,255,255,0.4)";
+  ctx.fillText("Follow @dailysceal · link in bio", W / 2, 840);
+  ctx.textAlign = "left";
   return canvas;
 }
 
@@ -752,8 +806,11 @@ function ExportView({ stories }) {
   const [images, setImages] = useState([]);
   const [busy, setBusy] = useState(false);
   const [coverIndex, setCoverIndex] = useState(0);
-  const [weeklyText, setWeeklyText] = useState("");
-  const [weeklyImage, setWeeklyImage] = useState(null);
+  const [enText, setEnText] = useState("");   // English words to translate to Irish
+  const [gaText, setGaText] = useState("");   // Irish words to translate to English
+  const [wordPairs, setWordPairs] = useState([]); // resolved {irish, english}
+  const [weeklyImages, setWeeklyImages] = useState([]);
+  const [translating, setTranslating] = useState(false);
   const levelLabel = LEVELS_CONFIG.find(l => l.pct === pct)?.label || "Beginner";
 
   function generateAll() {
@@ -774,14 +831,50 @@ function ExportView({ stories }) {
     }, 50);
   }
 
+  async function translateOne(word, from, to) {
+    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(word)}&langpair=${from}|${to}&de=joelucadooley@gmail.com`;
+    try {
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data.responseStatus === 200) {
+        return data.responseData.translatedText.trim().replace(/^[.,;:!?]+|[.,;:!?]+$/g, "").trim();
+      }
+    } catch {}
+    return "";
+  }
+
+  async function translateWords() {
+    setTranslating(true);
+    const pairs = [];
+    // English -> Irish
+    for (const line of enText.split("\n").map(s => s.trim()).filter(Boolean)) {
+      const irish = await translateOne(line, "en", "ga");
+      pairs.push({ english: line.toLowerCase(), irish: (irish || "?").toLowerCase() });
+    }
+    // Irish -> English
+    for (const line of gaText.split("\n").map(s => s.trim()).filter(Boolean)) {
+      const english = await translateOne(line, "ga", "en");
+      pairs.push({ irish: line.toLowerCase(), english: (english || "?").toLowerCase() });
+    }
+    setWordPairs(pairs);
+    setTranslating(false);
+  }
+
+  function updatePair(i, field, value) {
+    setWordPairs(prev => prev.map((p, idx) => idx === i ? { ...p, [field]: value } : p));
+  }
+
   function generateWeekly() {
-    // Each line is "irish = english"
-    const words = weeklyText.split("\n").map(line => {
-      const [irish, english] = line.split("=").map(s => (s || "").trim());
-      return { irish, english };
-    }).filter(w => w.irish && w.english);
+    const words = wordPairs.filter(w => w.irish && w.english && w.irish !== "?" && w.english !== "?");
     if (!words.length) return;
-    setWeeklyImage(makeWeeklyWordsCanvas(words).toDataURL("image/png"));
+    const out = [];
+    out.push({ id: "w-cover", title: "Cover", url: makeWeeklyCoverCanvas().toDataURL("image/png") });
+    words.forEach((w, i) => {
+      out.push({ id: `w-${i}-guess`, title: `${w.irish} (guess)`, url: makeWordSlideCanvas(w, i + 1, false).toDataURL("image/png") });
+      out.push({ id: `w-${i}-reveal`, title: `${w.irish} (reveal)`, url: makeWordSlideCanvas(w, i + 1, true).toDataURL("image/png") });
+    });
+    out.push({ id: "w-closing", title: "Closing", url: makeWeeklyClosingCanvas().toDataURL("image/png") });
+    setWeeklyImages(out);
   }
 
   return (
@@ -824,23 +917,51 @@ function ExportView({ stories }) {
 
       <div style={{ marginTop: 40, paddingTop: 24, borderTop: `2px solid ${C.border}` }}>
         <h2 style={{ fontFamily: "Georgia, serif", color: C.navy, fontSize: "1.15rem", margin: "0 0 4px" }}>Focail na Seachtaine</h2>
-        <p style={{ color: C.muted, fontSize: "0.8rem", margin: "0 0 14px" }}>Sunday recap card. One word per line, in the form <strong>irish = english</strong>. Up to seven.</p>
-        <textarea value={weeklyText} onChange={e => setWeeklyText(e.target.value)}
-          rows={7} placeholder={"rialtas = government\ntithíocht = housing\ncíosanna = rents"}
-          style={{ width: "100%", padding: "12px", borderRadius: 8, border: `1px solid ${C.border}`, fontSize: "0.85rem", fontFamily: "monospace", marginBottom: 12, resize: "vertical", boxSizing: "border-box" }} />
-        <button onClick={generateWeekly}
-          style={{ width: "100%", background: C.navy, color: "#fff", border: "none", borderRadius: 8, padding: "13px", fontSize: "0.88rem", fontWeight: 600, cursor: "pointer", marginBottom: 20 }}>
-          Generate weekly card
+        <p style={{ color: C.muted, fontSize: "0.8rem", margin: "0 0 14px" }}>Sunday recap carousel. Type a few key words (one per line) in either box, translate, check them, then generate a guess-and-reveal carousel. Three or four words works best.</p>
+
+        <label style={{ display: "block", fontSize: "0.72rem", color: C.muted, marginBottom: 4, fontWeight: 600 }}>English words (→ Irish)</label>
+        <textarea value={enText} onChange={e => setEnText(e.target.value)}
+          rows={3} placeholder={"government\nhousing\ntrial"}
+          style={{ width: "100%", padding: "10px", borderRadius: 8, border: `1px solid ${C.border}`, fontSize: "0.85rem", marginBottom: 12, resize: "vertical", boxSizing: "border-box" }} />
+
+        <label style={{ display: "block", fontSize: "0.72rem", color: C.muted, marginBottom: 4, fontWeight: 600 }}>Irish words (→ English)</label>
+        <textarea value={gaText} onChange={e => setGaText(e.target.value)}
+          rows={3} placeholder={"rialtas\ntithíocht"}
+          style={{ width: "100%", padding: "10px", borderRadius: 8, border: `1px solid ${C.border}`, fontSize: "0.85rem", marginBottom: 12, resize: "vertical", boxSizing: "border-box" }} />
+
+        <button onClick={translateWords} disabled={translating}
+          style={{ width: "100%", background: C.amber, color: "#fff", border: "none", borderRadius: 8, padding: "12px", fontSize: "0.85rem", fontWeight: 600, cursor: translating ? "wait" : "pointer", marginBottom: 16, opacity: translating ? 0.6 : 1 }}>
+          {translating ? "Translating..." : "Translate"}
         </button>
-        {weeklyImage && (
-          <div>
-            <img src={weeklyImage} alt="Focail na Seachtaine" style={{ width: "100%", borderRadius: 10, border: `1px solid ${C.border}` }} />
-            <a href={weeklyImage} download="daily-sceal-focail-na-seachtaine.png"
-              style={{ display: "inline-block", marginTop: 8, color: C.navy, fontSize: "0.78rem", fontWeight: 600, textDecoration: "none", borderBottom: `1px solid ${C.border}` }}>
-              Download weekly card ↓
-            </a>
+
+        {wordPairs.length > 0 && (
+          <div style={{ marginBottom: 16 }}>
+            <p style={{ fontSize: "0.72rem", color: C.muted, marginBottom: 8 }}>Check and edit if needed:</p>
+            {wordPairs.map((w, i) => (
+              <div key={i} style={{ display: "flex", gap: 8, marginBottom: 6 }}>
+                <input value={w.irish} onChange={e => updatePair(i, "irish", e.target.value)}
+                  style={{ flex: 1, padding: "8px", borderRadius: 6, border: `1px solid ${C.border}`, fontSize: "0.82rem", color: C.amber, fontWeight: 600 }} />
+                <input value={w.english} onChange={e => updatePair(i, "english", e.target.value)}
+                  style={{ flex: 1, padding: "8px", borderRadius: 6, border: `1px solid ${C.border}`, fontSize: "0.82rem" }} />
+              </div>
+            ))}
+            <button onClick={generateWeekly}
+              style={{ width: "100%", background: C.navy, color: "#fff", border: "none", borderRadius: 8, padding: "13px", fontSize: "0.88rem", fontWeight: 600, cursor: "pointer", marginTop: 10 }}>
+              Generate weekly carousel
+            </button>
           </div>
         )}
+
+        {weeklyImages.map((img, i) => (
+          <div key={img.id} style={{ marginBottom: 24 }}>
+            <div style={{ fontSize: "0.7rem", color: C.faint, marginBottom: 6 }}>{i + 1}. {img.title}</div>
+            <img src={img.url} alt={img.title} style={{ width: "100%", borderRadius: 10, border: `1px solid ${C.border}` }} />
+            <a href={img.url} download={`daily-sceal-week-${i + 1}.png`}
+              style={{ display: "inline-block", marginTop: 8, color: C.navy, fontSize: "0.78rem", fontWeight: 600, textDecoration: "none", borderBottom: `1px solid ${C.border}` }}>
+              Download slide {i + 1} ↓
+            </a>
+          </div>
+        ))}
       </div>
     </div>
   );
