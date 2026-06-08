@@ -244,7 +244,9 @@ function fitHeadline(ctx, text, maxWidth, maxLines, maxSize, minSize, weight = "
 }
 
 // Cover slide — opening card with date and the lead headline (keeps the grid varied)
-function makeCoverCanvas(leadStory) {
+// Cover slide. headlineParts is an array of {text, irish:bool} segments so we can
+// render a few Irish words in amber within an otherwise English headline.
+function makeCoverCanvas(leadStory, headlineParts) {
   const W = 1080, H = 1350;
   const canvas = document.createElement("canvas");
   canvas.width = W; canvas.height = H;
@@ -255,53 +257,105 @@ function makeCoverCanvas(leadStory) {
   ctx.fillStyle = "#e8951e";
   ctx.fillRect(0, 0, W, 10);
 
-  // Logo centred-ish near top
+  // Logo centred near top
   ctx.font = "bold 72px Georgia, serif";
   ctx.fillStyle = "#ffffff";
   const d1 = ctx.measureText("Daily ").width;
   const d2 = ctx.measureText("Scéal").width;
-  const totalW = d1 + d2;
-  const startX = (W - totalW) / 2;
+  const startX = (W - (d1 + d2)) / 2;
   ctx.fillText("Daily ", startX, 200);
   ctx.fillStyle = "#e8951e";
   ctx.fillText("Scéal", startX + d1, 200);
 
-  // Date, centred
+  // Date
   const dateStr = new Date().toLocaleDateString("en-IE", { weekday: "long", day: "numeric", month: "long" });
   ctx.textAlign = "center";
   ctx.font = "32px Arial, sans-serif";
   ctx.fillStyle = "rgba(255,255,255,0.4)";
   ctx.fillText(dateStr, W / 2, 250);
 
-  // "Príomhscéalta an lae" heading
-  ctx.font = "italic 40px Georgia, serif";
+  // Tagline
+  ctx.font = "italic 42px Georgia, serif";
   ctx.fillStyle = "#e8951e";
-  ctx.fillText("Príomhscéalta an lae", W / 2, 370);
+  ctx.fillText("Cad é an scéal?", W / 2, 372);
   ctx.font = "26px Arial, sans-serif";
   ctx.fillStyle = "rgba(255,255,255,0.35)";
-  ctx.fillText("Today's top stories, as Gaeilge", W / 2, 412);
+  ctx.fillText("Today's news, as Gaeilge", W / 2, 414);
   ctx.textAlign = "left";
 
   // Divider
   ctx.fillStyle = "rgba(255,255,255,0.08)";
   ctx.fillRect(80, 480, W - 160, 1);
 
-  // Lead headline (large, this is what makes each cover different in the grid)
-  ctx.fillStyle = "#ffffff";
-  const cf = fitHeadline(ctx, leadStory.title, W - 160, 6, 66, 40);
-  ctx.font = `bold ${cf.size}px Georgia, serif`;
-  const startY = 620;
-  cf.lines.forEach((l, i) => ctx.fillText(l, 80, startY + i * cf.lineHeight));
+  // Headline. Build a flat word list with colour from headlineParts (or plain title).
+  const parts = (headlineParts && headlineParts.length)
+    ? headlineParts
+    : [{ text: leadStory.title, irish: false }];
+  const words = [];
+  parts.forEach(p => {
+    p.text.split(/(\s+)/).forEach(tok => {
+      if (!tok || /^\s+$/.test(tok)) return;
+      words.push({ token: tok, irish: p.irish });
+    });
+  });
 
-  // Swipe hint bottom
+  // Find a font size where the headline fits in up to 6 lines
+  const maxW = W - 160;
+  let size = 66, lineHeight = 78, lines = [];
+  for (size = 66; size >= 40; size -= 2) {
+    ctx.font = `bold ${size}px Georgia, serif`;
+    lineHeight = Math.round(size * 1.18);
+    lines = [];
+    let cur = [];
+    let curW = 0;
+    for (const w of words) {
+      const wW = ctx.measureText(w.token + " ").width;
+      if (curW + wW > maxW && cur.length) { lines.push(cur); cur = []; curW = 0; }
+      cur.push(w); curW += wW;
+    }
+    if (cur.length) lines.push(cur);
+    if (lines.length <= 6) break;
+  }
+
+  // Draw the headline lines, colouring Irish words amber
+  ctx.font = `bold ${size}px Georgia, serif`;
+  const startY = 620;
+  lines.forEach((line, li) => {
+    let x = 80;
+    const y = startY + li * lineHeight;
+    line.forEach(w => {
+      ctx.fillStyle = w.irish ? "#e8951e" : "#ffffff";
+      ctx.fillText(w.token, x, y);
+      x += ctx.measureText(w.token + " ").width;
+    });
+  });
+
+  // Swipe hint
   ctx.textAlign = "center";
   ctx.font = "bold 30px Arial, sans-serif";
   ctx.fillStyle = "#e8951e";
-  ctx.fillText("Swipe to read  →", W / 2, H - 110);
+  ctx.fillText("Swipe to translate  →", W / 2, H - 110);
   ctx.textAlign = "left";
 
   return canvas;
 }
+
+// Parse a headline written with [[irish|english]] markers into coloured parts.
+// Plain text (no markers) just becomes one English part.
+function parseHeadlineParts(text) {
+  const parts = [];
+  let last = 0;
+  const re = /\[\[([^|\]]+)\|([^\]]+)\]\]/g;
+  let m;
+  while ((m = re.exec(text)) !== null) {
+    if (m.index > last) parts.push({ text: text.slice(last, m.index), irish: false });
+    parts.push({ text: m[1], irish: true });
+    last = m.index + m[0].length;
+  }
+  if (last < text.length) parts.push({ text: text.slice(last), irish: false });
+  return parts;
+}
+
 
 // Closing slide — single call to action
 function makeClosingCanvas() {
@@ -806,6 +860,10 @@ function ExportView({ stories }) {
   const [images, setImages] = useState([]);
   const [busy, setBusy] = useState(false);
   const [coverIndex, setCoverIndex] = useState(0);
+  const [coverHeadline, setCoverHeadline] = useState(""); // editable, may contain [[irish|english]] markers
+  const [coverImage, setCoverImage] = useState(null);
+  const [coverBusy, setCoverBusy] = useState(false);
+  const [reviewWords, setReviewWords] = useState([]);
   const [enText, setEnText] = useState("");   // English words to translate to Irish
   const [gaText, setGaText] = useState("");   // Irish words to translate to English
   const [wordPairs, setWordPairs] = useState([]); // resolved {irish, english}
@@ -819,13 +877,24 @@ function ExportView({ stories }) {
     setImages([]);
     setTimeout(() => {
       const out = [];
-      out.push({ id: "cover", title: "Cover slide", url: makeCoverCanvas(stories[coverIndex] || stories[0]).toDataURL("image/png") });
+      const usedWords = [];
+      const coverParts = coverHeadline ? parseHeadlineParts(coverHeadline) : null;
+      out.push({ id: "cover", title: "Cover slide", url: makeCoverCanvas(stories[coverIndex] || stories[0], coverParts).toDataURL("image/png") });
       stories.forEach(story => {
         const parts = parseText(story.levels[pct] || story.summary);
+        parts.filter(p => p.t === "ir").forEach(p => usedWords.push({ irish: p.irish, english: p.english }));
         const canvas = makeShareCanvas(story, parts, levelLabel);
         out.push({ id: story.id, title: story.title, url: canvas.toDataURL("image/png") });
       });
       out.push({ id: "closing", title: "Closing slide", url: makeClosingCanvas().toDataURL("image/png") });
+      // De-duplicate the word list for review
+      const seen = new Set();
+      const unique = usedWords.filter(w => {
+        const k = w.irish.toLowerCase();
+        if (seen.has(k)) return false;
+        seen.add(k); return true;
+      });
+      setReviewWords(unique);
       setImages(out);
       setBusy(false);
     }, 50);
@@ -864,6 +933,45 @@ function ExportView({ stories }) {
     setWordPairs(prev => prev.map((p, idx) => idx === i ? { ...p, [field]: value } : p));
   }
 
+  // Pick one or two longer words from the headline and translate them to Irish,
+  // returning the headline as a string with [[irish|english]] markers inserted.
+  async function prepareCoverHeadline() {
+    const story = stories[coverIndex] || stories[0];
+    if (!story) return;
+    setCoverBusy(true);
+    const title = story.title;
+    // Candidate words: 5+ letters, not the first word, not all-caps acronyms
+    const tokens = title.split(/(\s+)/);
+    const candidates = [];
+    tokens.forEach((tok, i) => {
+      const clean = tok.replace(/[^A-Za-z]/g, "");
+      if (clean.length >= 5 && clean !== clean.toUpperCase()) candidates.push({ i, clean });
+    });
+    // Take up to two candidates, preferring longer words
+    candidates.sort((a, b) => b.clean.length - a.clean.length);
+    const chosen = candidates.slice(0, 2);
+    for (const c of chosen) {
+      const irish = await translateOne(c.clean, "en", "ga");
+      if (irish && irish.toLowerCase() !== c.clean.toLowerCase()) {
+        // preserve original casing position by replacing within the token
+        const ga = irish.toLowerCase();
+        tokens[c.i] = tokens[c.i].replace(c.clean, `[[${ga}|${c.clean.toLowerCase()}]]`);
+      }
+    }
+    setCoverHeadline(tokens.join(""));
+    setCoverBusy(false);
+    // Auto-generate a first version so they see it immediately
+    setTimeout(() => regenerateCover(tokens.join("")), 30);
+  }
+
+  function regenerateCover(headlineStr) {
+    const story = stories[coverIndex] || stories[0];
+    if (!story) return;
+    const text = typeof headlineStr === "string" ? headlineStr : coverHeadline;
+    const parts = parseHeadlineParts(text);
+    setCoverImage(makeCoverCanvas(story, parts).toDataURL("image/png"));
+  }
+
   function generateWeekly() {
     const words = wordPairs.filter(w => w.irish && w.english && w.irish !== "?" && w.english !== "?");
     if (!words.length) return;
@@ -892,17 +1000,78 @@ function ExportView({ stories }) {
       </div>
 
       <label style={{ display: "block", fontSize: "0.72rem", color: C.muted, marginBottom: 6, fontWeight: 600 }}>Cover story (shown on slide 1)</label>
-      <select value={coverIndex} onChange={e => setCoverIndex(+e.target.value)}
-        style={{ width: "100%", padding: "10px", borderRadius: 8, border: `1px solid ${C.border}`, fontSize: "0.8rem", marginBottom: 16, background: "#fff", color: C.text, fontFamily: "system-ui, sans-serif" }}>
+      <select value={coverIndex} onChange={e => { setCoverIndex(+e.target.value); setCoverHeadline(""); setCoverImage(null); }}
+        style={{ width: "100%", padding: "10px", borderRadius: 8, border: `1px solid ${C.border}`, fontSize: "0.8rem", marginBottom: 12, background: "#fff", color: C.text, fontFamily: "system-ui, sans-serif" }}>
         {stories.map((s, i) => (
           <option key={s.id} value={i}>{i + 1}. {s.title}</option>
         ))}
       </select>
 
+      <div style={{ background: "#f8fafc", border: `1px solid ${C.border}`, borderRadius: 10, padding: "14px 16px", marginBottom: 20 }}>
+        <div style={{ fontWeight: 700, fontSize: "0.78rem", color: C.navy, marginBottom: 4 }}>Cover headline with Irish words</div>
+        <div style={{ fontSize: "0.72rem", color: C.muted, marginBottom: 10 }}>Adds a couple of Irish words to the cover. Check them, edit if wrong, then regenerate. Format: <code>[[irish|english]]</code></div>
+        <button onClick={prepareCoverHeadline} disabled={coverBusy}
+          style={{ width: "100%", background: C.amber, color: "#fff", border: "none", borderRadius: 8, padding: "11px", fontSize: "0.82rem", fontWeight: 600, cursor: coverBusy ? "wait" : "pointer", marginBottom: 12, opacity: coverBusy ? 0.6 : 1 }}>
+          {coverBusy ? "Translating..." : "Add Irish to headline"}
+        </button>
+        {coverHeadline && (
+          <>
+            <textarea value={coverHeadline} onChange={e => setCoverHeadline(e.target.value)}
+              rows={3}
+              style={{ width: "100%", padding: "10px", borderRadius: 8, border: `1px solid ${C.border}`, fontSize: "0.82rem", fontFamily: "monospace", marginBottom: 8, resize: "vertical", boxSizing: "border-box" }} />
+            {(() => {
+              const irishWords = parseHeadlineParts(coverHeadline).filter(p => p.irish);
+              return irishWords.length > 0 ? (
+                <div style={{ fontSize: "0.72rem", marginBottom: 10 }}>
+                  {irishWords.map((p, i) => (
+                    <a key={i} href={`https://www.teanglann.ie/en/fgb/${encodeURIComponent(p.text)}`} target="_blank" rel="noopener noreferrer"
+                      style={{ color: C.amber, fontWeight: 700, textDecoration: "none", marginRight: 12, borderBottom: `1px solid ${C.border}` }}>
+                      {p.text} ↗
+                    </a>
+                  ))}
+                </div>
+              ) : null;
+            })()}
+            <button onClick={() => regenerateCover()}
+              style={{ width: "100%", background: C.navy, color: "#fff", border: "none", borderRadius: 8, padding: "11px", fontSize: "0.82rem", fontWeight: 600, cursor: "pointer", marginBottom: 12 }}>
+              Regenerate cover
+            </button>
+            {coverImage && (
+              <div>
+                <img src={coverImage} alt="Cover preview" style={{ width: "100%", borderRadius: 10, border: `1px solid ${C.border}` }} />
+                <a href={coverImage} download="daily-sceal-cover.png"
+                  style={{ display: "inline-block", marginTop: 8, color: C.navy, fontSize: "0.78rem", fontWeight: 600, textDecoration: "none", borderBottom: `1px solid ${C.border}` }}>
+                  Download cover ↓
+                </a>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
       <button onClick={generateAll} disabled={busy}
         style={{ width: "100%", background: C.navy, color: "#fff", border: "none", borderRadius: 8, padding: "13px", fontSize: "0.88rem", fontWeight: 600, cursor: busy ? "wait" : "pointer", marginBottom: 24, opacity: busy ? 0.6 : 1 }}>
         {busy ? "Generating..." : `Generate ${levelLabel} cards`}
       </button>
+
+      {reviewWords.length > 0 && (
+        <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 10, padding: "14px 16px", marginBottom: 24 }}>
+          <div style={{ fontWeight: 700, fontSize: "0.8rem", color: "#854d0e", marginBottom: 4 }}>Check these words before posting</div>
+          <div style={{ fontSize: "0.74rem", color: "#a16207", marginBottom: 12 }}>Tap any word you're unsure of to look it up. If one is wrong, pick a different level or skip that story's card.</div>
+          {reviewWords.map((w, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 0", borderTop: i > 0 ? "1px solid #fde68a" : "none" }}>
+              <span style={{ fontSize: "0.85rem" }}>
+                <span style={{ color: C.amber, fontWeight: 700 }}>{w.irish}</span>
+                <span style={{ color: C.muted }}> · {w.english}</span>
+              </span>
+              <a href={`https://www.teanglann.ie/en/fgb/${encodeURIComponent(w.irish)}`} target="_blank" rel="noopener noreferrer"
+                style={{ fontSize: "0.72rem", color: C.navy, fontWeight: 600, textDecoration: "none", borderBottom: `1px solid ${C.border}`, whiteSpace: "nowrap", marginLeft: 10 }}>
+                look up ↗
+              </a>
+            </div>
+          ))}
+        </div>
+      )}
 
       {images.map((img, i) => (
         <div key={img.id} style={{ marginBottom: 24 }}>
