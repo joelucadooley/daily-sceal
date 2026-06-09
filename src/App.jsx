@@ -871,6 +871,35 @@ function ExportView({ stories }) {
   const [translating, setTranslating] = useState(false);
   const levelLabel = LEVELS_CONFIG.find(l => l.pct === pct)?.label || "Beginner";
 
+  // Daily caption: fixed bookends, rotating middle line by day of year
+  const CAPTION_MIDDLES = [
+    "A taste of today's news as Gaeilge. Read more at your own level,",
+    "Pick up some Irish from today's headlines. Read more at your own level,",
+    "Today's news, a little as Gaeilge. Tap through, then read more at your level,",
+    "A few of today's stories as Gaeilge. Read the rest at your own level,",
+    "Today's headlines, with a little Irish to ease you in. Read more at your level,",
+    "Today's stories, with Irish mixed in. Read more at your level,",
+    "Some Irish from today's news. Read the full stories at your level,",
+  ];
+  const SUNDAY_CAPTION = "Focail na seachtaine ☘️\n\nA few words from this week's news. Can you guess them before the reveal? Comment your score 💚\n\nRead the news at your own level, link in bio 🗞️\n\n#gaeilge #irishlanguage #foghlaimgaeilge #nuacht #ireland";
+
+  function todayCaption() {
+    const now = new Date();
+    if (now.getDay() === 0) return SUNDAY_CAPTION;
+    const start = new Date(now.getFullYear(), 0, 0);
+    const dayOfYear = Math.floor((now - start) / 86400000);
+    const middle = CAPTION_MIDDLES[dayOfYear % CAPTION_MIDDLES.length];
+    return `Scéalta an lae ☘️\n\n${middle} link in bio 🗞️\n\n#gaeilge #irishlanguage #foghlaimgaeilge #nuacht #ireland`;
+  }
+
+  const [captionCopied, setCaptionCopied] = useState(false);
+  function copyCaption() {
+    navigator.clipboard?.writeText(todayCaption()).then(() => {
+      setCaptionCopied(true);
+      setTimeout(() => setCaptionCopied(false), 2000);
+    });
+  }
+
   function generateAll() {
     if (!stories.length) return;
     setBusy(true);
@@ -1050,9 +1079,20 @@ function ExportView({ stories }) {
       </div>
 
       <button onClick={generateAll} disabled={busy}
-        style={{ width: "100%", background: C.navy, color: "#fff", border: "none", borderRadius: 8, padding: "13px", fontSize: "0.88rem", fontWeight: 600, cursor: busy ? "wait" : "pointer", marginBottom: 24, opacity: busy ? 0.6 : 1 }}>
+        style={{ width: "100%", background: C.navy, color: "#fff", border: "none", borderRadius: 8, padding: "13px", fontSize: "0.88rem", fontWeight: 600, cursor: busy ? "wait" : "pointer", marginBottom: 16, opacity: busy ? 0.6 : 1 }}>
         {busy ? "Generating..." : `Generate ${levelLabel} cards`}
       </button>
+
+      <div style={{ background: "#f8fafc", border: `1px solid ${C.border}`, borderRadius: 10, padding: "14px 16px", marginBottom: 24 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+          <span style={{ fontWeight: 700, fontSize: "0.78rem", color: C.navy }}>Today's caption</span>
+          <button onClick={copyCaption}
+            style={{ background: captionCopied ? "#16a34a" : C.navy, color: "#fff", border: "none", borderRadius: 6, padding: "6px 14px", fontSize: "0.72rem", fontWeight: 600, cursor: "pointer" }}>
+            {captionCopied ? "Copied ✓" : "Copy"}
+          </button>
+        </div>
+        <pre style={{ margin: 0, fontFamily: "system-ui, sans-serif", fontSize: "0.78rem", color: C.muted, whiteSpace: "pre-wrap", lineHeight: 1.5 }}>{todayCaption()}</pre>
+      </div>
 
       {reviewWords.length > 0 && (
         <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 10, padding: "14px 16px", marginBottom: 24 }}>
