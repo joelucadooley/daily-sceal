@@ -71,8 +71,24 @@ function isGoodTranslation(original, raw) {
   // Reject suspiciously short results: a 1-2 char translation for a real word
   // is almost always junk (e.g. "south" -> "D")
   if (original.length >= 4 && t.replace(/[.,;:!?]/g, "").length <= 2) return false;
+  // Reject words with letters/combinations that don't occur in standard Irish.
+  // Irish doesn't use j, k, q, v, w, x, y, z (except in loanwords), so a result
+  // full of them is likely junk or an untranslated foreign string.
+  if (/[jkqwxyz]/i.test(t)) return false;
+  // Irish words must contain at least one vowel (incl. fada vowels)
+  if (!/[aeiouáéíóú]/i.test(t)) return false;
+  // Reject 4+ consonants in a row (not a valid Irish cluster) — catches mangled output
+  if (/[bcdfghlmnprst]{5,}/i.test(t)) return false;
   return true;
 }
+
+// A small set of common real Irish words we trust outright (helps avoid
+// over-rejecting good short words). Not exhaustive — just a safety net.
+const KNOWN_GOOD = new Set([
+  "rialtas","tithíocht","cíosanna","teach","tithe","scéal","nuacht","lá",
+  "bliain","blianta","tír","domhan","airgead","obair","duine","daoine",
+  "rud","áit","cúirt","dlí","sláinte","scoil","oideachas","aimsir","báisteach",
+]);
 
 // Match the casing of the original word so MyMemory can't randomly capitalise.
 // Handles both "Tuar" (wrong leading cap) and "tRIALACHA" (weird internal caps).
@@ -121,8 +137,18 @@ async function scrapeArticle(url) {
   }
 }
 
+// Curated overrides: english (lowercase) -> trusted Irish. Checked before MyMemory.
+// Grows over time as corrections are made — every fix here is permanent.
+let OVERRIDES = {};
+try {
+  OVERRIDES = JSON.parse(readFileSync("scripts/overrides.json", "utf-8"));
+  console.log(`Loaded ${Object.keys(OVERRIDES).length} translation overrides`);
+} catch {
+  console.log("No overrides file found, continuing without");
+}
+
 async function translate(word) {
-  const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(word)}&langpair=en|ga`;
+  const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(word)}&langpair=en|ga&de=joelucadooley@gmail.com`;
   const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
   const data = await res.json();
   if (data.responseStatus === 200) return data.responseData.translatedText;
@@ -133,6 +159,8 @@ const translationCache = {};
 
 async function translateCached(word) {
   const key = word.toLowerCase();
+  // Curated overrides win over everything
+  if (OVERRIDES[key] !== undefined) return OVERRIDES[key];
   if (translationCache[key] !== undefined) return translationCache[key];
   await sleep(250);
   const result = await translate(word);
@@ -185,7 +213,8 @@ async function buildLevel(sentence, pct) {
     if (isWord && toTranslateIndices.has(i)) {
       try {
         const irish = await translateCached(tok);
-        if (isGoodTranslation(tok, irish)) {
+        const isOverride = OVERRIDES[tok.toLowerCase()] !== undefined;
+        if (isOverride || isGoodTranslation(tok, irish)) {
           result.push(`[[${matchCase(tok, cleanTranslation(irish))}|${tok}]]`);
         } else {
           result.push(tok);
@@ -284,7 +313,8 @@ async function buildLevelWordByWord(sentence, pct) {
     if (isWord && toTranslateIndices.has(i)) {
       try {
         const irish = await translateCached(tok);
-        if (isGoodTranslation(tok, irish)) {
+        const isOverride = OVERRIDES[tok.toLowerCase()] !== undefined;
+        if (isOverride || isGoodTranslation(tok, irish)) {
           result.push(`[[${matchCase(tok, cleanTranslation(irish))}|${tok}]]`);
         } else { result.push(tok); }
       } catch { result.push(tok); }
