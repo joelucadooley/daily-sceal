@@ -1129,15 +1129,14 @@ function ExportView({ stories }) {
           </a>
           {img.words && img.words.length > 0 && (
             <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 10, padding: "12px 14px", marginTop: 10 }}>
-              <div style={{ fontWeight: 700, fontSize: "0.74rem", color: "#854d0e", marginBottom: 8 }}>Check this story's words · edit any that are wrong</div>
+              <div style={{ fontWeight: 700, fontSize: "0.74rem", color: "#854d0e", marginBottom: 8 }}>Check this story's words · tap the English to find the right Irish</div>
               {img.words.map((w, wi) => (
                 <div key={wi} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
                   <input value={w.irish} onChange={e => updateImageWord(i, wi, e.target.value)}
                     style={{ flex: 1, padding: "7px 9px", borderRadius: 6, border: w.irish !== w.origIrish ? `1.5px solid ${C.amber}` : "1px solid #fde68a", fontSize: "0.8rem", color: C.amber, fontWeight: 700, background: "#fff" }} />
-                  <span style={{ flex: 1, fontSize: "0.78rem", color: C.muted }}>{w.english}</span>
-                  <a href={`https://www.teanglann.ie/en/fgb/${encodeURIComponent(w.irish)}`} target="_blank" rel="noopener noreferrer"
-                    style={{ fontSize: "0.7rem", color: C.navy, fontWeight: 600, textDecoration: "none", borderBottom: `1px solid ${C.border}`, whiteSpace: "nowrap" }}>
-                    ↗
+                  <a href={`https://www.focloir.ie/en/search/ei/adv?q=${encodeURIComponent(w.english)}`} target="_blank" rel="noopener noreferrer"
+                    style={{ flex: 1, fontSize: "0.78rem", color: C.navy, fontWeight: 600, textDecoration: "none" }}>
+                    {w.english} ↗
                   </a>
                 </div>
               ))}
@@ -1149,6 +1148,32 @@ function ExportView({ stories }) {
           )}
         </div>
       ))}
+
+      {(() => {
+        const corrections = [];
+        images.forEach(img => (img.words || []).forEach(w => {
+          if (w.irish.trim() && w.irish !== w.origIrish) corrections.push({ english: w.english.toLowerCase(), irish: w.irish.trim() });
+        }));
+        if (!corrections.length) return null;
+        const snippet = corrections.map(c => `  "${c.english}": "${c.irish}"`).join(",\n");
+        return (
+          <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 10, padding: "14px 16px", marginBottom: 24 }}>
+            <div style={{ fontWeight: 700, fontSize: "0.78rem", color: "#1e40af", marginBottom: 4 }}>Make these corrections permanent</div>
+            <div style={{ fontSize: "0.72rem", color: "#3b82f6", marginBottom: 10 }}>Add these lines to overrides.json so the site and all future cards use your fix automatically. Tap to open the file on GitHub, paste inside the braces, and commit.</div>
+            <pre style={{ margin: "0 0 10px", background: "#fff", border: "1px solid #bfdbfe", borderRadius: 6, padding: "10px", fontSize: "0.75rem", overflowX: "auto" }}>{snippet}</pre>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={() => navigator.clipboard?.writeText(snippet)}
+                style={{ flex: 1, background: "#1e40af", color: "#fff", border: "none", borderRadius: 6, padding: "9px", fontSize: "0.76rem", fontWeight: 600, cursor: "pointer" }}>
+                Copy lines
+              </button>
+              <a href="https://github.com/joelucadooley/daily-sceal/edit/main/scripts/overrides.json" target="_blank" rel="noopener noreferrer"
+                style={{ flex: 1, background: "#fff", color: "#1e40af", border: "1px solid #bfdbfe", borderRadius: 6, padding: "9px", fontSize: "0.76rem", fontWeight: 600, textAlign: "center", textDecoration: "none" }}>
+                Open overrides.json ↗
+              </a>
+            </div>
+          </div>
+        );
+      })()}
 
       <div style={{ marginTop: 40, paddingTop: 24, borderTop: `2px solid ${C.border}` }}>
         <h2 style={{ fontFamily: "Georgia, serif", color: C.navy, fontSize: "1.15rem", margin: "0 0 4px" }}>Focail na Seachtaine</h2>
