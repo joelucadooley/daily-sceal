@@ -863,7 +863,6 @@ function ExportView({ stories }) {
   const [coverHeadline, setCoverHeadline] = useState(""); // editable, may contain [[irish|english]] markers
   const [coverImage, setCoverImage] = useState(null);
   const [coverBusy, setCoverBusy] = useState(false);
-  const [reviewWords, setReviewWords] = useState([]);
   const [enText, setEnText] = useState("");   // English words to translate to Irish
   const [gaText, setGaText] = useState("");   // Irish words to translate to English
   const [wordPairs, setWordPairs] = useState([]); // resolved {irish, english}
@@ -906,27 +905,53 @@ function ExportView({ stories }) {
     setImages([]);
     setTimeout(() => {
       const out = [];
-      const usedWords = [];
       const coverParts = coverHeadline ? parseHeadlineParts(coverHeadline) : null;
       out.push({ id: "cover", title: "Cover slide", url: makeCoverCanvas(stories[coverIndex] || stories[0], coverParts).toDataURL("image/png") });
-      stories.forEach(story => {
+      stories.forEach((story, si) => {
         const parts = parseText(story.levels[pct] || story.summary);
-        parts.filter(p => p.t === "ir").forEach(p => usedWords.push({ irish: p.irish, english: p.english }));
+        // unique Irish words for this story, editable for corrections
+        const seen = new Set();
+        const words = [];
+        parts.filter(p => p.t === "ir").forEach(p => {
+          const k = p.irish.toLowerCase();
+          if (!seen.has(k)) { seen.add(k); words.push({ origIrish: p.irish, irish: p.irish, english: p.english }); }
+        });
         const canvas = makeShareCanvas(story, parts, levelLabel);
-        out.push({ id: story.id, title: story.title, url: canvas.toDataURL("image/png") });
+        out.push({ id: story.id, title: story.title, url: canvas.toDataURL("image/png"), storyIdx: si, words });
       });
       out.push({ id: "closing", title: "Closing slide", url: makeClosingCanvas().toDataURL("image/png") });
-      // De-duplicate the word list for review
-      const seen = new Set();
-      const unique = usedWords.filter(w => {
-        const k = w.irish.toLowerCase();
-        if (seen.has(k)) return false;
-        seen.add(k); return true;
-      });
-      setReviewWords(unique);
       setImages(out);
       setBusy(false);
     }, 50);
+  }
+
+  function updateImageWord(imgIdx, wordIdx, value) {
+    setImages(prev => prev.map((img, i) => {
+      if (i !== imgIdx || !img.words) return img;
+      const words = img.words.map((w, wi) => wi === wordIdx ? { ...w, irish: value } : w);
+      return { ...img, words };
+    }));
+  }
+
+  function regenerateStory(imgIdx) {
+    setImages(prev => prev.map((img, i) => {
+      if (i !== imgIdx || img.storyIdx === undefined) return img;
+      const story = stories[img.storyIdx];
+      if (!story) return img;
+      // Apply corrections to the parsed parts
+      const corrections = {};
+      (img.words || []).forEach(w => {
+        if (w.irish.trim() && w.irish !== w.origIrish) corrections[w.origIrish.toLowerCase()] = w.irish.trim();
+      });
+      const parts = parseText(story.levels[pct] || story.summary).map(p => {
+        if (p.t === "ir" && corrections[p.irish.toLowerCase()]) {
+          return { ...p, irish: corrections[p.irish.toLowerCase()] };
+        }
+        return p;
+      });
+      const canvas = makeShareCanvas(story, parts, levelLabel);
+      return { ...img, url: canvas.toDataURL("image/png") };
+    }));
   }
 
   async function translateOne(word, from, to) {
@@ -1094,33 +1119,34 @@ function ExportView({ stories }) {
         <pre style={{ margin: 0, fontFamily: "system-ui, sans-serif", fontSize: "0.78rem", color: C.muted, whiteSpace: "pre-wrap", lineHeight: 1.5 }}>{todayCaption()}</pre>
       </div>
 
-      {reviewWords.length > 0 && (
-        <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 10, padding: "14px 16px", marginBottom: 24 }}>
-          <div style={{ fontWeight: 700, fontSize: "0.8rem", color: "#854d0e", marginBottom: 4 }}>Check these words before posting</div>
-          <div style={{ fontSize: "0.74rem", color: "#a16207", marginBottom: 12 }}>Tap any word you're unsure of to look it up. If one is wrong, pick a different level or skip that story's card.</div>
-          {reviewWords.map((w, i) => (
-            <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 0", borderTop: i > 0 ? "1px solid #fde68a" : "none" }}>
-              <span style={{ fontSize: "0.85rem" }}>
-                <span style={{ color: C.amber, fontWeight: 700 }}>{w.irish}</span>
-                <span style={{ color: C.muted }}> · {w.english}</span>
-              </span>
-              <a href={`https://www.teanglann.ie/en/fgb/${encodeURIComponent(w.irish)}`} target="_blank" rel="noopener noreferrer"
-                style={{ fontSize: "0.72rem", color: C.navy, fontWeight: 600, textDecoration: "none", borderBottom: `1px solid ${C.border}`, whiteSpace: "nowrap", marginLeft: 10 }}>
-                look up ↗
-              </a>
-            </div>
-          ))}
-        </div>
-      )}
-
       {images.map((img, i) => (
-        <div key={img.id} style={{ marginBottom: 24 }}>
+        <div key={img.id} style={{ marginBottom: 28 }}>
           <div style={{ fontSize: "0.7rem", color: C.faint, marginBottom: 6 }}>{i + 1}. {img.title}</div>
           <img src={img.url} alt={img.title} style={{ width: "100%", borderRadius: 10, border: `1px solid ${C.border}` }} />
           <a href={img.url} download={`daily-sceal-${pct}-${i + 1}.png`}
             style={{ display: "inline-block", marginTop: 8, color: C.navy, fontSize: "0.78rem", fontWeight: 600, textDecoration: "none", borderBottom: `1px solid ${C.border}` }}>
             Download card {i + 1} ↓
           </a>
+          {img.words && img.words.length > 0 && (
+            <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 10, padding: "12px 14px", marginTop: 10 }}>
+              <div style={{ fontWeight: 700, fontSize: "0.74rem", color: "#854d0e", marginBottom: 8 }}>Check this story's words · edit any that are wrong</div>
+              {img.words.map((w, wi) => (
+                <div key={wi} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                  <input value={w.irish} onChange={e => updateImageWord(i, wi, e.target.value)}
+                    style={{ flex: 1, padding: "7px 9px", borderRadius: 6, border: w.irish !== w.origIrish ? `1.5px solid ${C.amber}` : "1px solid #fde68a", fontSize: "0.8rem", color: C.amber, fontWeight: 700, background: "#fff" }} />
+                  <span style={{ flex: 1, fontSize: "0.78rem", color: C.muted }}>{w.english}</span>
+                  <a href={`https://www.teanglann.ie/en/fgb/${encodeURIComponent(w.irish)}`} target="_blank" rel="noopener noreferrer"
+                    style={{ fontSize: "0.7rem", color: C.navy, fontWeight: 600, textDecoration: "none", borderBottom: `1px solid ${C.border}`, whiteSpace: "nowrap" }}>
+                    ↗
+                  </a>
+                </div>
+              ))}
+              <button onClick={() => regenerateStory(i)}
+                style={{ width: "100%", background: C.navy, color: "#fff", border: "none", borderRadius: 6, padding: "9px", fontSize: "0.76rem", fontWeight: 600, cursor: "pointer", marginTop: 4 }}>
+                Regenerate this card
+              </button>
+            </div>
+          )}
         </div>
       ))}
 
