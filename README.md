@@ -17,7 +17,7 @@ Each morning, a GitHub Action automatically:
 
 1. Fetches the top stories from RTÉ News
 2. Scrapes the full article text from each story page
-3. Translates words into Irish at the preset levels using the free [MyMemory](https://mymemory.translated.net/) translation API
+3. Translates words into Irish at the preset levels, checking a curated dictionary of verified translations first and falling back to the free [MyMemory](https://mymemory.translated.net/) translation API
 4. Saves everything as a static `today.json` file
 5. Deploys the updated site to GitHub Pages
 
@@ -33,7 +33,7 @@ Every user gets the same pre-generated content. No AI calls per user, no ongoing
 | Advanced | 75% | Near-fluent |
 | As Gaeilge | 100% | Full Irish (in development) |
 
-The four active levels run on free machine translation, which works well at lower densities. Full, accurate Irish at the **As Gaeilge** level requires specialist linguistic resources and is the next goal for the project; in the app it is shown as a locked preview.
+The four active levels combine a growing, hand-verified dictionary of common news vocabulary with free machine translation for everything else. Corrections are curated over time in `scripts/overrides.json`, so translation quality steadily improves. Full, accurate Irish at the **As Gaeilge** level requires specialist linguistic resources and is the next goal for the project; in the app it is shown as a locked preview.
 
 ## The method
 
@@ -60,11 +60,13 @@ daily-sceal/
 │   ├── App.jsx          # Main React app (feed, reader, export, share cards)
 │   └── main.jsx         # Entry point
 ├── scripts/
-│   └── generate.js      # Daily story generation script
+│   ├── generate.js      # Daily story generation script
+│   └── overrides.json   # Curated english -> Irish dictionary, checked before MyMemory
 ├── public/
 │   ├── og-image.png     # Social preview image
 │   └── data/
-│       └── today.json   # Generated daily, do not edit manually
+│       ├── today.json   # Generated daily, do not edit manually
+│       └── archive/     # Dated copy of every day's stories
 ├── .github/
 │   └── workflows/
 │       ├── daily.yml    # Runs generate.js each morning
