@@ -1,6 +1,6 @@
 {
   "date": "2026-06-12",
-  "generated": "2026-06-12T09:34:44.325Z",
+  "generated": "2026-06-12T09:41:38.397Z",
   "stories": [
     {
       "id": "story-0",
@@ -41,7 +41,7 @@
       "link": "https://www.rte.ie/news/middle-east/2026/0612/1578042-iran-trump-us/",
       "category": "Middle East",
       "categoryIr": "Nuacht",
-      "timeAgo": "9h ago",
+      "timeAgo": "10h ago",
       "levels": {
         "10": "Iran has said it has not [[shroich|reached]] a final decision on a deal to end the war with the US, despite US President Donald Trump claiming an agreement could be signed in days and [[cealú|cancelling]] threatened strikes on Iran. Mr Trump's statements fuelled a stock market rally and [[tancáilte|tanked]] oil prices, again spurring hopes a resolution was nearing in the war triggered by US-Israeli strikes in February. Claiming that [[cainteanna|talks]] with Iran had been \"brought to the highest level of Iranian leadership and approved,\" Mr Trump said he had \"cancelled the scheduled [[stailceanna|strikes]] and bombings against Iran this evening.\" \"Time and place of the signing to be announced shortly,\" he added.",
         "25": "Iran has said it has not [[shroich|reached]] a final decision on a deal to end the war with the US, [[in ainneoin|despite]] US President Donald Trump claiming an agreement could be signed in days and cancelling threatened strikes on Iran. Mr Trump's statements fuelled a stock market [[batar|rally]] and tanked oil prices, again [[spalpadh|spurring]] hopes a resolution was nearing in the war triggered by US-Israeli strikes in February. Claiming that talks with Iran had been \"[[tugtha|brought]] to the highest level of Iranian leadership and [[faofa|approved]],\" Mr Trump said he had \"cancelled the scheduled strikes and [[buamáil|bombings]] against Iran this evening.\" \"Time and place of the [[comharthaíocht láimhe|signing]] to be announced shortly,\" he added.",
@@ -86,10 +86,10 @@
       "id": "story-5",
       "title": "Temperatures of up to 23C expected this weekend",
       "summary": "Temperatures are expected to climb up to 23C nationwide over the weekend, due to high pressure coming from the south of Europe.",
-      "link": "https://www.rte.ie/news/weather/2026/0612/1578086-weather-ireland/",
-      "category": "Weather",
-      "categoryIr": "Aimsir",
-      "timeAgo": "5m ago",
+      "link": "https://www.rte.ie/news/weather/2026/0612/1578086-ireland-weather/",
+      "category": "Ireland",
+      "categoryIr": "Éire",
+      "timeAgo": "12m ago",
       "levels": {
         "10": "Temperatures are [[ionchais|expected]] to climb up to 23C nationwide over the weekend, due to high pressure coming from the south of Europe.",
         "25": "Temperatures are [[ionchais|expected]] to climb up to 23C nationwide over the weekend, due to [[ard|high]] pressure coming from the south of Europe.",
