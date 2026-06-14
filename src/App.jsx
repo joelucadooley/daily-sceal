@@ -137,6 +137,45 @@ async function fetchTodayContent() {
   return await r.json();
 }
 
+// Pull the last `days` archived story files and collect unique Irish words used.
+// Marks each word verified if its English appears in the published overrides list.
+async function fetchWeekWords(days = 7) {
+  const base = import.meta.env.BASE_URL;
+  let verified = new Set();
+  try {
+    const vr = await fetch(`${base}data/verified.json`, { signal: AbortSignal.timeout(5000) });
+    if (vr.ok) verified = new Set((await vr.json()).map(s => s.toLowerCase()));
+  } catch {}
+
+  const seen = new Map(); // irish(lower) -> {irish, english, verified}
+  const today = new Date();
+  for (let d = 0; d < days; d++) {
+    const dt = new Date(today);
+    dt.setDate(today.getDate() - d);
+    const key = dt.toISOString().slice(0, 10);
+    try {
+      const r = await fetch(`${base}data/archive/${key}.json`, { signal: AbortSignal.timeout(5000) });
+      if (!r.ok) continue;
+      const data = await r.json();
+      (data.stories || []).forEach(story => {
+        Object.values(story.levels || {}).forEach(levelText => {
+          const re = /\[\[([^|\]]+)\|([^\]]+)\]\]/g;
+          let m;
+          while ((m = re.exec(levelText)) !== null) {
+            const irish = m[1].trim(), english = m[2].trim();
+            const k = irish.toLowerCase();
+            if (!seen.has(k) && irish && english) {
+              seen.set(k, { irish, english, verified: verified.has(english.toLowerCase()) });
+            }
+          }
+        });
+      });
+    } catch {}
+  }
+  // Verified first, then alphabetical
+  return [...seen.values()].sort((a, b) => (b.verified - a.verified) || a.irish.localeCompare(b.irish));
+}
+
 function Spinner() {
   return (
     <div style={{ textAlign: "center", padding: "60px 0" }}>
@@ -459,28 +498,25 @@ function makeWordSlideCanvas(word, index, reveal) {
   ctx.fillStyle = "#e8951e";
   ctx.fillText("Scéal", 80 + d1, 90);
 
-  // Word number top-right
-  ctx.textAlign = "right";
-  ctx.font = "28px Arial, sans-serif";
-  ctx.fillStyle = "rgba(13,33,55,0.35)";
-  ctx.fillText(`${index}`, W - 80, 88);
   ctx.textAlign = "center";
 
-  // The Irish word, large and centred
+  // The Irish word sits at the SAME vertical position on both slides so it
+  // doesn't jump when you swipe from guess to reveal.
+  const IRISH_Y = 560;
   ctx.font = "bold 96px Georgia, serif";
   ctx.fillStyle = "#e8951e";
-  ctx.fillText(word.irish, W / 2, reveal ? 560 : 700);
+  ctx.fillText(word.irish, W / 2, IRISH_Y);
 
   if (reveal) {
     ctx.fillStyle = "rgba(13,33,55,0.12)";
-    ctx.fillRect(W / 2 - 120, 640, 240, 2);
+    ctx.fillRect(W / 2 - 120, IRISH_Y + 80, 240, 2);
     ctx.font = "60px Georgia, serif";
     ctx.fillStyle = "#0d2137";
-    ctx.fillText(word.english, W / 2, 760);
+    ctx.fillText(word.english, W / 2, IRISH_Y + 200);
   } else {
     ctx.font = "32px Arial, sans-serif";
     ctx.fillStyle = "rgba(13,33,55,0.45)";
-    ctx.fillText("What does it mean?", W / 2, 800);
+    ctx.fillText("What does it mean?", W / 2, IRISH_Y + 160);
     ctx.font = "bold 30px Arial, sans-serif";
     ctx.fillStyle = "#0d2137";
     ctx.fillText("Swipe to reveal  →", W / 2, H - 120);
@@ -868,6 +904,9 @@ function ExportView({ stories }) {
   const [wordPairs, setWordPairs] = useState([]); // resolved {irish, english}
   const [weeklyImages, setWeeklyImages] = useState([]);
   const [translating, setTranslating] = useState(false);
+  const [weekSuggestions, setWeekSuggestions] = useState([]);
+  const [loadingWeek, setLoadingWeek] = useState(false);
+  const [picked, setPicked] = useState({}); // irish(lower) -> true
   const levelLabel = LEVELS_CONFIG.find(l => l.pct === pct)?.label || "Beginner";
 
   // Daily caption: fixed bookends, rotating middle line by day of year
@@ -1026,8 +1065,24 @@ function ExportView({ stories }) {
     setCoverImage(makeCoverCanvas(story, parts).toDataURL("image/png"));
   }
 
+  async function loadWeekWords() {
+    setLoadingWeek(true);
+    const words = await fetchWeekWords(7);
+    setWeekSuggestions(words);
+    setLoadingWeek(false);
+  }
+
   function generateWeekly() {
-    const words = wordPairs.filter(w => w.irish && w.english && w.irish !== "?" && w.english !== "?");
+    const pickedWords = weekSuggestions.filter(w => picked[w.irish.toLowerCase()])
+      .map(w => ({ irish: w.irish.toLowerCase(), english: w.english.toLowerCase() }));
+    const manualWords = wordPairs.filter(w => w.irish && w.english && w.irish !== "?" && w.english !== "?");
+    // Picked suggestions first, then any manual additions, de-duplicated
+    const seen = new Set();
+    const words = [...pickedWords, ...manualWords].filter(w => {
+      const k = w.irish.toLowerCase();
+      if (seen.has(k)) return false;
+      seen.add(k); return true;
+    });
     if (!words.length) return;
     const out = [];
     out.push({ id: "w-cover", title: "Cover", url: makeWeeklyCoverCanvas().toDataURL("image/png") });
@@ -1177,8 +1232,41 @@ function ExportView({ stories }) {
 
       <div style={{ marginTop: 40, paddingTop: 24, borderTop: `2px solid ${C.border}` }}>
         <h2 style={{ fontFamily: "Georgia, serif", color: C.navy, fontSize: "1.15rem", margin: "0 0 4px" }}>Focail na Seachtaine</h2>
-        <p style={{ color: C.muted, fontSize: "0.8rem", margin: "0 0 14px" }}>Sunday recap carousel. Type a few key words (one per line) in either box, translate, check them, then generate a guess-and-reveal carousel. Three or four words works best.</p>
+        <p style={{ color: C.muted, fontSize: "0.8rem", margin: "0 0 14px" }}>Sunday recap carousel. Pick words from this week's stories below, or add your own. Three or four works best.</p>
 
+        <button onClick={loadWeekWords} disabled={loadingWeek}
+          style={{ width: "100%", background: C.navy, color: "#fff", border: "none", borderRadius: 8, padding: "12px", fontSize: "0.84rem", fontWeight: 600, cursor: loadingWeek ? "wait" : "pointer", marginBottom: 14, opacity: loadingWeek ? 0.6 : 1 }}>
+          {loadingWeek ? "Loading this week..." : "Load words from this week's stories"}
+        </button>
+
+        {weekSuggestions.length > 0 && (
+          <div style={{ border: `1px solid ${C.border}`, borderRadius: 8, padding: "10px 12px", marginBottom: 16, maxHeight: 320, overflowY: "auto" }}>
+            <div style={{ fontSize: "0.72rem", color: C.muted, marginBottom: 8 }}>
+              Tick the words you want. <span style={{ color: "#16a34a", fontWeight: 700 }}>✓ verified</span> means it's from your trusted dictionary.
+            </div>
+            {weekSuggestions.map((w, i) => {
+              const key = w.irish.toLowerCase();
+              return (
+                <label key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 0", cursor: "pointer", borderTop: i > 0 ? `1px solid ${C.border}` : "none" }}>
+                  <input type="checkbox" checked={!!picked[key]}
+                    onChange={e => setPicked(p => ({ ...p, [key]: e.target.checked }))}
+                    style={{ width: 18, height: 18, flexShrink: 0 }} />
+                  <span style={{ flex: 1, fontSize: "0.84rem" }}>
+                    <span style={{ color: C.amber, fontWeight: 700 }}>{w.irish}</span>
+                    <span style={{ color: C.muted }}> · {w.english}</span>
+                  </span>
+                  {w.verified
+                    ? <span style={{ fontSize: "0.66rem", color: "#16a34a", fontWeight: 700, whiteSpace: "nowrap" }}>✓ verified</span>
+                    : <a href={`https://www.focloir.ie/en/search/ei/adv?q=${encodeURIComponent(w.english)}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: "0.66rem", color: C.navy, fontWeight: 600, textDecoration: "none", whiteSpace: "nowrap" }}>check ↗</a>}
+                </label>
+              );
+            })}
+          </div>
+        )}
+
+        <details style={{ marginBottom: 14 }}>
+          <summary style={{ fontSize: "0.78rem", color: C.muted, cursor: "pointer", fontWeight: 600 }}>Or add words manually</summary>
+          <div style={{ paddingTop: 12 }}>
         <label style={{ display: "block", fontSize: "0.72rem", color: C.muted, marginBottom: 4, fontWeight: 600 }}>English words (→ Irish)</label>
         <textarea value={enText} onChange={e => setEnText(e.target.value)}
           rows={3} placeholder={"government\nhousing\ntrial"}
@@ -1205,12 +1293,15 @@ function ExportView({ stories }) {
                   style={{ flex: 1, padding: "8px", borderRadius: 6, border: `1px solid ${C.border}`, fontSize: "0.82rem" }} />
               </div>
             ))}
-            <button onClick={generateWeekly}
-              style={{ width: "100%", background: C.navy, color: "#fff", border: "none", borderRadius: 8, padding: "13px", fontSize: "0.88rem", fontWeight: 600, cursor: "pointer", marginTop: 10 }}>
-              Generate weekly carousel
-            </button>
           </div>
         )}
+          </div>
+        </details>
+
+        <button onClick={generateWeekly}
+          style={{ width: "100%", background: C.navy, color: "#fff", border: "none", borderRadius: 8, padding: "13px", fontSize: "0.88rem", fontWeight: 600, cursor: "pointer", marginBottom: 20 }}>
+          Generate weekly carousel
+        </button>
 
         {weeklyImages.map((img, i) => (
           <div key={img.id} style={{ marginBottom: 24 }}>
