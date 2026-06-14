@@ -383,6 +383,14 @@ async function main() {
     writeFileSync("public/data/today.json", JSON.stringify(output, null, 2));
     console.log(`\n✓ Written public/data/today.json with ${processed.length} stories`);
 
+    // Publish the list of verified (override) English keys so the export page
+    // can mark which weekly-recap words come from the trusted dictionary.
+    try {
+      writeFileSync("public/data/verified.json", JSON.stringify(Object.keys(OVERRIDES), null, 2));
+    } catch (e) {
+      console.warn("Could not write verified.json:", e.message);
+    }
+
     // Archive — save a dated copy and update the index.
     // Wrapped separately so any archive problem can never break today.json or the site.
     try {
