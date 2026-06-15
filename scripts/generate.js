@@ -38,6 +38,8 @@ const BAD_MARKERS = [
   "optional", "city name", "probably does not", "file is being downloaded",
   "no translation", "translation not found", "mymemory", "daily quota",
   "contact us", "quota", "abuse", "being downloaded", "does not need",
+  "place name", "proper noun", "not need a translation", "probably", "(optional",
+  "name (", "untranslated", "leave as", "keep as", "do not translate",
 ];
 
 function getIrCat(c) {
@@ -63,6 +65,9 @@ function isGoodTranslation(original, raw) {
   if (/[\[\](){}]/.test(t)) return false;
   const tl = t.toLowerCase();
   if (BAD_MARKERS.some(m => tl.includes(m))) return false;
+  // Reject any parenthetical note, e.g. "ard mhacha (optional...)"
+  if (/[()]/.test(t)) return false;
+  // A single source word should map to at most 2 Irish words; note-blobs are long
   if (t.trim().split(/\s+/).length > 2) return false;
   if (t.length > original.length * 5) return false;
   if (/\d/.test(t) && !/\d/.test(original)) return false;
@@ -147,6 +152,16 @@ try {
   console.log("No overrides file found, continuing without");
 }
 
+// Verified Irish place names (english lowercase -> properly-capitalised Irish).
+// These are translated even though they're proper nouns, and keep their capitals.
+let PLACES = {};
+try {
+  PLACES = JSON.parse(readFileSync("scripts/places.json", "utf-8"));
+  console.log(`Loaded ${Object.keys(PLACES).length} place names`);
+} catch {
+  console.log("No places file found, continuing without");
+}
+
 async function translate(word) {
   const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(word)}&langpair=en|ga&de=joelucadooley@gmail.com`;
   const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
@@ -159,7 +174,9 @@ const translationCache = {};
 
 async function translateCached(word) {
   const key = word.toLowerCase();
-  // Curated overrides win over everything
+  // Verified place names win first, with their proper capitalisation
+  if (PLACES[key] !== undefined) return PLACES[key];
+  // Curated overrides win over MyMemory
   if (OVERRIDES[key] !== undefined) return OVERRIDES[key];
   if (translationCache[key] !== undefined) return translationCache[key];
   await sleep(250);
@@ -171,6 +188,8 @@ async function translateCached(word) {
 function shouldTranslate(tok, pct) {
   const lower = tok.toLowerCase();
   if (NEVER_TRANSLATE.has(lower)) return false;
+  // Place names are proper nouns but we DO want to translate them (from PLACES)
+  if (PLACES[lower] !== undefined) return true;
   if (/^[A-Z]/.test(tok)) return false;
   if (/^\d+$/.test(tok)) return false;
   if (tok.length <= 1) return false;
@@ -213,8 +232,13 @@ async function buildLevel(sentence, pct) {
     if (isWord && toTranslateIndices.has(i)) {
       try {
         const irish = await translateCached(tok);
-        const isOverride = OVERRIDES[tok.toLowerCase()] !== undefined;
-        if (isOverride || isGoodTranslation(tok, irish)) {
+        const lower = tok.toLowerCase();
+        const isPlace = PLACES[lower] !== undefined;
+        const isOverride = OVERRIDES[lower] !== undefined;
+        if (isPlace) {
+          // Keep proper capitalisation, don't run matchCase
+          result.push(`[[${irish}|${tok}]]`);
+        } else if (isOverride || isGoodTranslation(tok, irish)) {
           result.push(`[[${matchCase(tok, cleanTranslation(irish))}|${tok}]]`);
         } else {
           result.push(tok);
@@ -313,8 +337,12 @@ async function buildLevelWordByWord(sentence, pct) {
     if (isWord && toTranslateIndices.has(i)) {
       try {
         const irish = await translateCached(tok);
-        const isOverride = OVERRIDES[tok.toLowerCase()] !== undefined;
-        if (isOverride || isGoodTranslation(tok, irish)) {
+        const lower = tok.toLowerCase();
+        const isPlace = PLACES[lower] !== undefined;
+        const isOverride = OVERRIDES[lower] !== undefined;
+        if (isPlace) {
+          result.push(`[[${irish}|${tok}]]`);
+        } else if (isOverride || isGoodTranslation(tok, irish)) {
           result.push(`[[${matchCase(tok, cleanTranslation(irish))}|${tok}]]`);
         } else { result.push(tok); }
       } catch { result.push(tok); }
@@ -390,6 +418,13 @@ async function main() {
       writeFileSync("public/data/verified.json", JSON.stringify(Object.keys(OVERRIDES), null, 2));
     } catch (e) {
       console.warn("Could not write verified.json:", e.message);
+    }
+
+    // Publish place names so the cover-headline tool can translate them correctly.
+    try {
+      writeFileSync("public/data/places.json", JSON.stringify(PLACES, null, 2));
+    } catch (e) {
+      console.warn("Could not write places.json:", e.message);
     }
 
     // Archive — save a dated copy and update the index.
