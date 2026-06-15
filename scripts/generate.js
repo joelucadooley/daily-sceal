@@ -339,7 +339,8 @@ async function fetchStories() {
       link: g("link").trim(),
       category: cat,
       categoryIr: getIrCat(cat),
-      timeAgo: msAgo(d),
+      published: d.toISOString(),
+      timeAgo: msAgo(d), // kept for backwards-compatibility; app recomputes live from `published`
     };
   }).filter(s => s.title.length > 5);
 }
