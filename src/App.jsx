@@ -918,6 +918,23 @@ function ExportView({ stories }) {
   const [weekSuggestions, setWeekSuggestions] = useState([]);
   const [loadingWeek, setLoadingWeek] = useState(false);
   const [picked, setPicked] = useState({}); // irish(lower) -> true
+  const [verifiedEng, setVerifiedEng] = useState(new Set()); // english words known-safe
+
+  useEffect(() => {
+    const base = import.meta.env.BASE_URL;
+    (async () => {
+      const set = new Set();
+      try {
+        const vr = await fetch(`${base}data/verified.json`, { signal: AbortSignal.timeout(5000) });
+        if (vr.ok) (await vr.json()).forEach(s => set.add(s.toLowerCase()));
+      } catch {}
+      try {
+        const pr = await fetch(`${base}data/places.json`, { signal: AbortSignal.timeout(5000) });
+        if (pr.ok) Object.keys(await pr.json()).forEach(s => set.add(s.toLowerCase()));
+      } catch {}
+      setVerifiedEng(set);
+    })();
+  }, []);
   const levelLabel = LEVELS_CONFIG.find(l => l.pct === pct)?.label || "Beginner";
 
   // Daily caption: fixed bookends, rotating middle line by day of year
@@ -964,7 +981,7 @@ function ExportView({ stories }) {
         const words = [];
         parts.filter(p => p.t === "ir").forEach(p => {
           const k = p.irish.toLowerCase();
-          if (!seen.has(k)) { seen.add(k); words.push({ origIrish: p.irish, irish: p.irish, english: p.english }); }
+          if (!seen.has(k)) { seen.add(k); words.push({ origIrish: p.irish, irish: p.irish, english: p.english, include: true }); }
         });
         const canvas = makeShareCanvas(story, parts, levelLabel);
         out.push({ id: story.id, title: story.title, url: canvas.toDataURL("image/png"), storyIdx: si, words });
@@ -983,20 +1000,34 @@ function ExportView({ stories }) {
     }));
   }
 
+  function toggleImageWord(imgIdx, wordIdx) {
+    setImages(prev => prev.map((img, i) => {
+      if (i !== imgIdx || !img.words) return img;
+      const words = img.words.map((w, wi) => wi === wordIdx ? { ...w, include: !w.include } : w);
+      return { ...img, words };
+    }));
+  }
+
   function regenerateStory(imgIdx) {
     setImages(prev => prev.map((img, i) => {
       if (i !== imgIdx || img.storyIdx === undefined) return img;
       const story = stories[img.storyIdx];
       if (!story) return img;
-      // Apply corrections to the parsed parts
+      // Build per-word instructions: corrections to apply, and words to drop to English
       const corrections = {};
+      const dropped = new Set();
       (img.words || []).forEach(w => {
-        if (w.irish.trim() && w.irish !== w.origIrish) corrections[w.origIrish.toLowerCase()] = w.irish.trim();
+        const key = w.origIrish.toLowerCase();
+        if (!w.include) { dropped.add(key); return; }
+        if (w.irish.trim() && w.irish !== w.origIrish) corrections[key] = w.irish.trim();
       });
       const parts = parseText(story.levels[pct] || story.summary).map(p => {
-        if (p.t === "ir" && corrections[p.irish.toLowerCase()]) {
-          return { ...p, irish: corrections[p.irish.toLowerCase()] };
-        }
+        if (p.t !== "ir") return p;
+        const key = p.irish.toLowerCase();
+        // Unticked word: show the English instead
+        if (dropped.has(key)) return { t: "en", v: p.english };
+        // Corrected word: swap in the fix
+        if (corrections[key]) return { ...p, irish: corrections[key] };
         return p;
       });
       const canvas = makeShareCanvas(story, parts, levelLabel);
@@ -1215,17 +1246,26 @@ function ExportView({ stories }) {
           </a>
           {img.words && img.words.length > 0 && (
             <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 10, padding: "12px 14px", marginTop: 10 }}>
-              <div style={{ fontWeight: 700, fontSize: "0.74rem", color: "#854d0e", marginBottom: 8 }}>Check this story's words · tap the English to find the right Irish</div>
-              {img.words.map((w, wi) => (
-                <div key={wi} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                  <input value={w.irish} onChange={e => updateImageWord(i, wi, e.target.value)}
-                    style={{ flex: 1, padding: "7px 9px", borderRadius: 6, border: w.irish !== w.origIrish ? `1.5px solid ${C.amber}` : "1px solid #fde68a", fontSize: "0.8rem", color: C.amber, fontWeight: 700, background: "#fff" }} />
+              <div style={{ fontWeight: 700, fontSize: "0.74rem", color: "#854d0e", marginBottom: 4 }}>Check this story's words</div>
+              <div style={{ fontSize: "0.7rem", color: "#a16207", marginBottom: 10 }}><span style={{ color: "#16a34a", fontWeight: 700 }}>✓</span> means verified from your dictionary. Untick any word you're unsure of to show it in English, or tap the English to look it up. Then regenerate.</div>
+              {img.words.map((w, wi) => {
+                const isVerified = verifiedEng.has((w.english || "").toLowerCase());
+                return (
+                <div key={wi} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, opacity: w.include ? 1 : 0.4 }}>
+                  <input type="checkbox" checked={w.include} onChange={() => toggleImageWord(i, wi)}
+                    style={{ width: 18, height: 18, flexShrink: 0 }} />
+                  <input value={w.irish} onChange={e => updateImageWord(i, wi, e.target.value)} disabled={!w.include}
+                    style={{ flex: 1, padding: "7px 9px", borderRadius: 6, border: w.irish !== w.origIrish ? `1.5px solid ${C.amber}` : "1px solid #fde68a", fontSize: "0.8rem", color: C.amber, fontWeight: 700, background: w.include ? "#fff" : "#f3f4f6", textDecoration: w.include ? "none" : "line-through" }} />
                   <a href={`https://www.focloir.ie/en/search/ei/adv?q=${encodeURIComponent(w.english)}`} target="_blank" rel="noopener noreferrer"
                     style={{ flex: 1, fontSize: "0.78rem", color: C.navy, fontWeight: 600, textDecoration: "none" }}>
                     {w.english} ↗
                   </a>
+                  {isVerified
+                    ? <span style={{ fontSize: "0.64rem", color: "#16a34a", fontWeight: 700, whiteSpace: "nowrap" }}>✓</span>
+                    : <span style={{ width: 10, flexShrink: 0 }} />}
                 </div>
-              ))}
+                );
+              })}
               <button onClick={() => regenerateStory(i)}
                 style={{ width: "100%", background: C.navy, color: "#fff", border: "none", borderRadius: 6, padding: "9px", fontSize: "0.76rem", fontWeight: 600, cursor: "pointer", marginTop: 4 }}>
                 Regenerate this card
