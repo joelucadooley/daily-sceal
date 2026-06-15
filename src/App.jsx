@@ -1044,27 +1044,47 @@ function ExportView({ stories }) {
     if (!story) return;
     setCoverBusy(true);
     const title = story.title;
-    // Candidate words: 5+ letters, not the first word, not all-caps acronyms
+    // Load the verified place names so we can translate them with proper capitals
+    let places = {};
+    try {
+      const pr = await fetch(`${import.meta.env.BASE_URL}data/places.json`, { signal: AbortSignal.timeout(5000) });
+      if (pr.ok) places = await pr.json();
+    } catch {}
+
     const tokens = title.split(/(\s+)/);
     const candidates = [];
     tokens.forEach((tok, i) => {
       const clean = tok.replace(/[^A-Za-z]/g, "");
-      if (clean.length >= 5 && clean !== clean.toUpperCase()) candidates.push({ i, clean });
+      const lower = clean.toLowerCase();
+      if (places[lower]) {
+        // Place name: translate from trusted list, keep capitals, no MyMemory
+        candidates.push({ i, clean, place: places[lower] });
+      } else if (clean.length >= 5 && /^[a-z]/.test(clean)) {
+        // Ordinary lowercase content word: translate via MyMemory
+        candidates.push({ i, clean });
+      }
     });
-    // Take up to two candidates, preferring longer words
-    candidates.sort((a, b) => b.clean.length - a.clean.length);
+    // Prefer place names, then longer words; take up to two
+    candidates.sort((a, b) => (b.place ? 1 : 0) - (a.place ? 1 : 0) || b.clean.length - a.clean.length);
     const chosen = candidates.slice(0, 2);
     for (const c of chosen) {
+      if (c.place) {
+        tokens[c.i] = tokens[c.i].replace(c.clean, `[[${c.place}|${c.clean}]]`);
+        continue;
+      }
       const irish = await translateOne(c.clean, "en", "ga");
-      if (irish && irish.toLowerCase() !== c.clean.toLowerCase()) {
-        // preserve original casing position by replacing within the token
-        const ga = irish.toLowerCase();
+      const ga = (irish || "").toLowerCase().trim();
+      const ok = ga && ga !== c.clean.toLowerCase()
+        && ga.split(/\s+/).length <= 2
+        && !/[()\[\]{}]/.test(ga)
+        && !/optional|name|probably|translat|quota/.test(ga)
+        && ga.length <= c.clean.length * 4;
+      if (ok) {
         tokens[c.i] = tokens[c.i].replace(c.clean, `[[${ga}|${c.clean.toLowerCase()}]]`);
       }
     }
     setCoverHeadline(tokens.join(""));
     setCoverBusy(false);
-    // Auto-generate a first version so they see it immediately
     setTimeout(() => regenerateCover(tokens.join("")), 30);
   }
 
