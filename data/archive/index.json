@@ -1,10 +1,22 @@
 [
   {
     "date": "2026-06-24",
-    "generated": "2026-06-24T08:39:44.727Z",
+    "generated": "2026-06-24T15:01:14.648Z",
     "stories": [
       {
-        "title": "Commuters warned of 'major disruption' to train services",
+        "title": "Deaths and thousands without power in European heatwave",
+        "category": "Nuacht"
+      },
+      {
+        "title": "Convicted paedophile Donaldson to renounce knighthood",
+        "category": "Nuacht"
+      },
+      {
+        "title": "Man waited to attack smallest children, trial hears",
+        "category": "Nuacht"
+      },
+      {
+        "title": "North Dublin rail services resume after major disruption",
         "category": "Éire"
       },
       {
@@ -12,20 +24,8 @@
         "category": "Polaitíocht"
       },
       {
-        "title": "US Senate votes to check Trump's war powers",
-        "category": "Nuacht"
-      },
-      {
-        "title": "Children at risk of 'very real danger' from AI",
-        "category": "Éire"
-      },
-      {
-        "title": "Hot spell peak could see new all-time high - Met Éireann",
-        "category": "Éire"
-      },
-      {
-        "title": "Enhanced security planned for EU Presidency, gardaí say",
-        "category": "Nuacht"
+        "title": "Cardiac specialists to strike next week over pay dispute",
+        "category": "Sláinte"
       }
     ]
   },
