@@ -155,8 +155,15 @@ async function fetchWeekWords(days = 7) {
   let verified = new Set();
   try {
     const vr = await fetch(`${base}data/verified.json`, { signal: AbortSignal.timeout(5000) });
-    if (vr.ok) verified = new Set((await vr.json()).map(s => s.toLowerCase()));
+    if (vr.ok) (await vr.json()).forEach(s => verified.add(s.toLowerCase()));
   } catch {}
+  try {
+    const pr = await fetch(`${base}data/places.json`, { signal: AbortSignal.timeout(5000) });
+    if (pr.ok) Object.keys(await pr.json()).forEach(s => verified.add(s.toLowerCase()));
+  } catch {}
+
+  // Common English function words we never want as "words of the week"
+  const STOP = new Set(["the","a","an","to","of","in","on","at","by","for","and","or","but","with","as","is","are","was","were","be","been","has","had","have","it","its","this","that","these","those","about","from","into","over","under","after","before","they","them","their","he","she","his","her","you","we","our","i"]);
 
   const seen = new Map(); // irish(lower) -> {irish, english, verified}
   const today = new Date();
@@ -175,8 +182,17 @@ async function fetchWeekWords(days = 7) {
           while ((m = re.exec(levelText)) !== null) {
             const irish = m[1].trim(), english = m[2].trim();
             const k = irish.toLowerCase();
-            if (!seen.has(k) && irish && english) {
-              seen.set(k, { irish, english, verified: verified.has(english.toLowerCase()) });
+            const ek = english.toLowerCase();
+            // Quality filters: skip numbers, stop-words, too-short, and junk
+            if (!irish || !english) continue;
+            if (/\d/.test(irish) || /\d/.test(english)) continue;       // numbers like "1970idí"
+            if (STOP.has(ek)) continue;                                  // function words
+            if (english.length < 4 || irish.length < 3) continue;       // too short to be useful
+            if (irish.toLowerCase() === ek) continue;                    // untranslated
+            if (/[()\[\]{}]/.test(irish)) continue;                      // leftover junk
+            if (english.split(/\s+/).length > 1) continue;              // single words only
+            if (!seen.has(k)) {
+              seen.set(k, { irish, english, verified: verified.has(ek) });
             }
           }
         });
@@ -947,7 +963,8 @@ function ExportView({ stories }) {
     "Today's stories, with Irish mixed in. Read more at your level,",
     "Some Irish from today's news. Read the full stories at your level,",
   ];
-  const SUNDAY_CAPTION = "Focail na seachtaine ☘️\n\nA few words from this week's news. Can you guess them before the reveal? Comment your score 💚\n\nRead the news at your own level, link in bio 🗞️\n\n#gaeilge #irishlanguage #foghlaimgaeilge #nuacht #ireland";
+  const HASHTAGS = "#gaeilge #irishlanguage #dailyscéal #nuacht #ireland";
+  const SUNDAY_CAPTION = `Focail na seachtaine ☘️\n\nA few words from this week's news. Can you guess them before the reveal? Comment your score 💚\n\nRead the news at your own level, link in bio 🗞️\n\n${HASHTAGS}`;
 
   function todayCaption() {
     const now = new Date();
@@ -955,7 +972,35 @@ function ExportView({ stories }) {
     const start = new Date(now.getFullYear(), 0, 0);
     const dayOfYear = Math.floor((now - start) / 86400000);
     const middle = CAPTION_MIDDLES[dayOfYear % CAPTION_MIDDLES.length];
-    return `Scéalta an lae ☘️\n\n${middle} link in bio 🗞️\n\n#gaeilge #irishlanguage #foghlaimgaeilge #nuacht #ireland`;
+    return `Scéalta an lae ☘️\n\n${middle} link in bio 🗞️\n\n${HASHTAGS}`;
+  }
+
+  // Per-slide caption: cover gets the main caption, each story slide highlights
+  // three key words with a varied intro, closing gets a short prompt.
+  const WORD_INTROS = [
+    "Trí fhocal ón scéal seo ☘️",
+    "Cúpla focal le foghlaim ☘️",
+    "Focail an scéil ☘️",
+    "Roinnt Gaeilge ón scéal seo ☘️",
+    "Trí fhocal Ghaeilge ☘️",
+  ];
+  function slideCaption(img) {
+    if (!img.words || !img.words.length) {
+      if (img.id === "closing") return "Read more at your own level, link in bio 🗞️";
+      return todayCaption(); // cover
+    }
+    // Pick the three longest included words (longer = more substantial vocab)
+    const chosen = img.words.filter(w => w.include)
+      .slice()
+      .sort((a, b) => b.english.length - a.english.length)
+      .slice(0, 3);
+    if (!chosen.length) return todayCaption();
+    const now = new Date();
+    const start = new Date(now.getFullYear(), 0, 0);
+    const dayOfYear = Math.floor((now - start) / 86400000);
+    const intro = WORD_INTROS[dayOfYear % WORD_INTROS.length];
+    const lines = chosen.map(w => `${w.irish} (${w.english})`).join("\n");
+    return `${intro}\n\n${lines}\n\nRead the full story as Gaeilge on the site, link in bio 🗞️`;
   }
 
   const [captionCopied, setCaptionCopied] = useState(false);
@@ -1244,6 +1289,12 @@ function ExportView({ stories }) {
             style={{ display: "inline-block", marginTop: 8, color: C.navy, fontSize: "0.78rem", fontWeight: 600, textDecoration: "none", borderBottom: `1px solid ${C.border}` }}>
             Download card {i + 1} ↓
           </a>
+          {img.words && img.words.length > 0 && (
+            <button onClick={() => navigator.clipboard?.writeText(slideCaption(img))}
+              style={{ display: "block", marginTop: 8, background: "none", border: `1px solid ${C.border}`, color: C.navy, fontSize: "0.74rem", fontWeight: 600, borderRadius: 6, padding: "6px 12px", cursor: "pointer" }}>
+              Copy this slide's word list
+            </button>
+          )}
           {img.words && img.words.length > 0 && (
             <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 10, padding: "12px 14px", marginTop: 10 }}>
               <div style={{ fontWeight: 700, fontSize: "0.74rem", color: "#854d0e", marginBottom: 4 }}>Check this story's words</div>
