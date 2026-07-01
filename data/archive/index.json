@@ -1,5 +1,35 @@
 [
   {
+    "date": "2026-07-01",
+    "generated": "2026-07-01T08:59:14.778Z",
+    "stories": [
+      {
+        "title": "Dublin Castle ceremony to mark start of EU Presidency",
+        "category": "Nuacht"
+      },
+      {
+        "title": "Ukraine could join EU while still at war - Taoiseach",
+        "category": "Nuacht"
+      },
+      {
+        "title": "No talks on public sector pay as deal expires",
+        "category": "Gnó"
+      },
+      {
+        "title": "World's oceans break June heat record",
+        "category": "Nuacht"
+      },
+      {
+        "title": "Victim of alleged assault set to referee game tonight",
+        "category": "Peil"
+      },
+      {
+        "title": "Drinking water meets 'very high standards', says EPA",
+        "category": "Éire"
+      }
+    ]
+  },
+  {
     "date": "2026-06-30",
     "generated": "2026-06-30T08:42:26.519Z",
     "stories": [
