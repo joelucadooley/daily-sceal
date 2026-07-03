@@ -975,32 +975,21 @@ function ExportView({ stories }) {
     return `Scéalta an lae ☘️\n\n${middle} link in bio 🗞️\n\n${HASHTAGS}`;
   }
 
-  // Per-slide caption: cover gets the main caption, each story slide highlights
-  // three key words with a varied intro, closing gets a short prompt.
-  const WORD_INTROS = [
-    "Trí fhocal ón scéal seo ☘️",
-    "Cúpla focal le foghlaim ☘️",
-    "Focail an scéil ☘️",
-    "Roinnt Gaeilge ón scéal seo ☘️",
-    "Trí fhocal Ghaeilge ☘️",
-  ];
+  // Per-slide caption: cover gets the main caption, each story slide leads with
+  // a TRANSLATIONS header and three key words, closing gets a short prompt.
   function slideCaption(img) {
-    if (!img.words || !img.words.length) {
-      if (img.id === "closing") return "Read more at your own level, link in bio 🗞️";
-      return todayCaption(); // cover
-    }
+    if (img.id === "cover") return todayCaption();
+    if (img.id === "closing") return "Read the news at your own level, link in bio 🗞️";
+    if (!img.words || !img.words.length) return todayCaption();
     // Pick the three longest included words (longer = more substantial vocab)
     const chosen = img.words.filter(w => w.include)
       .slice()
       .sort((a, b) => b.english.length - a.english.length)
       .slice(0, 3);
     if (!chosen.length) return todayCaption();
-    const now = new Date();
-    const start = new Date(now.getFullYear(), 0, 0);
-    const dayOfYear = Math.floor((now - start) / 86400000);
-    const intro = WORD_INTROS[dayOfYear % WORD_INTROS.length];
     const lines = chosen.map(w => `${w.irish} (${w.english})`).join("\n");
-    return `${intro}\n\n${lines}\n\nRead the full story as Gaeilge on the site, link in bio 🗞️`;
+    // Lead with the TRANSLATIONS header so it's visible before Instagram's "more" cutoff
+    return `TRANSLATIONS ⬇️\n\n${lines}\n\nRead the full story as Gaeilge on the site, link in bio 🗞️`;
   }
 
   const [captionCopied, setCaptionCopied] = useState(false);
@@ -1289,12 +1278,10 @@ function ExportView({ stories }) {
             style={{ display: "inline-block", marginTop: 8, color: C.navy, fontSize: "0.78rem", fontWeight: 600, textDecoration: "none", borderBottom: `1px solid ${C.border}` }}>
             Download card {i + 1} ↓
           </a>
-          {img.words && img.words.length > 0 && (
-            <button onClick={() => navigator.clipboard?.writeText(slideCaption(img))}
-              style={{ display: "block", marginTop: 8, background: "none", border: `1px solid ${C.border}`, color: C.navy, fontSize: "0.74rem", fontWeight: 600, borderRadius: 6, padding: "6px 12px", cursor: "pointer" }}>
-              Copy this slide's word list
-            </button>
-          )}
+          <button onClick={() => navigator.clipboard?.writeText(slideCaption(img))}
+            style={{ display: "block", marginTop: 8, background: "none", border: `1px solid ${C.border}`, color: C.navy, fontSize: "0.74rem", fontWeight: 600, borderRadius: 6, padding: "6px 12px", cursor: "pointer" }}>
+            Copy caption for this slide
+          </button>
           {img.words && img.words.length > 0 && (
             <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 10, padding: "12px 14px", marginTop: 10 }}>
               <div style={{ fontWeight: 700, fontSize: "0.74rem", color: "#854d0e", marginBottom: 4 }}>Check this story's words</div>
@@ -1307,7 +1294,7 @@ function ExportView({ stories }) {
                     style={{ width: 18, height: 18, flexShrink: 0 }} />
                   <input value={w.irish} onChange={e => updateImageWord(i, wi, e.target.value)} disabled={!w.include}
                     style={{ flex: 1, padding: "7px 9px", borderRadius: 6, border: w.irish !== w.origIrish ? `1.5px solid ${C.amber}` : "1px solid #fde68a", fontSize: "0.8rem", color: C.amber, fontWeight: 700, background: w.include ? "#fff" : "#f3f4f6", textDecoration: w.include ? "none" : "line-through" }} />
-                  <a href={`https://www.focloir.ie/en/search/ei/adv?q=${encodeURIComponent(w.english)}`} target="_blank" rel="noopener noreferrer"
+                  <a href={`https://www.focloir.ie/en/dictionary/ei/${encodeURIComponent(w.english)}?q=${encodeURIComponent(w.english)}`} target="_blank" rel="noopener noreferrer"
                     style={{ flex: 1, fontSize: "0.78rem", color: C.navy, fontWeight: 600, textDecoration: "none" }}>
                     {w.english} ↗
                   </a>
@@ -1379,7 +1366,7 @@ function ExportView({ stories }) {
                   </span>
                   {w.verified
                     ? <span style={{ fontSize: "0.66rem", color: "#16a34a", fontWeight: 700, whiteSpace: "nowrap" }}>✓ verified</span>
-                    : <a href={`https://www.focloir.ie/en/search/ei/adv?q=${encodeURIComponent(w.english)}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: "0.66rem", color: C.navy, fontWeight: 600, textDecoration: "none", whiteSpace: "nowrap" }}>check ↗</a>}
+                    : <a href={`https://www.focloir.ie/en/dictionary/ei/${encodeURIComponent(w.english)}?q=${encodeURIComponent(w.english)}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: "0.66rem", color: C.navy, fontWeight: 600, textDecoration: "none", whiteSpace: "nowrap" }}>check ↗</a>}
                 </label>
               );
             })}
