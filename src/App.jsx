@@ -527,23 +527,56 @@ function makeWordSlideCanvas(word, index, reveal) {
 
   ctx.textAlign = "center";
 
-  // The Irish word sits at the SAME vertical position on both slides so it
-  // doesn't jump when you swipe from guess to reveal.
+  // The Irish word/phrase sits centred. Multi-word phrases wrap to lines at a
+  // readable size; a single long word shrinks to fit instead.
   const IRISH_Y = 560;
-  ctx.font = "bold 96px Georgia, serif";
+  const maxW = W - 140;
+
+  // Wrap text into lines that fit maxW at the given font size
+  const wrapAt = (text, size) => {
+    ctx.font = `bold ${size}px Georgia, serif`;
+    const words = text.split(/\s+/);
+    const lines = [];
+    let line = "";
+    for (const w of words) {
+      const test = line ? `${line} ${w}` : w;
+      if (ctx.measureText(test).width > maxW && line) { lines.push(line); line = w; }
+      else line = test;
+    }
+    if (line) lines.push(line);
+    return lines;
+  };
+
+  // Try 96px; if any wrapped line still overflows (e.g. one very long word),
+  // step the size down until every line fits.
+  let irishSize = 96, irishLines = wrapAt(word.irish, irishSize);
+  while (irishSize > 40 && irishLines.some(l => (ctx.font = `bold ${irishSize}px Georgia, serif`, ctx.measureText(l).width > maxW))) {
+    irishSize -= 4;
+    irishLines = wrapAt(word.irish, irishSize);
+  }
+  ctx.font = `bold ${irishSize}px Georgia, serif`;
   ctx.fillStyle = "#e8951e";
-  ctx.fillText(word.irish, W / 2, IRISH_Y);
+  const irishLH = Math.round(irishSize * 1.15);
+  // Vertically centre the block of lines around IRISH_Y
+  const irishStartY = IRISH_Y - ((irishLines.length - 1) * irishLH) / 2;
+  irishLines.forEach((l, i) => ctx.fillText(l, W / 2, irishStartY + i * irishLH));
+  const irishBottom = irishStartY + (irishLines.length - 1) * irishLH;
 
   if (reveal) {
     ctx.fillStyle = "rgba(13,33,55,0.12)";
-    ctx.fillRect(W / 2 - 120, IRISH_Y + 80, 240, 2);
-    ctx.font = "60px Georgia, serif";
+    ctx.fillRect(W / 2 - 120, irishBottom + 60, 240, 2);
+    let engSize = 60;
+    do {
+      ctx.font = `${engSize}px Georgia, serif`;
+      if (ctx.measureText(word.english).width <= maxW) break;
+      engSize -= 3;
+    } while (engSize > 28);
     ctx.fillStyle = "#0d2137";
-    ctx.fillText(word.english, W / 2, IRISH_Y + 200);
+    ctx.fillText(word.english, W / 2, irishBottom + 180);
   } else {
     ctx.font = "32px Arial, sans-serif";
     ctx.fillStyle = "rgba(13,33,55,0.45)";
-    ctx.fillText("What does it mean?", W / 2, IRISH_Y + 160);
+    ctx.fillText("What does it mean?", W / 2, irishBottom + 140);
     ctx.font = "bold 30px Arial, sans-serif";
     ctx.fillStyle = "#0d2137";
     ctx.fillText("Swipe to reveal  →", W / 2, H - 120);
