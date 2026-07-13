@@ -1046,7 +1046,7 @@ function ExportView({ stories }) {
           if (!seen.has(k)) { seen.add(k); words.push({ origIrish: p.irish, irish: p.irish, english: p.english, include: true }); }
         });
         const canvas = makeShareCanvas(story, parts, levelLabel);
-        out.push({ id: story.id, title: story.title, url: canvas.toDataURL("image/png"), storyIdx: si, words });
+        out.push({ id: story.id, title: story.title, url: canvas.toDataURL("image/png"), storyIdx: si, words, rawText: story.levels[pct] || story.summary, editedText: null });
       });
       out.push({ id: "closing", title: "Closing slide", url: makeClosingCanvas().toDataURL("image/png") });
       setImages(out);
@@ -1070,12 +1070,22 @@ function ExportView({ stories }) {
     }));
   }
 
+  function updateImageText(imgIdx, value) {
+    setImages(prev => prev.map((img, i) => i === imgIdx ? { ...img, editedText: value } : img));
+  }
+
   function regenerateStory(imgIdx) {
     setImages(prev => prev.map((img, i) => {
       if (i !== imgIdx || img.storyIdx === undefined) return img;
       const story = stories[img.storyIdx];
       if (!story) return img;
-      // Build per-word instructions: corrections to apply, and words to drop to English
+      // If the text has been manually edited, it is the source of truth
+      if (img.editedText !== null && img.editedText !== undefined) {
+        const parts = parseText(img.editedText);
+        const canvas = makeShareCanvas(story, parts, levelLabel);
+        return { ...img, url: canvas.toDataURL("image/png") };
+      }
+      // Otherwise apply the word checklist: corrections and unticked words
       const corrections = {};
       const dropped = new Set();
       (img.words || []).forEach(w => {
@@ -1086,9 +1096,7 @@ function ExportView({ stories }) {
       const parts = parseText(story.levels[pct] || story.summary).map(p => {
         if (p.t !== "ir") return p;
         const key = p.irish.toLowerCase();
-        // Unticked word: show the English instead
         if (dropped.has(key)) return { t: "en", v: p.english };
-        // Corrected word: swap in the fix
         if (corrections[key]) return { ...p, irish: corrections[key] };
         return p;
       });
@@ -1332,6 +1340,15 @@ function ExportView({ stories }) {
                 </div>
                 );
               })}
+              <details style={{ marginTop: 8, marginBottom: 8 }}>
+                <summary style={{ fontSize: "0.72rem", color: "#854d0e", cursor: "pointer", fontWeight: 600 }}>Edit the card text</summary>
+                <div style={{ paddingTop: 8 }}>
+                  <div style={{ fontSize: "0.68rem", color: "#a16207", marginBottom: 6 }}>Edit anything, English or Irish. Irish words use <code>[[irish|english]]</code>. When you edit here, this text becomes the card, and the tick list above no longer applies.</div>
+                  <textarea value={img.editedText ?? img.rawText} onChange={e => updateImageText(i, e.target.value)}
+                    rows={6}
+                    style={{ width: "100%", padding: "10px", borderRadius: 8, border: img.editedText !== null && img.editedText !== undefined ? `1.5px solid ${C.amber}` : "1px solid #fde68a", fontSize: "0.78rem", fontFamily: "monospace", resize: "vertical", boxSizing: "border-box", background: "#fff" }} />
+                </div>
+              </details>
               <button onClick={() => regenerateStory(i)}
                 style={{ width: "100%", background: C.navy, color: "#fff", border: "none", borderRadius: 6, padding: "9px", fontSize: "0.76rem", fontWeight: 600, cursor: "pointer", marginTop: 4 }}>
                 Regenerate this card
