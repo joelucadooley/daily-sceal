@@ -671,14 +671,14 @@ function makeShareCanvas(story, parts, levelLabel) {
   ctx.font = "36px Georgia, serif";
 
   const words = [];
-  for (const part of parts) {
+  parts.forEach((part, pi) => {
     const isIrish = part.t === "ir";
     const raw = isIrish ? part.irish : (part.v || "");
     for (const token of raw.split(/(\s+)/)) {
       if (!token || /^\s+$/.test(token)) continue;
-      words.push({ token, isIrish });
+      words.push({ token, isIrish, pi });
     }
-  }
+  });
 
   let fitCount = 0, simX = 80, simLines = 0;
   for (let i = 0; i < words.length; i++) {
@@ -692,6 +692,14 @@ function makeShareCanvas(story, parts, levelLabel) {
   for (let i = fitCount - 1; i >= 0; i--) {
     if (/[.!?]$/.test(words[i].token)) { endIndex = i + 1; break; }
   }
+
+  // Record which Irish parts actually appear on the card, so callers can
+  // limit word lists and captions to visible words only
+  const visible = new Set();
+  for (let i = 0; i < endIndex; i++) {
+    if (words[i].isIrish) visible.add(words[i].pi);
+  }
+  canvas._visibleIrishParts = visible;
 
   let x = 80, y = textY;
   for (let i = 0; i < endIndex; i++) {
@@ -1004,10 +1012,22 @@ function ExportView({ stories }) {
   }
 
   // Per-slide caption: cover gets the main caption, each story slide leads with
-  // a TRANSLATIONS header and three key words, closing gets a short prompt.
+  // a TRANSLATIONS header and three key words, closing gets a rotating CTA.
+  const CLOSING_CAPTIONS = [
+    "Read today's stories at your own level, from a few words to nearly all Irish. Link in bio 🗞️",
+    "New stories every morning. Follow along for a little Irish each day 💚",
+    "Know someone learning Irish? Send this their way ☘️",
+    "Save this to come back to the focail later 💚",
+    "All of today's stories are on the site at whatever level suits you. Link in bio 🗞️",
+  ];
   function slideCaption(img) {
     if (img.id === "cover") return todayCaption();
-    if (img.id === "closing") return "Read the news at your own level, link in bio 🗞️";
+    if (img.id === "closing") {
+      const now = new Date();
+      const start = new Date(now.getFullYear(), 0, 0);
+      const dayOfYear = Math.floor((now - start) / 86400000);
+      return CLOSING_CAPTIONS[dayOfYear % CLOSING_CAPTIONS.length];
+    }
     if (!img.words || !img.words.length) return todayCaption();
     // Pick the three longest included words (longer = more substantial vocab)
     const chosen = img.words.filter(w => w.include)
@@ -1038,14 +1058,16 @@ function ExportView({ stories }) {
       out.push({ id: "cover", title: "Cover slide", url: makeCoverCanvas(stories[coverIndex] || stories[0], coverParts).toDataURL("image/png") });
       stories.forEach((story, si) => {
         const parts = parseText(story.levels[pct] || story.summary);
-        // unique Irish words for this story, editable for corrections
+        const canvas = makeShareCanvas(story, parts, levelLabel);
+        // Only include Irish words that actually appear on the rendered card
+        const visible = canvas._visibleIrishParts || new Set();
         const seen = new Set();
         const words = [];
-        parts.filter(p => p.t === "ir").forEach(p => {
+        parts.forEach((p, pi) => {
+          if (p.t !== "ir" || !visible.has(pi)) return;
           const k = p.irish.toLowerCase();
           if (!seen.has(k)) { seen.add(k); words.push({ origIrish: p.irish, irish: p.irish, english: p.english, include: true }); }
         });
-        const canvas = makeShareCanvas(story, parts, levelLabel);
         out.push({ id: story.id, title: story.title, url: canvas.toDataURL("image/png"), storyIdx: si, words, rawText: story.levels[pct] || story.summary, editedText: null });
       });
       out.push({ id: "closing", title: "Closing slide", url: makeClosingCanvas().toDataURL("image/png") });
