@@ -955,22 +955,26 @@ function AboutView() {
 }
 
 function ExportView({ stories }) {
+  // --- Daily single-story workflow ---
   const [pct, setPct] = useState(10);
-  const [images, setImages] = useState([]);
-  const [busy, setBusy] = useState(false);
-  const [coverIndex, setCoverIndex] = useState(0);
-  const [coverHeadline, setCoverHeadline] = useState(""); // editable, may contain [[irish|english]] markers
-  const [coverImage, setCoverImage] = useState(null);
+  const [storyIdx, setStoryIdx] = useState(0);
+  const [cardText, setCardText] = useState("");
+  const [textCopied, setTextCopied] = useState(false);
+  const [coverHeadline, setCoverHeadline] = useState("");
   const [coverBusy, setCoverBusy] = useState(false);
-  const [enText, setEnText] = useState("");   // English words to translate to Irish
-  const [gaText, setGaText] = useState("");   // Irish words to translate to English
-  const [wordPairs, setWordPairs] = useState([]); // resolved {irish, english}
+  const [hook, setHook] = useState("");
+  const [cards, setCards] = useState([]);
+  const [copiedCard, setCopiedCard] = useState(null);
+  // --- Weekly recap state ---
+  const [enText, setEnText] = useState("");
+  const [gaText, setGaText] = useState("");
+  const [wordPairs, setWordPairs] = useState([]);
   const [weeklyImages, setWeeklyImages] = useState([]);
   const [translating, setTranslating] = useState(false);
   const [weekSuggestions, setWeekSuggestions] = useState([]);
   const [loadingWeek, setLoadingWeek] = useState(false);
-  const [picked, setPicked] = useState({}); // irish(lower) -> true
-  const [verifiedEng, setVerifiedEng] = useState(new Set()); // english words known-safe
+  const [picked, setPicked] = useState({});
+  const [verifiedEng, setVerifiedEng] = useState(new Set());
 
   useEffect(() => {
     const base = import.meta.env.BASE_URL;
@@ -989,142 +993,74 @@ function ExportView({ stories }) {
   }, []);
   const levelLabel = LEVELS_CONFIG.find(l => l.pct === pct)?.label || "Beginner";
 
-  // Daily caption: fixed bookends, rotating middle line by day of year
-  const CAPTION_MIDDLES = [
-    "A taste of today's news as Gaeilge. Read more at your own level,",
-    "Pick up some Irish from today's headlines. Read more at your own level,",
-    "Today's news, a little as Gaeilge. Tap through, then read more at your level,",
-    "A few of today's stories as Gaeilge. Read the rest at your own level,",
-    "Today's headlines, with a little Irish to ease you in. Read more at your level,",
-    "Today's stories, with Irish mixed in. Read more at your level,",
-    "Some Irish from today's news. Read the full stories at your level,",
-  ];
   const HASHTAGS = "#gaeilge #irishlanguage #dailyscéal #nuacht #ireland";
   const SUNDAY_CAPTION = `Focail na seachtaine ☘️\n\nA few words from this week's news. Can you guess them before the reveal? Comment your score 💚\n\nRead the news at your own level, link in bio 🗞️\n\n${HASHTAGS}`;
-
-  function todayCaption() {
+  const HOOK_SUGGESTIONS = [
+    "A story from today's news, as Gaeilge.",
+    "Today's scéal, with some Irish to pick up along the way.",
+    "One from today's headlines, as Gaeilge.",
+    "A bit of Irish from today's news.",
+    "Today's story, with the focail to match.",
+  ];
+  function defaultHook() {
     const now = new Date();
-    if (now.getDay() === 0) return SUNDAY_CAPTION;
     const start = new Date(now.getFullYear(), 0, 0);
     const dayOfYear = Math.floor((now - start) / 86400000);
-    const middle = CAPTION_MIDDLES[dayOfYear % CAPTION_MIDDLES.length];
-    return `Scéalta an lae ☘️\n\n${middle} link in bio 🗞️\n\n${HASHTAGS}`;
+    return HOOK_SUGGESTIONS[dayOfYear % HOOK_SUGGESTIONS.length];
+  }
+  const CLOSING_CTA = "That's just one of today's stories. Every story and every translation is on the site, at whatever level of Irish suits you. Link in bio 🗞️";
+
+  function loadStoryText() {
+    const story = stories[storyIdx];
+    if (!story) return;
+    setCardText(story.levels[pct] || story.summary);
+    setCards([]);
+    setCoverHeadline("");
+    setHook(defaultHook());
   }
 
-  // Per-slide caption: cover gets the main caption, each story slide leads with
-  // a TRANSLATIONS header and three key words, closing gets a rotating CTA.
-  const CLOSING_CAPTIONS = [
-    "Read today's stories at your own level, from a few words to nearly all Irish. Link in bio 🗞️",
-    "New stories every morning. Follow along for a little Irish each day 💚",
-    "Know someone learning Irish? Send this their way ☘️",
-    "Save this to come back to the focail later 💚",
-    "All of today's stories are on the site at whatever level suits you. Link in bio 🗞️",
-  ];
-  function slideCaption(img) {
-    if (img.id === "cover") return todayCaption();
-    if (img.id === "closing") {
-      const now = new Date();
-      const start = new Date(now.getFullYear(), 0, 0);
-      const dayOfYear = Math.floor((now - start) / 86400000);
-      return CLOSING_CAPTIONS[dayOfYear % CLOSING_CAPTIONS.length];
-    }
-    if (!img.words || !img.words.length) return todayCaption();
-    // Pick the three longest included words (longer = more substantial vocab)
-    const chosen = img.words.filter(w => w.include)
-      .slice()
-      .sort((a, b) => b.english.length - a.english.length)
-      .slice(0, 3);
-    if (!chosen.length) return todayCaption();
-    const lines = chosen.map(w => `${w.irish} (${w.english})`).join("\n");
-    // Lead with the TRANSLATIONS header so it's visible before Instagram's "more" cutoff
-    return `TRANSLATIONS ⬇️\n\n${lines}\n\nRead the full story as Gaeilge on the site, link in bio 🗞️`;
-  }
-
-  const [captionCopied, setCaptionCopied] = useState(false);
-  function copyCaption() {
-    navigator.clipboard?.writeText(todayCaption()).then(() => {
-      setCaptionCopied(true);
-      setTimeout(() => setCaptionCopied(false), 2000);
+  function copyCheckText() {
+    navigator.clipboard?.writeText(cardText).then(() => {
+      setTextCopied(true);
+      setTimeout(() => setTextCopied(false), 2000);
     });
   }
 
-  function generateAll() {
-    if (!stories.length) return;
-    setBusy(true);
-    setImages([]);
-    setTimeout(() => {
-      const out = [];
-      const coverParts = coverHeadline ? parseHeadlineParts(coverHeadline) : null;
-      out.push({ id: "cover", title: "Cover slide", url: makeCoverCanvas(stories[coverIndex] || stories[0], coverParts).toDataURL("image/png") });
-      stories.forEach((story, si) => {
-        const parts = parseText(story.levels[pct] || story.summary);
-        const canvas = makeShareCanvas(story, parts, levelLabel);
-        // Only include Irish words that actually appear on the rendered card
-        const visible = canvas._visibleIrishParts || new Set();
-        const seen = new Set();
-        const words = [];
-        parts.forEach((p, pi) => {
-          if (p.t !== "ir" || !visible.has(pi)) return;
-          const k = p.irish.toLowerCase();
-          if (!seen.has(k)) { seen.add(k); words.push({ origIrish: p.irish, irish: p.irish, english: p.english, include: true }); }
-        });
-        out.push({ id: story.id, title: story.title, url: canvas.toDataURL("image/png"), storyIdx: si, words, rawText: story.levels[pct] || story.summary, editedText: null });
-      });
-      out.push({ id: "closing", title: "Closing slide", url: makeClosingCanvas().toDataURL("image/png") });
-      setImages(out);
-      setBusy(false);
-    }, 50);
+  function coverCaption() {
+    return `Scéalta an lae ☘️\n\n${(hook || defaultHook()).trim()}\n\nLink in bio 🗞️\n\n${HASHTAGS}`;
   }
 
-  function updateImageWord(imgIdx, wordIdx, value) {
-    setImages(prev => prev.map((img, i) => {
-      if (i !== imgIdx || !img.words) return img;
-      const words = img.words.map((w, wi) => wi === wordIdx ? { ...w, irish: value } : w);
-      return { ...img, words };
-    }));
+  function translationsCaption(words) {
+    const lines = words.map(w => `${w.irish} (${w.english})`).join("\n");
+    return `TRANSLATIONS ⬇️\n\n${lines}\n\nRead the full story as Gaeilge on the site, link in bio 🗞️`;
   }
 
-  function toggleImageWord(imgIdx, wordIdx) {
-    setImages(prev => prev.map((img, i) => {
-      if (i !== imgIdx || !img.words) return img;
-      const words = img.words.map((w, wi) => wi === wordIdx ? { ...w, include: !w.include } : w);
-      return { ...img, words };
-    }));
+  function generateCards() {
+    const story = stories[storyIdx];
+    if (!story || !cardText.trim()) return;
+    const coverParts = coverHeadline ? parseHeadlineParts(coverHeadline) : null;
+    const parts = parseText(cardText);
+    const storyCanvas = makeShareCanvas(story, parts, levelLabel);
+    const visible = storyCanvas._visibleIrishParts || new Set();
+    const seen = new Set();
+    const words = [];
+    parts.forEach((p, pi) => {
+      if (p.t !== "ir" || !visible.has(pi)) return;
+      const k = p.irish.toLowerCase();
+      if (!seen.has(k)) { seen.add(k); words.push({ irish: p.irish, english: p.english }); }
+    });
+    setCards([
+      { id: "cover", title: "1 · Cover", url: makeCoverCanvas(story, coverParts).toDataURL("image/png"), caption: coverCaption() },
+      { id: "story", title: "2 · Story", url: storyCanvas.toDataURL("image/png"), caption: translationsCaption(words) },
+      { id: "closing", title: "3 · Closing", url: makeClosingCanvas().toDataURL("image/png"), caption: CLOSING_CTA },
+    ]);
   }
 
-  function updateImageText(imgIdx, value) {
-    setImages(prev => prev.map((img, i) => i === imgIdx ? { ...img, editedText: value } : img));
-  }
-
-  function regenerateStory(imgIdx) {
-    setImages(prev => prev.map((img, i) => {
-      if (i !== imgIdx || img.storyIdx === undefined) return img;
-      const story = stories[img.storyIdx];
-      if (!story) return img;
-      // If the text has been manually edited, it is the source of truth
-      if (img.editedText !== null && img.editedText !== undefined) {
-        const parts = parseText(img.editedText);
-        const canvas = makeShareCanvas(story, parts, levelLabel);
-        return { ...img, url: canvas.toDataURL("image/png") };
-      }
-      // Otherwise apply the word checklist: corrections and unticked words
-      const corrections = {};
-      const dropped = new Set();
-      (img.words || []).forEach(w => {
-        const key = w.origIrish.toLowerCase();
-        if (!w.include) { dropped.add(key); return; }
-        if (w.irish.trim() && w.irish !== w.origIrish) corrections[key] = w.irish.trim();
-      });
-      const parts = parseText(story.levels[pct] || story.summary).map(p => {
-        if (p.t !== "ir") return p;
-        const key = p.irish.toLowerCase();
-        if (dropped.has(key)) return { t: "en", v: p.english };
-        if (corrections[key]) return { ...p, irish: corrections[key] };
-        return p;
-      });
-      const canvas = makeShareCanvas(story, parts, levelLabel);
-      return { ...img, url: canvas.toDataURL("image/png") };
-    }));
+  function copyCardCaption(card) {
+    navigator.clipboard?.writeText(card.caption).then(() => {
+      setCopiedCard(card.id);
+      setTimeout(() => setCopiedCard(null), 2000);
+    });
   }
 
   async function translateOne(word, from, to) {
@@ -1142,12 +1078,10 @@ function ExportView({ stories }) {
   async function translateWords() {
     setTranslating(true);
     const pairs = [];
-    // English -> Irish
     for (const line of enText.split("\n").map(s => s.trim()).filter(Boolean)) {
       const irish = await translateOne(line, "en", "ga");
       pairs.push({ english: line.toLowerCase(), irish: (irish || "?").toLowerCase() });
     }
-    // Irish -> English
     for (const line of gaText.split("\n").map(s => s.trim()).filter(Boolean)) {
       const english = await translateOne(line, "ga", "en");
       pairs.push({ irish: line.toLowerCase(), english: (english || "?").toLowerCase() });
@@ -1160,14 +1094,11 @@ function ExportView({ stories }) {
     setWordPairs(prev => prev.map((p, idx) => idx === i ? { ...p, [field]: value } : p));
   }
 
-  // Pick one or two longer words from the headline and translate them to Irish,
-  // returning the headline as a string with [[irish|english]] markers inserted.
   async function prepareCoverHeadline() {
-    const story = stories[coverIndex] || stories[0];
+    const story = stories[storyIdx];
     if (!story) return;
     setCoverBusy(true);
     const title = story.title;
-    // Load the verified place names so we can translate them with proper capitals
     let places = {};
     try {
       const pr = await fetch(`${import.meta.env.BASE_URL}data/places.json`, { signal: AbortSignal.timeout(5000) });
@@ -1180,14 +1111,11 @@ function ExportView({ stories }) {
       const clean = tok.replace(/[^A-Za-z]/g, "");
       const lower = clean.toLowerCase();
       if (places[lower]) {
-        // Place name: translate from trusted list, keep capitals, no MyMemory
         candidates.push({ i, clean, place: places[lower] });
       } else if (clean.length >= 5 && /^[a-z]/.test(clean)) {
-        // Ordinary lowercase content word: translate via MyMemory
         candidates.push({ i, clean });
       }
     });
-    // Prefer place names, then longer words; take up to two
     candidates.sort((a, b) => (b.place ? 1 : 0) - (a.place ? 1 : 0) || b.clean.length - a.clean.length);
     const chosen = candidates.slice(0, 2);
     for (const c of chosen) {
@@ -1208,15 +1136,6 @@ function ExportView({ stories }) {
     }
     setCoverHeadline(tokens.join(""));
     setCoverBusy(false);
-    setTimeout(() => regenerateCover(tokens.join("")), 30);
-  }
-
-  function regenerateCover(headlineStr) {
-    const story = stories[coverIndex] || stories[0];
-    if (!story) return;
-    const text = typeof headlineStr === "string" ? headlineStr : coverHeadline;
-    const parts = parseHeadlineParts(text);
-    setCoverImage(makeCoverCanvas(story, parts).toDataURL("image/png"));
   }
 
   async function loadWeekWords() {
@@ -1230,7 +1149,6 @@ function ExportView({ stories }) {
     const pickedWords = weekSuggestions.filter(w => picked[w.irish.toLowerCase()])
       .map(w => ({ irish: w.irish.toLowerCase(), english: w.english.toLowerCase() }));
     const manualWords = wordPairs.filter(w => w.irish && w.english && w.irish !== "?" && w.english !== "?");
-    // Picked suggestions first, then any manual additions, de-duplicated
     const seen = new Set();
     const words = [...pickedWords, ...manualWords].filter(w => {
       const k = w.irish.toLowerCase();
@@ -1248,167 +1166,124 @@ function ExportView({ stories }) {
     setWeeklyImages(out);
   }
 
+  const selectedStory = stories[storyIdx];
+
   return (
     <div style={{ padding: "20px 0 40px", fontFamily: "system-ui, sans-serif" }}>
       <h2 style={{ fontFamily: "Georgia, serif", color: C.navy, fontSize: "1.3rem", margin: "0 0 4px" }}>Card Export</h2>
-      <p style={{ color: C.muted, fontSize: "0.82rem", margin: "0 0 18px" }}>Private tool. Generates a full carousel for today: cover slide, one card per story at the chosen level, and a closing slide. Long-press each to save.</p>
+      <p style={{ color: C.muted, fontSize: "0.82rem", margin: "0 0 18px" }}>Private tool. Pick a story, check the text, then generate the three cards and their captions.</p>
 
-      <div style={{ display: "flex", gap: 4, marginBottom: 14 }}>
-        {LEVELS_CONFIG.map(l => (
-          <button key={l.pct} onClick={() => setPct(l.pct)}
-            style={{ flex: "1 1 auto", background: pct === l.pct ? l.bg : "transparent", color: pct === l.pct ? l.color : C.faint, border: `1px solid ${pct === l.pct ? l.color + "60" : C.border}`, borderRadius: 6, padding: "7px 2px", cursor: "pointer", fontSize: "0.66rem", fontWeight: 600 }}>
-            {l.label}
-          </button>
-        ))}
-      </div>
-
-      <label style={{ display: "block", fontSize: "0.72rem", color: C.muted, marginBottom: 6, fontWeight: 600 }}>Cover story (shown on slide 1)</label>
-      <select value={coverIndex} onChange={e => { setCoverIndex(+e.target.value); setCoverHeadline(""); setCoverImage(null); }}
-        style={{ width: "100%", padding: "10px", borderRadius: 8, border: `1px solid ${C.border}`, fontSize: "0.8rem", marginBottom: 12, background: "#fff", color: C.text, fontFamily: "system-ui, sans-serif" }}>
-        {stories.map((s, i) => (
-          <option key={s.id} value={i}>{i + 1}. {s.title}</option>
-        ))}
-      </select>
-
-      <div style={{ background: "#f8fafc", border: `1px solid ${C.border}`, borderRadius: 10, padding: "14px 16px", marginBottom: 20 }}>
-        <div style={{ fontWeight: 700, fontSize: "0.78rem", color: C.navy, marginBottom: 4 }}>Cover headline with Irish words</div>
-        <div style={{ fontSize: "0.72rem", color: C.muted, marginBottom: 10 }}>Adds a couple of Irish words to the cover. Check them, edit if wrong, then regenerate. Format: <code>[[irish|english]]</code></div>
-        <button onClick={prepareCoverHeadline} disabled={coverBusy}
-          style={{ width: "100%", background: C.amber, color: "#fff", border: "none", borderRadius: 8, padding: "11px", fontSize: "0.82rem", fontWeight: 600, cursor: coverBusy ? "wait" : "pointer", marginBottom: 12, opacity: coverBusy ? 0.6 : 1 }}>
-          {coverBusy ? "Translating..." : "Add Irish to headline"}
-        </button>
-        {coverHeadline && (
-          <>
-            <textarea value={coverHeadline} onChange={e => setCoverHeadline(e.target.value)}
-              rows={3}
-              style={{ width: "100%", padding: "10px", borderRadius: 8, border: `1px solid ${C.border}`, fontSize: "0.82rem", fontFamily: "monospace", marginBottom: 8, resize: "vertical", boxSizing: "border-box" }} />
-            {(() => {
-              const irishWords = parseHeadlineParts(coverHeadline).filter(p => p.irish);
-              return irishWords.length > 0 ? (
-                <div style={{ fontSize: "0.72rem", marginBottom: 10 }}>
-                  {irishWords.map((p, i) => (
-                    <a key={i} href={`https://www.teanglann.ie/en/fgb/${encodeURIComponent(p.text)}`} target="_blank" rel="noopener noreferrer"
-                      style={{ color: C.amber, fontWeight: 700, textDecoration: "none", marginRight: 12, borderBottom: `1px solid ${C.border}` }}>
-                      {p.text} ↗
-                    </a>
-                  ))}
-                </div>
-              ) : null;
-            })()}
-            <button onClick={() => regenerateCover()}
-              style={{ width: "100%", background: C.navy, color: "#fff", border: "none", borderRadius: 8, padding: "11px", fontSize: "0.82rem", fontWeight: 600, cursor: "pointer", marginBottom: 12 }}>
-              Regenerate cover
+      {/* Step 1: story + level */}
+      <div style={{ background: "#f8fafc", border: `1px solid ${C.border}`, borderRadius: 10, padding: "14px 16px", marginBottom: 16 }}>
+        <div style={{ fontWeight: 700, fontSize: "0.78rem", color: C.navy, marginBottom: 10 }}>1 · Pick the story</div>
+        <div style={{ display: "flex", gap: 4, marginBottom: 12 }}>
+          {LEVELS_CONFIG.map(l => (
+            <button key={l.pct} onClick={() => setPct(l.pct)}
+              style={{ flex: "1 1 auto", background: pct === l.pct ? l.bg : "transparent", color: pct === l.pct ? l.color : C.faint, border: `1px solid ${pct === l.pct ? l.color + "60" : C.border}`, borderRadius: 6, padding: "7px 2px", cursor: "pointer", fontSize: "0.66rem", fontWeight: 600 }}>
+              {l.label}
             </button>
-            {coverImage && (
-              <div>
-                <img src={coverImage} alt="Cover preview" style={{ width: "100%", borderRadius: 10, border: `1px solid ${C.border}` }} />
-                <a href={coverImage} download="daily-sceal-cover.png"
-                  style={{ display: "inline-block", marginTop: 8, color: C.navy, fontSize: "0.78rem", fontWeight: 600, textDecoration: "none", borderBottom: `1px solid ${C.border}` }}>
-                  Download cover ↓
-                </a>
-              </div>
-            )}
-          </>
-        )}
-      </div>
-
-      <button onClick={generateAll} disabled={busy}
-        style={{ width: "100%", background: C.navy, color: "#fff", border: "none", borderRadius: 8, padding: "13px", fontSize: "0.88rem", fontWeight: 600, cursor: busy ? "wait" : "pointer", marginBottom: 16, opacity: busy ? 0.6 : 1 }}>
-        {busy ? "Generating..." : `Generate ${levelLabel} cards`}
-      </button>
-
-      <div style={{ background: "#f8fafc", border: `1px solid ${C.border}`, borderRadius: 10, padding: "14px 16px", marginBottom: 24 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-          <span style={{ fontWeight: 700, fontSize: "0.78rem", color: C.navy }}>Today's caption</span>
-          <button onClick={copyCaption}
-            style={{ background: captionCopied ? "#16a34a" : C.navy, color: "#fff", border: "none", borderRadius: 6, padding: "6px 14px", fontSize: "0.72rem", fontWeight: 600, cursor: "pointer" }}>
-            {captionCopied ? "Copied ✓" : "Copy"}
-          </button>
+          ))}
         </div>
-        <pre style={{ margin: 0, fontFamily: "system-ui, sans-serif", fontSize: "0.78rem", color: C.muted, whiteSpace: "pre-wrap", lineHeight: 1.5 }}>{todayCaption()}</pre>
+        <select value={storyIdx} onChange={e => { setStoryIdx(+e.target.value); setCardText(""); setCards([]); setCoverHeadline(""); }}
+          style={{ width: "100%", padding: "10px", borderRadius: 8, border: `1px solid ${C.border}`, fontSize: "0.8rem", marginBottom: 12, background: "#fff", color: C.text, fontFamily: "system-ui, sans-serif" }}>
+          {stories.map((s, i) => (
+            <option key={s.id} value={i}>{i + 1}. {s.title}</option>
+          ))}
+        </select>
+        <button onClick={loadStoryText}
+          style={{ width: "100%", background: C.navy, color: "#fff", border: "none", borderRadius: 8, padding: "11px", fontSize: "0.82rem", fontWeight: 600, cursor: "pointer" }}>
+          Load story text
+        </button>
       </div>
 
-      {images.map((img, i) => (
-        <div key={img.id} style={{ marginBottom: 28 }}>
-          <div style={{ fontSize: "0.7rem", color: C.faint, marginBottom: 6 }}>{i + 1}. {img.title}</div>
-          <img src={img.url} alt={img.title} style={{ width: "100%", borderRadius: 10, border: `1px solid ${C.border}` }} />
-          <a href={img.url} download={`daily-sceal-${pct}-${i + 1}.png`}
-            style={{ display: "inline-block", marginTop: 8, color: C.navy, fontSize: "0.78rem", fontWeight: 600, textDecoration: "none", borderBottom: `1px solid ${C.border}` }}>
-            Download card {i + 1} ↓
-          </a>
-          <button onClick={() => navigator.clipboard?.writeText(slideCaption(img))}
-            style={{ display: "block", marginTop: 8, background: "none", border: `1px solid ${C.border}`, color: C.navy, fontSize: "0.74rem", fontWeight: 600, borderRadius: 6, padding: "6px 12px", cursor: "pointer" }}>
-            Copy caption for this slide
+      {/* Step 2: check the text */}
+      {cardText && (
+        <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 10, padding: "14px 16px", marginBottom: 16 }}>
+          <div style={{ fontWeight: 700, fontSize: "0.78rem", color: "#854d0e", marginBottom: 4 }}>2 · Check the text</div>
+          <div style={{ fontSize: "0.72rem", color: "#a16207", marginBottom: 10 }}>Copy it out to check the translations, then paste the corrected version back in. Irish words use <code>[[irish|english]]</code>.</div>
+          <button onClick={copyCheckText}
+            style={{ width: "100%", background: textCopied ? "#16a34a" : C.amber, color: "#fff", border: "none", borderRadius: 8, padding: "10px", fontSize: "0.8rem", fontWeight: 600, cursor: "pointer", marginBottom: 10 }}>
+            {textCopied ? "Copied ✓" : "Copy text for checking"}
           </button>
-          {img.words && img.words.length > 0 && (
-            <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 10, padding: "12px 14px", marginTop: 10 }}>
-              <div style={{ fontWeight: 700, fontSize: "0.74rem", color: "#854d0e", marginBottom: 4 }}>Check this story's words</div>
-              <div style={{ fontSize: "0.7rem", color: "#a16207", marginBottom: 10 }}><span style={{ color: "#16a34a", fontWeight: 700 }}>✓</span> means verified from your dictionary. Untick any word you're unsure of to show it in English, or tap the English to look it up. Then regenerate.</div>
-              {img.words.map((w, wi) => {
-                const isVerified = verifiedEng.has((w.english || "").toLowerCase());
-                return (
-                <div key={wi} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, opacity: w.include ? 1 : 0.4 }}>
-                  <input type="checkbox" checked={w.include} onChange={() => toggleImageWord(i, wi)}
-                    style={{ width: 18, height: 18, flexShrink: 0 }} />
-                  <input value={w.irish} onChange={e => updateImageWord(i, wi, e.target.value)} disabled={!w.include}
-                    style={{ flex: 1, padding: "7px 9px", borderRadius: 6, border: w.irish !== w.origIrish ? `1.5px solid ${C.amber}` : "1px solid #fde68a", fontSize: "0.8rem", color: C.amber, fontWeight: 700, background: w.include ? "#fff" : "#f3f4f6", textDecoration: w.include ? "none" : "line-through" }} />
-                  <a href={`https://www.focloir.ie/en/dictionary/ei/${encodeURIComponent(w.english)}?q=${encodeURIComponent(w.english)}`} target="_blank" rel="noopener noreferrer"
-                    style={{ flex: 1, fontSize: "0.78rem", color: C.navy, fontWeight: 600, textDecoration: "none" }}>
-                    {w.english} ↗
-                  </a>
-                  {isVerified
-                    ? <span style={{ fontSize: "0.64rem", color: "#16a34a", fontWeight: 700, whiteSpace: "nowrap" }}>✓</span>
-                    : <span style={{ width: 10, flexShrink: 0 }} />}
-                </div>
-                );
-              })}
-              <details style={{ marginTop: 8, marginBottom: 8 }}>
-                <summary style={{ fontSize: "0.72rem", color: "#854d0e", cursor: "pointer", fontWeight: 600 }}>Edit the card text</summary>
-                <div style={{ paddingTop: 8 }}>
-                  <div style={{ fontSize: "0.68rem", color: "#a16207", marginBottom: 6 }}>Edit anything, English or Irish. Irish words use <code>[[irish|english]]</code>. When you edit here, this text becomes the card, and the tick list above no longer applies.</div>
-                  <textarea value={img.editedText ?? img.rawText} onChange={e => updateImageText(i, e.target.value)}
-                    rows={6}
-                    style={{ width: "100%", padding: "10px", borderRadius: 8, border: img.editedText !== null && img.editedText !== undefined ? `1.5px solid ${C.amber}` : "1px solid #fde68a", fontSize: "0.78rem", fontFamily: "monospace", resize: "vertical", boxSizing: "border-box", background: "#fff" }} />
-                </div>
-              </details>
-              <button onClick={() => regenerateStory(i)}
-                style={{ width: "100%", background: C.navy, color: "#fff", border: "none", borderRadius: 6, padding: "9px", fontSize: "0.76rem", fontWeight: 600, cursor: "pointer", marginTop: 4 }}>
-                Regenerate this card
-              </button>
-            </div>
+          <textarea value={cardText} onChange={e => setCardText(e.target.value)}
+            rows={8}
+            style={{ width: "100%", padding: "10px", borderRadius: 8, border: "1px solid #fde68a", fontSize: "0.78rem", fontFamily: "monospace", resize: "vertical", boxSizing: "border-box", background: "#fff" }} />
+          <a href="https://github.com/joelucadooley/daily-sceal/edit/main/scripts/overrides.json" target="_blank" rel="noopener noreferrer"
+            style={{ display: "inline-block", marginTop: 8, fontSize: "0.72rem", color: "#854d0e", fontWeight: 600, textDecoration: "none", borderBottom: "1px solid #fde68a" }}>
+            Add permanent fixes to overrides.json ↗
+          </a>
+        </div>
+      )}
+
+      {/* Step 3: cover headline + hook */}
+      {cardText && (
+        <div style={{ background: "#f8fafc", border: `1px solid ${C.border}`, borderRadius: 10, padding: "14px 16px", marginBottom: 16 }}>
+          <div style={{ fontWeight: 700, fontSize: "0.78rem", color: C.navy, marginBottom: 4 }}>3 · Cover and caption hook</div>
+          <div style={{ fontSize: "0.72rem", color: C.muted, marginBottom: 10 }}>Optionally add Irish to the cover headline, and set the line for slide 1's caption.</div>
+          <button onClick={prepareCoverHeadline} disabled={coverBusy}
+            style={{ width: "100%", background: C.amber, color: "#fff", border: "none", borderRadius: 8, padding: "10px", fontSize: "0.8rem", fontWeight: 600, cursor: coverBusy ? "wait" : "pointer", marginBottom: 10, opacity: coverBusy ? 0.6 : 1 }}>
+            {coverBusy ? "Translating..." : "Add Irish to headline"}
+          </button>
+          {coverHeadline && (
+            <>
+              <textarea value={coverHeadline} onChange={e => setCoverHeadline(e.target.value)}
+                rows={2}
+                style={{ width: "100%", padding: "10px", borderRadius: 8, border: `1px solid ${C.border}`, fontSize: "0.8rem", fontFamily: "monospace", marginBottom: 6, resize: "vertical", boxSizing: "border-box" }} />
+              {(() => {
+                const irishWords = parseHeadlineParts(coverHeadline).filter(p => p.irish);
+                return irishWords.length > 0 ? (
+                  <div style={{ fontSize: "0.72rem", marginBottom: 10 }}>
+                    {irishWords.map((p, i) => (
+                      <a key={i} href={`https://www.teanglann.ie/en/fgb/${encodeURIComponent(p.text)}`} target="_blank" rel="noopener noreferrer"
+                        style={{ color: C.amber, fontWeight: 700, textDecoration: "none", marginRight: 12, borderBottom: `1px solid ${C.border}` }}>
+                        {p.text} ↗
+                      </a>
+                    ))}
+                  </div>
+                ) : null;
+              })()}
+            </>
           )}
+          <label style={{ display: "block", fontSize: "0.72rem", color: C.muted, marginBottom: 4, fontWeight: 600 }}>Slide 1 caption line (edit to fit the story)</label>
+          <input value={hook} onChange={e => setHook(e.target.value)}
+            style={{ width: "100%", padding: "10px", borderRadius: 8, border: `1px solid ${C.border}`, fontSize: "0.8rem", boxSizing: "border-box" }} />
+        </div>
+      )}
+
+      {/* Step 4: generate */}
+      {cardText && (
+        <button onClick={generateCards}
+          style={{ width: "100%", background: C.navy, color: "#fff", border: "none", borderRadius: 8, padding: "13px", fontSize: "0.88rem", fontWeight: 600, cursor: "pointer", marginBottom: 24 }}>
+          Generate the 3 cards
+        </button>
+      )}
+
+      {cards.map(card => (
+        <div key={card.id} style={{ marginBottom: 28 }}>
+          <div style={{ fontSize: "0.7rem", color: C.faint, marginBottom: 6 }}>{card.title}</div>
+          <img src={card.url} alt={card.title} style={{ width: "100%", borderRadius: 10, border: `1px solid ${C.border}` }} />
+          <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+            <a href={card.url} download={`daily-sceal-${card.id}.png`}
+              style={{ flex: 1, textAlign: "center", color: C.navy, fontSize: "0.76rem", fontWeight: 600, textDecoration: "none", border: `1px solid ${C.border}`, borderRadius: 6, padding: "7px 0" }}>
+              Download ↓
+            </a>
+            <button onClick={() => copyCardCaption(card)}
+              style={{ flex: 1, background: copiedCard === card.id ? "#16a34a" : C.navy, color: "#fff", border: "none", borderRadius: 6, padding: "7px 0", fontSize: "0.76rem", fontWeight: 600, cursor: "pointer" }}>
+              {copiedCard === card.id ? "Copied ✓" : "Copy caption"}
+            </button>
+          </div>
+          <pre style={{ margin: "8px 0 0", background: "#f8fafc", border: `1px solid ${C.border}`, borderRadius: 8, padding: "10px", fontSize: "0.72rem", color: C.muted, whiteSpace: "pre-wrap", lineHeight: 1.5 }}>{card.caption}</pre>
         </div>
       ))}
-
-      {(() => {
-        const corrections = [];
-        images.forEach(img => (img.words || []).forEach(w => {
-          if (w.irish.trim() && w.irish !== w.origIrish) corrections.push({ english: w.english.toLowerCase(), irish: w.irish.trim() });
-        }));
-        if (!corrections.length) return null;
-        const snippet = corrections.map(c => `  "${c.english}": "${c.irish}"`).join(",\n");
-        return (
-          <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 10, padding: "14px 16px", marginBottom: 24 }}>
-            <div style={{ fontWeight: 700, fontSize: "0.78rem", color: "#1e40af", marginBottom: 4 }}>Make these corrections permanent</div>
-            <div style={{ fontSize: "0.72rem", color: "#3b82f6", marginBottom: 10 }}>Add these lines to overrides.json so the site and all future cards use your fix automatically. Tap to open the file on GitHub, paste inside the braces, and commit.</div>
-            <pre style={{ margin: "0 0 10px", background: "#fff", border: "1px solid #bfdbfe", borderRadius: 6, padding: "10px", fontSize: "0.75rem", overflowX: "auto" }}>{snippet}</pre>
-            <div style={{ display: "flex", gap: 8 }}>
-              <button onClick={() => navigator.clipboard?.writeText(snippet)}
-                style={{ flex: 1, background: "#1e40af", color: "#fff", border: "none", borderRadius: 6, padding: "9px", fontSize: "0.76rem", fontWeight: 600, cursor: "pointer" }}>
-                Copy lines
-              </button>
-              <a href="https://github.com/joelucadooley/daily-sceal/edit/main/scripts/overrides.json" target="_blank" rel="noopener noreferrer"
-                style={{ flex: 1, background: "#fff", color: "#1e40af", border: "1px solid #bfdbfe", borderRadius: 6, padding: "9px", fontSize: "0.76rem", fontWeight: 600, textAlign: "center", textDecoration: "none" }}>
-                Open overrides.json ↗
-              </a>
-            </div>
-          </div>
-        );
-      })()}
 
       <div style={{ marginTop: 40, paddingTop: 24, borderTop: `2px solid ${C.border}` }}>
         <h2 style={{ fontFamily: "Georgia, serif", color: C.navy, fontSize: "1.15rem", margin: "0 0 4px" }}>Focail na Seachtaine</h2>
         <p style={{ color: C.muted, fontSize: "0.8rem", margin: "0 0 14px" }}>Sunday recap carousel. Pick words from this week's stories below, or add your own. Three or four works best.</p>
+
+        <button onClick={() => navigator.clipboard?.writeText(SUNDAY_CAPTION)}
+          style={{ width: "100%", background: "none", border: `1px solid ${C.border}`, color: C.navy, borderRadius: 8, padding: "9px", fontSize: "0.76rem", fontWeight: 600, cursor: "pointer", marginBottom: 14 }}>
+          Copy Sunday caption
+        </button>
 
         <button onClick={loadWeekWords} disabled={loadingWeek}
           style={{ width: "100%", background: C.navy, color: "#fff", border: "none", borderRadius: 8, padding: "12px", fontSize: "0.84rem", fontWeight: 600, cursor: loadingWeek ? "wait" : "pointer", marginBottom: 14, opacity: loadingWeek ? 0.6 : 1 }}>
