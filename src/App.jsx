@@ -965,6 +965,7 @@ function ExportView({ stories }) {
   const [hook, setHook] = useState("");
   const [cards, setCards] = useState([]);
   const [copiedCard, setCopiedCard] = useState(null);
+  const [loaded, setLoaded] = useState(false);
   // --- Weekly recap state ---
   const [enText, setEnText] = useState("");
   const [gaText, setGaText] = useState("");
@@ -1013,10 +1014,12 @@ function ExportView({ stories }) {
   function loadStoryText() {
     const story = stories[storyIdx];
     if (!story) return;
+    setLoaded(true);
     setCardText(story.levels[pct] || story.summary);
     setCards([]);
-    setCoverHeadline("");
-    setHook(defaultHook());
+    setHook(`Today's scéal: ${story.title}`);
+    // Automatically add Irish to the headline (editable after)
+    prepareCoverHeadline();
   }
 
   function copyCheckText() {
@@ -1031,8 +1034,10 @@ function ExportView({ stories }) {
   }
 
   function translationsCaption(words) {
-    const lines = words.map(w => `${w.irish} (${w.english})`).join("\n");
-    return `TRANSLATIONS ⬇️\n\n${lines}\n\nRead the full story as Gaeilge on the site, link in bio 🗞️`;
+    // Three key words (longest = most substantial), rest on the site
+    const chosen = words.slice().sort((a, b) => b.english.length - a.english.length).slice(0, 3);
+    const lines = chosen.map(w => `${w.irish} (${w.english})`).join("\n");
+    return `TRANSLATIONS ⬇️\n\n${lines}\n\nEvery other translation is on the site, link in bio 🗞️`;
   }
 
   function generateCards() {
@@ -1184,7 +1189,7 @@ function ExportView({ stories }) {
             </button>
           ))}
         </div>
-        <select value={storyIdx} onChange={e => { setStoryIdx(+e.target.value); setCardText(""); setCards([]); setCoverHeadline(""); }}
+        <select value={storyIdx} onChange={e => { setStoryIdx(+e.target.value); setCardText(""); setCards([]); setCoverHeadline(""); setLoaded(false); }}
           style={{ width: "100%", padding: "10px", borderRadius: 8, border: `1px solid ${C.border}`, fontSize: "0.8rem", marginBottom: 12, background: "#fff", color: C.text, fontFamily: "system-ui, sans-serif" }}>
           {stories.map((s, i) => (
             <option key={s.id} value={i}>{i + 1}. {s.title}</option>
@@ -1196,10 +1201,40 @@ function ExportView({ stories }) {
         </button>
       </div>
 
-      {/* Step 2: check the text */}
-      {cardText && (
+      {/* Step 2: headline (Irish added automatically, editable) */}
+      {loaded && (
+        <div style={{ background: "#f8fafc", border: `1px solid ${C.border}`, borderRadius: 10, padding: "14px 16px", marginBottom: 16 }}>
+          <div style={{ fontWeight: 700, fontSize: "0.78rem", color: C.navy, marginBottom: 4 }}>2 · Check the headline</div>
+          <div style={{ fontSize: "0.72rem", color: C.muted, marginBottom: 10 }}>Irish is added automatically. Check the words, edit if wrong. Format: <code>[[irish|english]]</code></div>
+          {coverBusy ? (
+            <div style={{ fontSize: "0.78rem", color: C.faint, padding: "8px 0" }}>Adding Irish to the headline...</div>
+          ) : (
+            <>
+              <textarea value={coverHeadline} onChange={e => setCoverHeadline(e.target.value)}
+                rows={2}
+                style={{ width: "100%", padding: "10px", borderRadius: 8, border: `1px solid ${C.border}`, fontSize: "0.8rem", fontFamily: "monospace", marginBottom: 6, resize: "vertical", boxSizing: "border-box" }} />
+              {(() => {
+                const irishWords = parseHeadlineParts(coverHeadline).filter(p => p.irish);
+                return irishWords.length > 0 ? (
+                  <div style={{ fontSize: "0.72rem" }}>
+                    {irishWords.map((p, i) => (
+                      <a key={i} href={`https://www.teanglann.ie/en/fgb/${encodeURIComponent(p.text)}`} target="_blank" rel="noopener noreferrer"
+                        style={{ color: C.amber, fontWeight: 700, textDecoration: "none", marginRight: 12, borderBottom: `1px solid ${C.border}` }}>
+                        {p.text} ↗
+                      </a>
+                    ))}
+                  </div>
+                ) : null;
+              })()}
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Step 3: check the story text */}
+      {loaded && (
         <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 10, padding: "14px 16px", marginBottom: 16 }}>
-          <div style={{ fontWeight: 700, fontSize: "0.78rem", color: "#854d0e", marginBottom: 4 }}>2 · Check the text</div>
+          <div style={{ fontWeight: 700, fontSize: "0.78rem", color: "#854d0e", marginBottom: 4 }}>3 · Check the text</div>
           <div style={{ fontSize: "0.72rem", color: "#a16207", marginBottom: 10 }}>Copy it out to check the translations, then paste the corrected version back in. Irish words use <code>[[irish|english]]</code>.</div>
           <button onClick={copyCheckText}
             style={{ width: "100%", background: textCopied ? "#16a34a" : C.amber, color: "#fff", border: "none", borderRadius: 8, padding: "10px", fontSize: "0.8rem", fontWeight: 600, cursor: "pointer", marginBottom: 10 }}>
@@ -1215,47 +1250,18 @@ function ExportView({ stories }) {
         </div>
       )}
 
-      {/* Step 3: cover headline + hook */}
-      {cardText && (
+      {/* Step 4: caption line + generate */}
+      {loaded && (
         <div style={{ background: "#f8fafc", border: `1px solid ${C.border}`, borderRadius: 10, padding: "14px 16px", marginBottom: 16 }}>
-          <div style={{ fontWeight: 700, fontSize: "0.78rem", color: C.navy, marginBottom: 4 }}>3 · Cover and caption hook</div>
-          <div style={{ fontSize: "0.72rem", color: C.muted, marginBottom: 10 }}>Optionally add Irish to the cover headline, and set the line for slide 1's caption.</div>
-          <button onClick={prepareCoverHeadline} disabled={coverBusy}
-            style={{ width: "100%", background: C.amber, color: "#fff", border: "none", borderRadius: 8, padding: "10px", fontSize: "0.8rem", fontWeight: 600, cursor: coverBusy ? "wait" : "pointer", marginBottom: 10, opacity: coverBusy ? 0.6 : 1 }}>
-            {coverBusy ? "Translating..." : "Add Irish to headline"}
-          </button>
-          {coverHeadline && (
-            <>
-              <textarea value={coverHeadline} onChange={e => setCoverHeadline(e.target.value)}
-                rows={2}
-                style={{ width: "100%", padding: "10px", borderRadius: 8, border: `1px solid ${C.border}`, fontSize: "0.8rem", fontFamily: "monospace", marginBottom: 6, resize: "vertical", boxSizing: "border-box" }} />
-              {(() => {
-                const irishWords = parseHeadlineParts(coverHeadline).filter(p => p.irish);
-                return irishWords.length > 0 ? (
-                  <div style={{ fontSize: "0.72rem", marginBottom: 10 }}>
-                    {irishWords.map((p, i) => (
-                      <a key={i} href={`https://www.teanglann.ie/en/fgb/${encodeURIComponent(p.text)}`} target="_blank" rel="noopener noreferrer"
-                        style={{ color: C.amber, fontWeight: 700, textDecoration: "none", marginRight: 12, borderBottom: `1px solid ${C.border}` }}>
-                        {p.text} ↗
-                      </a>
-                    ))}
-                  </div>
-                ) : null;
-              })()}
-            </>
-          )}
-          <label style={{ display: "block", fontSize: "0.72rem", color: C.muted, marginBottom: 4, fontWeight: 600 }}>Slide 1 caption line (edit to fit the story)</label>
+          <div style={{ fontWeight: 700, fontSize: "0.78rem", color: C.navy, marginBottom: 4 }}>4 · Slide 1 caption line</div>
+          <div style={{ fontSize: "0.72rem", color: C.muted, marginBottom: 8 }}>Auto-filled from the story. Edit to give it a hook, e.g. a question.</div>
           <input value={hook} onChange={e => setHook(e.target.value)}
-            style={{ width: "100%", padding: "10px", borderRadius: 8, border: `1px solid ${C.border}`, fontSize: "0.8rem", boxSizing: "border-box" }} />
+            style={{ width: "100%", padding: "10px", borderRadius: 8, border: `1px solid ${C.border}`, fontSize: "0.8rem", boxSizing: "border-box", marginBottom: 12 }} />
+          <button onClick={generateCards}
+            style={{ width: "100%", background: C.navy, color: "#fff", border: "none", borderRadius: 8, padding: "13px", fontSize: "0.88rem", fontWeight: 600, cursor: "pointer" }}>
+            Generate the 3 cards
+          </button>
         </div>
-      )}
-
-      {/* Step 4: generate */}
-      {cardText && (
-        <button onClick={generateCards}
-          style={{ width: "100%", background: C.navy, color: "#fff", border: "none", borderRadius: 8, padding: "13px", fontSize: "0.88rem", fontWeight: 600, cursor: "pointer", marginBottom: 24 }}>
-          Generate the 3 cards
-        </button>
       )}
 
       {cards.map(card => (
