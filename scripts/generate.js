@@ -2,8 +2,11 @@ import { writeFileSync, readFileSync, mkdirSync } from "fs";
 import { DOMParser } from "@xmldom/xmldom";
 
 const RSS_URL = "https://www.rte.ie/feeds/rss/?index=/news";
-const LEVELS = [10, 25, 50, 75, 100];
-const STORY_COUNT = 6;
+// Levels actually generated. 75 (Advanced) and 100 (As Gaeilge) are locked
+// funding goals in the app — the sentence-alignment approach isn't reliable
+// enough to ship, so we don't generate them at all.
+const LEVELS = [10, 25, 50];
+const STORY_COUNT = 8;
 
 const CAT_MAP = {
   ireland: "Éire", sport: "Spórt", politics: "Polaitíocht",
@@ -349,6 +352,31 @@ async function buildLevelWordByWord(sentence, pct) {
     } else { result.push(tok); }
   }
   return result.join("");
+}
+
+// Mark up to 3 headline words with Irish, using ONLY the verified dictionaries
+// (overrides + places), never MyMemory, so the most visible text is always right.
+function markHeadline(title) {
+  const tokens = title.split(/(\s+)/);
+  const candidates = [];
+  tokens.forEach((tok, i) => {
+    const clean = tok.replace(/[^A-Za-zÀ-ÿ'’]/g, "");
+    if (!clean) return;
+    const lower = clean.toLowerCase();
+    if (PLACES[lower] !== undefined) {
+      candidates.push({ i, clean, irish: PLACES[lower], place: true });
+    } else if (OVERRIDES[lower] !== undefined && clean.length >= 4) {
+      let irish = OVERRIDES[lower];
+      if (/^[A-Z]/.test(clean)) irish = irish.charAt(0).toUpperCase() + irish.slice(1);
+      candidates.push({ i, clean, irish, place: false });
+    }
+  });
+  // Prefer place names, then longer words; cap at 3 so it stays readable
+  candidates.sort((a, b) => (b.place ? 1 : 0) - (a.place ? 1 : 0) || b.clean.length - a.clean.length);
+  for (const c of candidates.slice(0, 3)) {
+    tokens[c.i] = tokens[c.i].replace(c.clean, `[[${c.irish}|${c.clean}]]`);
+  }
+  return tokens.join("");
 }
 
 async function fetchStories() {
