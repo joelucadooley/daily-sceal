@@ -99,12 +99,16 @@ const FALLBACK_STORIES = [
   },
 ];
 
-const SNAP_LEVELS = [10, 25, 50, 75];
+const SNAP_LEVELS = [10, 25, 50];
 const LEVELS_CONFIG = [
   { pct: 10, label: "Beginner", color: "#16a34a", bg: "#f0fdf4", tip: "Key nouns only" },
   { pct: 25, label: "Foundation", color: "#2563eb", bg: "#eff6ff", tip: "Nouns and verbs" },
   { pct: 50, label: "Intermediate", color: "#d97706", bg: "#fffbeb", tip: "Most content words" },
-  { pct: 75, label: "Advanced", color: "#7c3aed", bg: "#faf5ff", tip: "Full Irish unlocked with funding" },
+];
+// Locked levels shown as funding goals (slider positions 3 and 4)
+const LOCKED_LEVELS = [
+  { pct: 75, label: "Advanced" },
+  { pct: 100, label: "As Gaeilge" },
 ];
 
 const getLevel = pct => LEVELS_CONFIG.find(l => l.pct === pct) || LEVELS_CONFIG[0];
@@ -728,6 +732,7 @@ function ReadingView({ story, onBack }) {
   const [activeWord, setActiveWord] = useState(null);
   const [shareLoading, setShareLoading] = useState(false);
   const level = getLevel(pct);
+  const locked = pct >= 75;
   const parts = parseText(story.levels[pct] || story.summary);
   const irishCount = parts.filter(p => p.t === "ir").length;
 
@@ -782,15 +787,18 @@ function ReadingView({ story, onBack }) {
       {/* Level selector */}
       <div style={{ background: C.card, borderRadius: 10, border: `1px solid ${C.border}`, padding: "16px 18px", marginBottom: 20 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-          <span style={{ fontFamily: "system-ui, sans-serif", fontSize: "0.8rem", fontWeight: 700, color: pct === 100 ? "#9ca3af" : level.color }}>{pct === 100 ? "As Gaeilge" : level.label}</span>
-          <span style={{ fontFamily: "system-ui, sans-serif", fontSize: "0.72rem", color: C.faint }}>{pct === 100 ? "Coming soon" : level.tip}</span>
+          <span style={{ fontFamily: "system-ui, sans-serif", fontSize: "0.8rem", fontWeight: 700, color: locked ? "#9ca3af" : level.color }}>{pct === 100 ? "As Gaeilge" : pct === 75 ? "Advanced" : level.label}</span>
+          <span style={{ fontFamily: "system-ui, sans-serif", fontSize: "0.72rem", color: C.faint }}>{locked ? "A funding goal" : level.tip}</span>
         </div>
         <div style={{ position: "relative", marginBottom: 10, display: "flex", alignItems: "center" }}>
-          <input type="range" min={0} max={4} step={1} value={pct === 100 ? 4 : SNAP_LEVELS.indexOf(pct)}
+          <input type="range" min={0} max={4} step={1}
+            value={pct === 100 ? 4 : pct === 75 ? 3 : SNAP_LEVELS.indexOf(pct)}
             onChange={e => {
               const val = +e.target.value;
-              if (val === 4) { setPct(100); setActiveWord(null); }
-              else { setPct(SNAP_LEVELS[val]); setActiveWord(null); }
+              if (val === 4) setPct(100);
+              else if (val === 3) setPct(75);
+              else setPct(SNAP_LEVELS[val]);
+              setActiveWord(null);
             }}
             style={{ width: "100%", cursor: "pointer" }}
             className="sceal-range" />
@@ -814,29 +822,31 @@ function ReadingView({ story, onBack }) {
               {l.label}
             </button>
           ))}
-          <button
-            onClick={() => { setPct(100); setActiveWord(null); }}
-            style={{
-              flex: "1 1 auto",
-              background: pct === 100 ? "#f3f4f6" : "transparent",
-              color: pct === 100 ? "#6b7280" : "#d1d5db",
-              border: `1px dashed ${pct === 100 ? "#9ca3af" : "#e5e7eb"}`,
-              borderRadius: 6, padding: "6px 2px", cursor: "pointer",
-              fontFamily: "system-ui, sans-serif", fontSize: "0.62rem", fontWeight: 600,
-              transition: "all 0.12s",
-            }}>
-            🔒 As Gaeilge
-          </button>
+          {LOCKED_LEVELS.map(l => (
+            <button key={l.pct}
+              onClick={() => { setPct(l.pct); setActiveWord(null); }}
+              style={{
+                flex: "1 1 auto",
+                background: pct === l.pct ? "#f3f4f6" : "transparent",
+                color: pct === l.pct ? "#6b7280" : "#d1d5db",
+                border: `1px dashed ${pct === l.pct ? "#9ca3af" : "#e5e7eb"}`,
+                borderRadius: 6, padding: "6px 2px", cursor: "pointer",
+                fontFamily: "system-ui, sans-serif", fontSize: "0.62rem", fontWeight: 600,
+                transition: "all 0.12s",
+              }}>
+              🔒 {l.label}
+            </button>
+          ))}
         </div>
       </div>
 
       {/* Article */}
-      {pct === 100 ? (
+      {locked ? (
         <>
           <div style={{ background: C.card, borderRadius: 10, border: `1px solid ${C.border}`, overflow: "hidden" }}>
             <div style={{ padding: "16px 20px 0", filter: "blur(4px)", userSelect: "none", pointerEvents: "none", opacity: 0.5, maxHeight: "4.5rem", overflow: "hidden" }}>
               <div style={{ fontSize: "clamp(1rem,2.3vw,1.06rem)", lineHeight: 2, color: C.text, fontFamily: "Georgia, serif" }}>
-                {parseText(story.levels[75] || story.summary).map((p, i) =>
+                {parseText(story.levels[50] || story.summary).map((p, i) =>
                   p.t === "en" ? <span key={i}>{p.v}</span> :
                     <span key={i} style={{ color: C.blue, fontWeight: 600 }}>{p.irish}</span>
                 )}
@@ -844,9 +854,9 @@ function ReadingView({ story, onBack }) {
             </div>
             <div style={{ padding: "24px 24px 28px", borderTop: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}`, textAlign: "center" }}>
               <div style={{ fontSize: "1.5rem", marginBottom: 12 }}>🔒</div>
-              <h3 style={{ margin: "0 0 10px", fontFamily: "Georgia, serif", fontSize: "1.05rem", color: C.navy, fontWeight: 700 }}>As Gaeilge</h3>
+              <h3 style={{ margin: "0 0 10px", fontFamily: "Georgia, serif", fontSize: "1.05rem", color: C.navy, fontWeight: 700 }}>{pct === 100 ? "As Gaeilge" : "Advanced"}</h3>
               <p style={{ margin: "0 0 16px", fontFamily: "Georgia, serif", fontSize: "0.88rem", color: C.muted, lineHeight: 1.7 }}>
-                Full Irish translation requires specialist linguistic resources that are currently beyond the scope of this project. This level is a goal and one I am actively seeking support to reach.
+                Accurate Irish at this level requires specialist linguistic resources that are currently beyond the scope of this project. It is a goal I am actively seeking support to reach.
               </p>
               <a href="https://ko-fi.com/joelucadooley" target="_blank" rel="noopener noreferrer"
                 style={{ display: "inline-block", background: C.amber, color: "#fff", borderRadius: 8, padding: "10px 20px", fontFamily: "system-ui, sans-serif", fontSize: "0.82rem", fontWeight: 600, textDecoration: "none" }}>
@@ -855,7 +865,7 @@ function ReadingView({ story, onBack }) {
             </div>
             <div style={{ padding: "16px 20px", filter: "blur(4px)", userSelect: "none", pointerEvents: "none", opacity: 0.5, maxHeight: "6rem", overflow: "hidden" }}>
               <div style={{ fontSize: "clamp(1rem,2.3vw,1.06rem)", lineHeight: 2, color: C.text, fontFamily: "Georgia, serif" }}>
-                {parseText(story.levels[75] || story.summary).map((p, i) =>
+                {parseText(story.levels[50] || story.summary).map((p, i) =>
                   p.t === "en" ? <span key={i}>{p.v}</span> :
                     <span key={i} style={{ color: C.blue, fontWeight: 600 }}>{p.irish}</span>
                 )}
