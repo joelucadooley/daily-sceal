@@ -4,6 +4,11 @@ on:
   schedule:
     - cron: "30 5 * * *"
   workflow_dispatch:
+    inputs:
+      feeds:
+        description: 'Feeds for this run only, comma separated (e.g. sport,gaa). Leave blank for the normal mix.'
+        required: false
+        default: ''
 
 jobs:
   generate:
@@ -25,6 +30,8 @@ jobs:
         run: npm install && npm install @xmldom/xmldom
 
       - name: Run generation script
+        env:
+          FEEDS: ${{ github.event.inputs.feeds }}
         run: node scripts/generate.js
 
       - name: Commit and push today.json
