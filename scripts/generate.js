@@ -1,12 +1,21 @@
 import { writeFileSync, readFileSync, mkdirSync } from "fs";
 import { DOMParser } from "@xmldom/xmldom";
-
-const RSS_URL = "https://www.rte.ie/feeds/rss/?index=/news";
+import {
+  activeFeeds, feedUrl, FETCH_PER_FEED,
+  isUsable, dedupe, balance, sectionForStory,
+} from "./feeds.js";
 // Levels actually generated. 75 (Advanced) and 100 (As Gaeilge) are locked
 // funding goals in the app — the sentence-alignment approach isn't reliable
 // enough to ship, so we don't generate them at all.
 const LEVELS = [10, 25, 50];
-const STORY_COUNT = 20;
+// Stories actually processed. Every one of these costs a page scrape plus
+// three levels of MyMemory calls, so this is the expensive number. Feeds are
+// read far more widely than this and then filtered down to it.
+//
+// Raised from 20 to fill the section tabs on the site. The homepage only shows
+// HOMEPAGE_COUNT of these; the rest live under their section. At ~50 lookups
+// per story this is still well inside MyMemory's daily allowance.
+const STORY_COUNT = 30;
 
 const CAT_MAP = {
   ireland: "Éire", sport: "Spórt", politics: "Polaitíocht",
@@ -379,26 +388,79 @@ function markHeadline(title) {
   return tokens.join("");
 }
 
+// Read one feed. A dead or slow feed logs a warning and returns nothing rather
+// than taking the whole run down with it.
+async function fetchFeed(feed) {
+  try {
+    const res = await fetch(feedUrl(feed), { signal: AbortSignal.timeout(10000) });
+    if (!res.ok) {
+      console.warn(`  ${feed.id}: HTTP ${res.status}, skipped`);
+      return [];
+    }
+    const xml = new DOMParser().parseFromString(await res.text(), "text/xml");
+    const items = Array.from(xml.getElementsByTagName("item")).slice(0, FETCH_PER_FEED);
+    return items.map((item, i) => {
+      const g = tag => item.getElementsByTagName(tag)[0]?.textContent || "";
+      const rssCat = g("category").trim();
+      const d = g("pubDate") ? new Date(g("pubDate")) : new Date();
+      // The item's own <category> is more specific than the feed it came from
+      // (the /news feed tags things Ireland, World, Football and so on), so
+      // prefer it and fall back to the feed's label only when it tells us
+      // nothing. This keeps the category chips in the export tool meaningful.
+      const fromRss = rssCat ? getIrCat(rssCat) : null;
+      const categoryIr = fromRss && fromRss !== "Nuacht" ? fromRss : feed.catIr;
+      return {
+        id: `${feed.id}-${i}`,
+        title: g("title").trim(),
+        summary: g("description").replace(/<[^>]+>/g, "").trim().slice(0, 300),
+        link: g("link").trim(),
+        category: rssCat || feed.label,
+        categoryIr,
+        feed: feed.id,
+        // Toolbar section on the site. Derived from the item's own category
+        // where possible, falling back to the feed's section.
+        section: sectionForStory(categoryIr, feed.id),
+        published: d.toISOString(),
+        timeAgo: msAgo(d), // kept for backwards-compatibility; app recomputes live from `published`
+      };
+    }).filter(s => s.title.length > 5);
+  } catch (e) {
+    console.warn(`  ${feed.id}: ${e.message}, skipped`);
+    return [];
+  }
+}
+
 async function fetchStories() {
-  console.log("Fetching RTÉ RSS...");
-  const res = await fetch(RSS_URL, { signal: AbortSignal.timeout(10000) });
-  if (!res.ok) throw new Error(`RSS fetch failed: ${res.status}`);
-  const xml = new DOMParser().parseFromString(await res.text(), "text/xml");
-  return Array.from(xml.getElementsByTagName("item")).slice(0, STORY_COUNT).map((item, i) => {
-    const g = tag => item.getElementsByTagName(tag)[0]?.textContent || "";
-    const cat = g("category") || "News";
-    const d = g("pubDate") ? new Date(g("pubDate")) : new Date();
-    return {
-      id: `story-${i}`,
-      title: g("title").trim(),
-      summary: g("description").replace(/<[^>]+>/g, "").trim().slice(0, 300),
-      link: g("link").trim(),
-      category: cat,
-      categoryIr: getIrCat(cat),
-      published: d.toISOString(),
-      timeAgo: msAgo(d), // kept for backwards-compatibility; app recomputes live from `published`
-    };
-  }).filter(s => s.title.length > 5);
+  const feeds = activeFeeds();
+  console.log(`Fetching ${feeds.length} RTÉ feed(s): ${feeds.map(f => f.id).join(", ")}`);
+
+  const all = [];
+  for (const feed of feeds) {
+    const items = await fetchFeed(feed);
+    console.log(`  ${feed.id}: ${items.length} items`);
+    all.push(...items);
+  }
+
+  if (!all.length) throw new Error("No stories from any feed");
+
+  const unique = dedupe(all);
+  const usable = unique.filter(isUsable);
+  console.log(`${all.length} fetched, ${unique.length} unique, ${usable.length} usable`);
+
+  // If the filters were too aggressive, fall back to unfiltered rather than
+  // publishing a nearly empty day.
+  const pool = usable.length >= STORY_COUNT ? usable : unique;
+  if (pool !== usable) {
+    console.warn(`Only ${usable.length} passed the quality filter, using all ${unique.length}`);
+  }
+
+  const chosen = balance(pool, STORY_COUNT);
+  const spread = {};
+  chosen.forEach(s => { spread[s.feed] = (spread[s.feed] || 0) + 1; });
+  console.log(`Selected ${chosen.length}:`, spread);
+
+  // Re-id sequentially so the app's React keys stay stable and predictable
+  return chosen.map((s, i) => ({ ...s, id: `story-${i}` }));
 }
 
 async function processStory(story, index) {
