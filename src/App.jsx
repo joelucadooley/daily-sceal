@@ -13,6 +13,145 @@ const C = {
   blueLight: "#eff6ff",
 };
 
+// Toolbar sections. Each story falls into exactly one, which decides the tab
+// it appears under. `cats` lists the Irish category labels that belong here,
+// so Spórt gathers Peil, Iomáint, Sacar and Rugbaí while each story still
+// shows its own finer label in gold.
+//
+// ORDER MATTERS. The first PRIMARY_TABS entries get their own button on the
+// toolbar; everything after that lives behind the ••• menu. Reorder this array
+// to change which sections are one tap away.
+//
+// generate.js writes a `section` field onto every story, so this map is only
+// consulted for the built-in fallback stories and for older archive files.
+// Keep it in step with SECTION_CATS in scripts/feeds.js.
+const SECTIONS = [
+  { id: "inniu",       label: "Inniu",       cats: null },
+  { id: "eire",        label: "Éire",        cats: ["Éire", "Baile Átha Cliath", "Nuacht", "Coireacht", "Cúirt", "Tithíocht", "Oideachas"] },
+  { id: "sport",       label: "Spórt",       cats: ["Spórt", "Peil", "Iomáint", "Sacar", "Rugbaí", "CLG"] },
+  { id: "domhan",      label: "Domhan",      cats: ["Domhan"] },
+  { id: "polaitiocht", label: "Polaitíocht", cats: ["Polaitíocht", "Toghchán"] },
+  { id: "gno",         label: "Gnó",         cats: ["Gnó", "Eacnamaíocht"] },
+  { id: "saol",        label: "Saol",        cats: ["Cultúr", "Siamsaíocht", "Saol", "Taisteal", "Sláinte", "Eolaíocht", "Teicneolaíocht", "Aimsir", "Ealaíon", "Comhshaol"] },
+];
+
+// Tabs shown directly on the bar, including Inniu. The rest go in the ••• menu.
+// Four plus the menu button is what fits a 320px phone without scrolling.
+const PRIMARY_TABS = 4;
+
+// How many stories the Inniu tab shows.
+const HOMEPAGE_COUNT = 8;
+
+// A section tab wants at least this many stories. If today's pull is short, we
+// top it up from the archive rather than showing a nearly empty tab.
+const MIN_PER_SECTION = 6;
+const TARGET_PER_SECTION = 8;
+// How far back to look when topping up. Four days keeps things recent enough
+// that a story still feels like news.
+const BACKFILL_DAYS = 4;
+
+const sectionOf = s => {
+  if (s.section) return s.section;
+  const hit = SECTIONS.find(sec => sec.cats && sec.cats.includes(s.categoryIr));
+  return hit ? hit.id : "eire";
+};
+
+/** Stories for a tab. Inniu gets a spread across sections, newest first. */
+function storiesForSection(stories, sectionId) {
+  if (sectionId !== "inniu") {
+    return stories.filter(s => sectionOf(s) === sectionId).sort(byNewest);
+  }
+  // Round-robin the sections so the homepage is never all one topic
+  const buckets = new Map();
+  for (const s of [...stories].sort(byNewest)) {
+    const k = sectionOf(s);
+    if (!buckets.has(k)) buckets.set(k, []);
+    buckets.get(k).push(s);
+  }
+  const order = SECTIONS.filter(sec => sec.id !== "inniu" && buckets.has(sec.id)).map(sec => sec.id);
+  const out = [];
+  for (let round = 0; out.length < HOMEPAGE_COUNT && round < 20; round++) {
+    let added = false;
+    for (const id of order) {
+      if (out.length >= HOMEPAGE_COUNT) break;
+      const item = buckets.get(id)[round];
+      if (item) { out.push(item); added = true; }
+    }
+    if (!added) break;
+  }
+  return out;
+}
+
+/** Only show tabs that actually have something, plus Inniu. */
+function availableSections(stories) {
+  const present = new Set(stories.map(sectionOf));
+  return SECTIONS.filter(sec => sec.id === "inniu" || present.has(sec.id));
+}
+
+/**
+ * Top up thin sections from the archive.
+ *
+ * A newly-enabled feed takes a few days to build depth, and some sections are
+ * just quiet. Rather than show a tab with two stories in it, we pull the last
+ * few days and fill any section that is under MIN_PER_SECTION up to
+ * TARGET_PER_SECTION. Today's stories always sort first, so the top of every
+ * tab stays current and the older ones sit underneath with their real age.
+ *
+ * Runs after first paint, so it never delays today's stories appearing.
+ */
+async function backfillThinSections(todayStories) {
+  const base = import.meta.env.BASE_URL;
+
+  const counts = {};
+  for (const s of todayStories) counts[sectionOf(s)] = (counts[sectionOf(s)] || 0) + 1;
+  const thin = SECTIONS
+    .filter(sec => sec.id !== "inniu" && (counts[sec.id] || 0) > 0 && (counts[sec.id] || 0) < MIN_PER_SECTION)
+    .map(sec => sec.id);
+  if (!thin.length) return [];
+
+  // Don't re-add anything already on the page
+  const seen = new Set();
+  for (const s of todayStories) {
+    if (s.link) seen.add(s.link.toLowerCase().replace(/[?#].*$/, "").replace(/\/$/, ""));
+    if (s.title) seen.add(s.title.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim());
+  }
+
+  const added = [];
+  const need = { ...counts };
+  const today = new Date();
+
+  for (let d = 1; d <= BACKFILL_DAYS; d++) {
+    if (!thin.some(id => (need[id] || 0) < TARGET_PER_SECTION)) break;
+    const dt = new Date(today);
+    dt.setDate(today.getDate() - d);
+    const key = dt.toISOString().slice(0, 10);
+    let data;
+    try {
+      const r = await fetch(`${base}data/archive/${key}.json`, { signal: AbortSignal.timeout(5000) });
+      if (!r.ok) continue;
+      data = await r.json();
+    } catch { continue; }
+
+    for (const s of data.stories || []) {
+      const sec = sectionOf(s);
+      if (!thin.includes(sec)) continue;
+      if ((need[sec] || 0) >= TARGET_PER_SECTION) continue;
+      const link = (s.link || "").toLowerCase().replace(/[?#].*$/, "").replace(/\/$/, "");
+      const title = (s.title || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+      if ((link && seen.has(link)) || (title && seen.has(title))) continue;
+      if (link) seen.add(link);
+      if (title) seen.add(title);
+      // Re-id so React keys can't collide with today's story-N ids
+      added.push({ ...s, id: `${key}-${s.id}`, published: s.published || `${key}T09:00:00.000Z` });
+      need[sec] = (need[sec] || 0) + 1;
+    }
+  }
+  return added;
+}
+
+const byNewest = (a, b) =>
+  new Date(b.published || 0).getTime() - new Date(a.published || 0).getTime();
+
 const CAT_MAP = {
   ireland: "Éire", sport: "Spórt", politics: "Polaitíocht",
   business: "Gnó", entertainment: "Siamsaíocht", world: "Domhan",
@@ -253,10 +392,129 @@ function WordChip({ part, active, onToggle }) {
   );
 }
 
-function FeedView({ stories, loading, onStoryClick }) {
+/**
+ * Section toolbar. Fits the width with no sideways scroll: the first
+ * PRIMARY_TABS sections get a button each, the rest live behind ••• .
+ * When an overflow section is selected it swaps into the last primary slot,
+ * so the bar always shows where you are and never changes width.
+ */
+function SectionBar({ sections, active, onSelect }) {
+  const [open, setOpen] = useState(false);
+
+  let primary = sections.slice(0, PRIMARY_TABS);
+  let overflow = sections.slice(PRIMARY_TABS);
+
+  // Selected an overflow section? Promote it into the last visible slot and
+  // push the one it displaced into the menu.
+  const activeIsHidden = overflow.some(s => s.id === active);
+  if (activeIsHidden) {
+    const promoted = overflow.find(s => s.id === active);
+    const displaced = primary[primary.length - 1];
+    primary = [...primary.slice(0, -1), promoted];
+    overflow = [displaced, ...overflow.filter(s => s.id !== active)];
+  }
+
+  const pick = id => { setOpen(false); onSelect(id); };
+
+  return (
+    <div style={{ position: "sticky", top: 0, zIndex: 50, margin: "0 -20px" }}>
+      <nav style={{
+        background: "rgba(255,255,255,0.97)",
+        backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
+        borderBottom: `1px solid ${C.border}`,
+      }}>
+        <div style={{
+          maxWidth: 640, margin: "0 auto", display: "flex",
+          alignItems: "stretch", justifyContent: "space-between",
+          padding: "0 8px",
+        }}>
+          {primary.map(sec => {
+            const on = active === sec.id;
+            return (
+              <button key={sec.id} onClick={() => pick(sec.id)}
+                style={{
+                  // Natural width, not equal shares: an equal-share layout
+                  // ellipsises the longest label (Polaitíocht) on every phone.
+                  flex: "0 1 auto", minWidth: 0, background: "none", border: "none",
+                  padding: "13px 6px 11px", cursor: "pointer", position: "relative",
+                  fontFamily: "system-ui, sans-serif", fontSize: "clamp(0.56rem,2.5vw,0.68rem)",
+                  fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase",
+                  color: on ? C.navy : C.faint,
+                  whiteSpace: "nowrap", transition: "color 0.15s",
+                }}>
+                {sec.label}
+                {on && <span style={{
+                  position: "absolute", left: 6, right: 6, bottom: 0,
+                  height: 3, background: C.amber, borderRadius: "2px 2px 0 0",
+                }} />}
+              </button>
+            );
+          })}
+
+          {overflow.length > 0 && (
+            <button onClick={() => setOpen(o => !o)} aria-label="Tuilleadh rannóg"
+              style={{
+                flex: "0 0 auto", width: 40, background: "none", border: "none",
+                padding: "13px 0 11px", cursor: "pointer", position: "relative",
+                fontFamily: "system-ui, sans-serif", fontSize: "0.9rem",
+                fontWeight: 700, letterSpacing: "0.06em",
+                color: open ? C.navy : C.faint, lineHeight: 1,
+              }}>
+              •••
+            </button>
+          )}
+        </div>
+      </nav>
+
+      {open && (
+        <>
+          {/* click-away catcher */}
+          <div onClick={() => setOpen(false)}
+            style={{ position: "fixed", inset: 0, zIndex: 40, background: "rgba(13,33,55,0.18)" }} />
+          <div style={{
+            position: "absolute", right: 12, top: "100%", zIndex: 60, minWidth: 168,
+            background: "#fff", border: `1px solid ${C.border}`, borderRadius: 10,
+            boxShadow: "0 12px 32px rgba(13,33,55,0.16)", overflow: "hidden",
+            animation: "fadeIn 0.12s ease",
+          }}>
+            {overflow.map((sec, i) => (
+              <button key={sec.id} onClick={() => pick(sec.id)}
+                style={{
+                  display: "block", width: "100%", textAlign: "left",
+                  background: "none", border: "none",
+                  borderTop: i ? `1px solid ${C.border}` : "none",
+                  padding: "12px 16px", cursor: "pointer",
+                  fontFamily: "system-ui, sans-serif", fontSize: "0.72rem",
+                  fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase",
+                  color: C.navy, whiteSpace: "nowrap",
+                }}>
+                {sec.label}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function FeedView({ stories, loading, onStoryClick, sectionLabel }) {
   return (
     <div>
       {loading && <Spinner />}
+
+      {!loading && stories.length === 0 && (
+        <div style={{ padding: "56px 10px", textAlign: "center", fontFamily: "system-ui, sans-serif" }}>
+          <div style={{ fontSize: "1.6rem", marginBottom: 10 }}>📭</div>
+          <div style={{ fontFamily: "Georgia, serif", fontSize: "1rem", color: C.navy, fontWeight: 700, marginBottom: 6 }}>
+            Faic anseo inniu
+          </div>
+          <div style={{ fontSize: "0.82rem", color: C.muted, lineHeight: 1.6 }}>
+            No {sectionLabel} stories in today's pull. Try another section.
+          </div>
+        </div>
+      )}
+
       {!loading && stories.map((s, i) => (
         <div key={s.id} onClick={() => onStoryClick(s)}
           style={{
@@ -1388,16 +1646,50 @@ function ExportView({ stories }) {
 export default function DailySceal() {
   const [view, setView] = useState("feed");
   const [stories, setStories] = useState(FALLBACK_STORIES);
+  // Today's pull on its own. The public feed may also contain older stories
+  // pulled in to pad thin sections, but the export tool must only ever offer
+  // today's, or you could end up posting a three-day-old story.
+  const [todayOnly, setTodayOnly] = useState(FALLBACK_STORIES);
   const [loading, setLoading] = useState(true);
   const [activeStory, setActiveStory] = useState(null);
+  const [section, setSection] = useState("inniu");
   const isExport = typeof window !== "undefined" && (window.location.hash === "#export" || window.location.search.includes("export=1"));
 
   useEffect(() => {
+    let cancelled = false;
     fetchTodayContent()
-      .then(data => { if (data?.stories?.length) setStories(data.stories); })
+      .then(data => {
+        if (cancelled || !data?.stories?.length) return;
+        const todayStories = data.stories;
+        setStories(todayStories);
+        setTodayOnly(todayStories);
+        // Top up thin sections in the background. Today's stories are already
+        // on screen by this point, so this only ever adds depth further down.
+        backfillThinSections(todayStories)
+          .then(extra => {
+            if (cancelled || !extra.length) return;
+            setStories([...todayStories, ...extra]);
+          })
+          .catch(() => {});
+      })
       .catch(() => {})
-      .finally(() => setLoading(false));
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
   }, []);
+
+  const sections = availableSections(stories);
+  const shown = storiesForSection(stories, section);
+  const sectionLabel = SECTIONS.find(s => s.id === section)?.label || "";
+
+  // If today's pull has nothing for the selected section, fall back to Inniu
+  useEffect(() => {
+    if (!sections.some(s => s.id === section)) setSection("inniu");
+  }, [stories]);
+
+  function pickSection(id) {
+    setSection(id);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
 
   function openStory(story) {
     setActiveStory(story);
@@ -1417,6 +1709,7 @@ export default function DailySceal() {
         input[type=range] { -webkit-appearance: none; appearance: none; height: 3px; background: ${C.border}; border-radius: 2px; outline: none; }
         input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; background: ${C.navy}; border-radius: 50%; cursor: pointer; border: 2px solid #fff; box-shadow: 0 1px 6px rgba(13,33,55,0.2); }
         .sceal-range { background: linear-gradient(to right, ${C.border} 0%, ${C.border} 80%, #ede8e0 80%, #f0ede8 100%) !important; }
+        .sceal-sections::-webkit-scrollbar { display: none; }
         button:active { opacity: 0.7; }
         a:hover { opacity: 0.75; }
       `}</style>
@@ -1424,7 +1717,7 @@ export default function DailySceal() {
       {/* Header */}
       <header style={{ background: C.navy, borderBottom: `3px solid ${C.amber}` }}>
         <div style={{ maxWidth: 640, margin: "0 auto", padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div onClick={() => setView("feed")} style={{ cursor: "pointer" }}>
+          <div onClick={() => { setSection("inniu"); setView("feed"); }} style={{ cursor: "pointer" }}>
             <div style={{ fontSize: "clamp(1.2rem,3.5vw,1.5rem)", fontWeight: 700, color: "#fff", fontFamily: "Georgia, serif", letterSpacing: "-0.01em", lineHeight: 1 }}>
               Daily <span style={{ color: C.amber }}>Scéal</span>
             </div>
@@ -1437,8 +1730,13 @@ export default function DailySceal() {
       {/* Content */}
       <main style={{ maxWidth: 640, margin: "0 auto", padding: "0 20px 120px" }}>
         <div style={{ background: view === "about" || isExport ? "transparent" : C.card, borderLeft: isExport ? "none" : `1px solid ${C.border}`, borderRight: isExport ? "none" : `1px solid ${C.border}`, borderBottom: isExport ? "none" : `1px solid ${C.border}`, borderRadius: "0 0 12px 12px", padding: "0 20px", minHeight: 400 }}>
-          {isExport && <ExportView stories={stories} />}
-          {!isExport && view === "feed" && <FeedView stories={stories} loading={loading} onStoryClick={openStory} />}
+          {isExport && <ExportView stories={todayOnly} />}
+          {!isExport && view === "feed" && (
+            <>
+              <SectionBar sections={sections} active={section} onSelect={pickSection} />
+              <FeedView stories={shown} loading={loading} onStoryClick={openStory} sectionLabel={sectionLabel} />
+            </>
+          )}
           {!isExport && view === "reading" && activeStory && (
             <div style={{ paddingTop: 20 }}>
               <ReadingView story={activeStory} onBack={() => setView("feed")} />
@@ -1461,7 +1759,10 @@ export default function DailySceal() {
           ].map(tab => {
             const active = view === tab.id || (tab.id === "feed" && view === "reading");
             return (
-            <button key={tab.id} onClick={() => setView(tab.id)}
+            <button key={tab.id} onClick={() => {
+                if (tab.id === "feed" && view === "feed") pickSection("inniu");
+                setView(tab.id);
+              }}
               style={{ background: "none", border: "none", padding: "11px 0 9px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 3, position: "relative" }}
             >
               {active && <span style={{ position: "absolute", top: 0, left: "20%", right: "20%", height: 2, background: C.navy, borderRadius: "0 0 2px 2px" }} />}
