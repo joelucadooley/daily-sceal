@@ -15,29 +15,24 @@ const C = {
 
 // Toolbar sections. Each story falls into exactly one, which decides the tab
 // it appears under. `cats` lists the Irish category labels that belong here,
-// so Spórt gathers Peil, Iomáint, Sacar and Rugbaí while each story still
-// shows its own finer label in gold.
+// so Spórt gathers Peil, Iomáint, Sacar and Rugbaí, and Eile gathers everything
+// that does not warrant its own tab. Either way each story still shows its own
+// finer label in gold.
 //
-// ORDER MATTERS. The first PRIMARY_TABS entries get their own button on the
-// toolbar; everything after that lives behind the ••• menu. Reorder this array
-// to change which sections are one tap away.
+// Five fixed tabs, no overflow menu: they fit a 320px phone without scrolling.
+// To promote something out of Eile, give it its own entry here and remove its
+// categories from the eile list.
 //
 // generate.js writes a `section` field onto every story, so this map is only
 // consulted for the built-in fallback stories and for older archive files.
 // Keep it in step with SECTION_CATS in scripts/feeds.js.
 const SECTIONS = [
-  { id: "inniu",       label: "Inniu",       cats: null },
-  { id: "eire",        label: "Éire",        cats: ["Éire", "Baile Átha Cliath", "Nuacht", "Coireacht", "Cúirt", "Tithíocht", "Oideachas"] },
-  { id: "sport",       label: "Spórt",       cats: ["Spórt", "Peil", "Iomáint", "Sacar", "Rugbaí", "CLG"] },
-  { id: "domhan",      label: "Domhan",      cats: ["Domhan"] },
-  { id: "polaitiocht", label: "Polaitíocht", cats: ["Polaitíocht", "Toghchán"] },
-  { id: "gno",         label: "Gnó",         cats: ["Gnó", "Eacnamaíocht"] },
-  { id: "saol",        label: "Saol",        cats: ["Cultúr", "Siamsaíocht", "Saol", "Taisteal", "Sláinte", "Eolaíocht", "Teicneolaíocht", "Aimsir", "Ealaíon", "Comhshaol"] },
+  { id: "inniu",  label: "Inniu",  cats: null },
+  { id: "eire",   label: "Éire",   cats: ["Éire", "Baile Átha Cliath", "Nuacht", "Coireacht", "Cúirt", "Tithíocht", "Oideachas"] },
+  { id: "sport",  label: "Spórt",  cats: ["Spórt", "Peil", "Iomáint", "Sacar", "Rugbaí", "CLG"] },
+  { id: "domhan", label: "Domhan", cats: ["Domhan"] },
+  { id: "eile",   label: "Eile",   cats: ["Polaitíocht", "Toghchán", "Gnó", "Eacnamaíocht", "Cultúr", "Siamsaíocht", "Saol", "Taisteal", "Sláinte", "Eolaíocht", "Teicneolaíocht", "Aimsir", "Ealaíon", "Comhshaol"] },
 ];
-
-// Tabs shown directly on the bar, including Inniu. The rest go in the ••• menu.
-// Four plus the menu button is what fits a 320px phone without scrolling.
-const PRIMARY_TABS = 4;
 
 // How many stories the Inniu tab shows.
 const HOMEPAGE_COUNT = 8;
@@ -50,10 +45,12 @@ const TARGET_PER_SECTION = 8;
 // that a story still feels like news.
 const BACKFILL_DAYS = 4;
 
+// Eile is the catch-all, so an RTÉ category nobody has mapped yet still shows
+// up somewhere sensible instead of being quietly filed under Éire.
 const sectionOf = s => {
   if (s.section) return s.section;
   const hit = SECTIONS.find(sec => sec.cats && sec.cats.includes(s.categoryIr));
-  return hit ? hit.id : "eire";
+  return hit ? hit.id : "eile";
 };
 
 /** Stories for a tab. Inniu gets a spread across sections, newest first. */
@@ -393,108 +390,47 @@ function WordChip({ part, active, onToggle }) {
 }
 
 /**
- * Section toolbar. Fits the width with no sideways scroll: the first
- * PRIMARY_TABS sections get a button each, the rest live behind ••• .
- * When an overflow section is selected it swaps into the last primary slot,
- * so the bar always shows where you are and never changes width.
+ * Section toolbar. Five fixed tabs, sized to their content and spread across
+ * the width, so it fits a 320px phone with no sideways scroll and nothing
+ * moves around between taps.
  */
 function SectionBar({ sections, active, onSelect }) {
-  const [open, setOpen] = useState(false);
-
-  let primary = sections.slice(0, PRIMARY_TABS);
-  let overflow = sections.slice(PRIMARY_TABS);
-
-  // Selected an overflow section? Promote it into the last visible slot and
-  // push the one it displaced into the menu.
-  const activeIsHidden = overflow.some(s => s.id === active);
-  if (activeIsHidden) {
-    const promoted = overflow.find(s => s.id === active);
-    const displaced = primary[primary.length - 1];
-    primary = [...primary.slice(0, -1), promoted];
-    overflow = [displaced, ...overflow.filter(s => s.id !== active)];
-  }
-
-  const pick = id => { setOpen(false); onSelect(id); };
-
   return (
-    <div style={{ position: "sticky", top: 0, zIndex: 50, margin: "0 -20px" }}>
-      <nav style={{
-        background: "rgba(255,255,255,0.97)",
-        backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
-        borderBottom: `1px solid ${C.border}`,
+    <nav style={{
+      position: "sticky", top: 0, zIndex: 50, margin: "0 -20px",
+      background: "rgba(255,255,255,0.97)",
+      backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
+      borderBottom: `1px solid ${C.border}`,
+    }}>
+      <div style={{
+        maxWidth: 640, margin: "0 auto", display: "flex",
+        alignItems: "stretch", justifyContent: "space-between",
+        padding: "0 8px",
       }}>
-        <div style={{
-          maxWidth: 640, margin: "0 auto", display: "flex",
-          alignItems: "stretch", justifyContent: "space-between",
-          padding: "0 8px",
-        }}>
-          {primary.map(sec => {
-            const on = active === sec.id;
-            return (
-              <button key={sec.id} onClick={() => pick(sec.id)}
-                style={{
-                  // Natural width, not equal shares: an equal-share layout
-                  // ellipsises the longest label (Polaitíocht) on every phone.
-                  flex: "0 1 auto", minWidth: 0, background: "none", border: "none",
-                  padding: "13px 6px 11px", cursor: "pointer", position: "relative",
-                  fontFamily: "system-ui, sans-serif", fontSize: "clamp(0.56rem,2.5vw,0.68rem)",
-                  fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase",
-                  color: on ? C.navy : C.faint,
-                  whiteSpace: "nowrap", transition: "color 0.15s",
-                }}>
-                {sec.label}
-                {on && <span style={{
-                  position: "absolute", left: 6, right: 6, bottom: 0,
-                  height: 3, background: C.amber, borderRadius: "2px 2px 0 0",
-                }} />}
-              </button>
-            );
-          })}
-
-          {overflow.length > 0 && (
-            <button onClick={() => setOpen(o => !o)} aria-label="Tuilleadh rannóg"
+        {sections.map(sec => {
+          const on = active === sec.id;
+          return (
+            <button key={sec.id} onClick={() => onSelect(sec.id)}
               style={{
-                flex: "0 0 auto", width: 40, background: "none", border: "none",
-                padding: "13px 0 11px", cursor: "pointer", position: "relative",
-                fontFamily: "system-ui, sans-serif", fontSize: "0.9rem",
-                fontWeight: 700, letterSpacing: "0.06em",
-                color: open ? C.navy : C.faint, lineHeight: 1,
+                // Natural width, not equal shares: equal shares ellipsise the
+                // longer labels on a narrow phone.
+                flex: "0 1 auto", minWidth: 0, background: "none", border: "none",
+                padding: "13px 6px 11px", cursor: "pointer", position: "relative",
+                fontFamily: "system-ui, sans-serif", fontSize: "clamp(0.56rem,2.5vw,0.68rem)",
+                fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase",
+                color: on ? C.navy : C.faint,
+                whiteSpace: "nowrap", transition: "color 0.15s",
               }}>
-              •••
+              {sec.label}
+              {on && <span style={{
+                position: "absolute", left: 6, right: 6, bottom: 0,
+                height: 3, background: C.amber, borderRadius: "2px 2px 0 0",
+              }} />}
             </button>
-          )}
-        </div>
-      </nav>
-
-      {open && (
-        <>
-          {/* click-away catcher */}
-          <div onClick={() => setOpen(false)}
-            style={{ position: "fixed", inset: 0, zIndex: 40, background: "rgba(13,33,55,0.18)" }} />
-          <div style={{
-            position: "absolute", right: 12, top: "100%", zIndex: 60, minWidth: 168,
-            background: "#fff", border: `1px solid ${C.border}`, borderRadius: 10,
-            boxShadow: "0 12px 32px rgba(13,33,55,0.16)", overflow: "hidden",
-            animation: "fadeIn 0.12s ease",
-          }}>
-            {overflow.map((sec, i) => (
-              <button key={sec.id} onClick={() => pick(sec.id)}
-                style={{
-                  display: "block", width: "100%", textAlign: "left",
-                  background: "none", border: "none",
-                  borderTop: i ? `1px solid ${C.border}` : "none",
-                  padding: "12px 16px", cursor: "pointer",
-                  fontFamily: "system-ui, sans-serif", fontSize: "0.72rem",
-                  fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase",
-                  color: C.navy, whiteSpace: "nowrap",
-                }}>
-                {sec.label}
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-    </div>
+          );
+        })}
+      </div>
+    </nav>
   );
 }
 
