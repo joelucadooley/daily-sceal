@@ -1,6 +1,6 @@
 {
   "date": "2026-07-27",
-  "generated": "2026-07-27T09:31:06.662Z",
+  "generated": "2026-07-27T09:41:53.510Z",
   "stories": [
     {
       "id": "story-0",
@@ -10,7 +10,7 @@
       "category": "Football",
       "categoryIr": "Peil",
       "published": "2026-07-27T08:47:36.000Z",
-      "timeAgo": "38m ago",
+      "timeAgo": "49m ago",
       "levels": {
         "10": "Mayo will [[dealraitheach|likely]] have to upscale plans for the homecoming of their triumphant footballers this evening as the county prepares for an enormous [[ceiliúradh|celebration]] in Castlebar. The green and red ended a 75-year wait for the Sam Maguire Cup on Sunday when they defeated Kerry at Croke Park to spark a monumental outpouring of joy in the stands. Thousands will [[freastail|attend]] a special homecoming event at Hastings Insurance McHale Park, with the team expected to arrive at around 6pm. Work began on a [[acmhainn|potential]] homecoming in the immediate aftermath of Mayo's semi-final victory over Louth three weeks ago.",
         "25": "Mayo will [[dealraitheach|likely]] have to upscale plans for the homecoming of their [[buadhach|triumphant]] footballers this evening as the county [[ullmhaigh|prepares]] for an enormous celebration in Castlebar. The green and red [[críochnaithe|ended]] a 75-year wait for the Sam Maguire Cup on Sunday when they defeated Kerry at Croke Park to [[splanc|spark]] a monumental outpouring of joy in the stands. Thousands will [[freastail|attend]] a special homecoming [[imeacht|event]] at Hastings Insurance McHale Park, with the team expected to arrive at [[timpeall|around]] 6pm. Work began on a potential homecoming in the [[láithreach|immediate]] aftermath of Mayo's semi-final [[bua|victory]] over Louth three weeks ago.",
@@ -40,7 +40,7 @@
       "category": "World",
       "categoryIr": "Domhan",
       "published": "2026-07-27T05:26:38.000Z",
-      "timeAgo": "3h ago",
+      "timeAgo": "4h ago",
       "levels": {
         "10": "Three [[daoine|people]] have been killed and at least four others wounded, including a toddler, after an apparent [[comhrac gunnaí|gunfight]] near the Space Needle landmark in Seattle last night, according to police. Seattle Police said one suspect had been arrested and they were searching for [[eile|another]] following the incident at the Bite of Seattle food festival in a popular tourist district of the northwestern US [[cathair|city]]. Assistant Police Chief Tyrone Davis said shots were heard around 6pm (2am Irish time) and \"there were two people who we believe were shooting at each [[eile|other]].\" Two weapons were recovered. Police said on X earlier Sunday there were \"multiple shooting victims\" after shots were fired at the Seattle Center.",
         "25": "Three [[daoine|people]] have been killed and at least four [[eile|others]] wounded, including a toddler, after an [[dealraitheach|apparent]] gunfight near the Space Needle landmark in Seattle [[ceann deireanach|last]] night, according to police. Seattle Police said one [[amhrastach|suspect]] had been arrested and they were searching for another [[i ndiaidh|following]] the incident at the Bite of Seattle food festival in a [[an phobail|popular]] tourist district of the northwestern US city. Assistant Police Chief Tyrone Davis said shots were [[cloiste|heard]] around 6pm (2am Irish time) and \"there were two people who we [[creid|believe]] were shooting at each other.\" Two [[arm|weapons]] were recovered. Police said on X earlier Sunday there were \"multiple [[caitheamh|shooting]] victims\" after shots were fired at the Seattle Center.",
@@ -64,21 +64,6 @@
     },
     {
       "id": "story-4",
-      "title": "Off-duty garda killed in single-vehicle crash in Co Clare",
-      "summary": "An off-duty garda was killed in a single-vehicle car crash in Co Clare yesterday evening. The collision happened shortly after 5.30pm yesterday on the R466 outside the village of Broadford. Gardaí and emergency services attended the scene, where the passenger of the car, was pronounced dead. The garda, a man in his 50s, was based at a station in Limerick city.",
-      "link": "https://www.rte.ie/news/2026/0727/1585245-car-crash-clare/",
-      "category": "Ireland",
-      "categoryIr": "Éire",
-      "published": "2026-07-27T08:09:03.000Z",
-      "timeAgo": "1h ago",
-      "levels": {
-        "10": "An off-[[dleacht|duty]] garda was killed in a single-vehicle car crash in Co Clare yesterday evening. The collision [[tharla|happened]] shortly after 5.30pm yesterday on the R466 outside the village of Broadford. Gardaí and emergency services [[freastal|attended]] the scene, where the passenger of the car, was pronounced dead. The garda, a man in his 50s, was based at a station in Limerick city.",
-        "25": "An off-[[dleacht|duty]] garda was killed in a single-vehicle car [[cliseadh|crash]] in Co Clare yesterday [[tráthnóna|evening]]. The collision happened shortly after 5.[[30i.n|30pm]] yesterday on the R466 outside the village of Broadford. Gardaí and [[éigeandáil|emergency]] services attended the scene, [[i gcás|where]] the passenger of the car, was pronounced [[marbh|dead]]. The garda, a man in his 50s, was based at a station in Limerick city.",
-        "50": "An [[as|off]]-duty garda was [[maraíodh|killed]] in a single-[[feithicil|vehicle]] car [[cliseadh|crash]] in Co Clare [[inné|yesterday]] evening. The [[imbhualadh|collision]] happened [[go gairid|shortly]] after 5.30pm [[inné|yesterday]] on the R466 outside the [[sráidbhaile|village]] of Broadford. Gardaí and [[éigeandáil|emergency]] services [[freastal|attended]] the scene, [[i gcás|where]] the passenger of the [[carr|car]], was pronounced [[marbh|dead]]. The garda, a man in his 50s, was based at a [[stáisiún|station]] in Limerick city."
-      }
-    },
-    {
-      "id": "story-5",
       "title": "Brazil recalls ambassador to Argentina over Milei speech",
       "summary": "Brazil has recalled its ambassador to Argentina for consultations following \"insults\" levelled by President Javier Milei against his Brazilian counterpart Luiz Inacio Lula da Silva. The comments were made by Mr Milei at a Sao Paulo political event, the foreign ministry said. The libertarian leader of Argentina referred to Brazil's leftist incumbent president as a \"convict\" and a \"thief\", without naming him explicitly, during an event on Saturday formally nominating right-wing presidential candidate Flavio Bolsonaro to run in upcoming elections. Mr Milei also referred to - without naming him directly - Brazilian Supreme Court Justice Alexandre de Moraes as \"bald trash.\"",
       "link": "https://www.rte.ie/news/world/2026/0727/1585222-brazil-argentina/",
@@ -93,7 +78,37 @@
       }
     },
     {
+      "id": "story-5",
+      "title": "'Consumed by hate' - Infantino hits back at critics",
+      "summary": "FIFA President Gianni Infantino has hit back at critics of the World Cup, accusing them of spreading hate and false narratives while defending the tournament as a success that celebrated unity, safety and inclusion. In an open letter published on Monday, Infantino, 56, said detractors had overlooked the joy and togetherness experienced by millions of fans around the world who witnessed the tournament, won by Spain and staged across the United States, Canada and Mexico. \"You were so consumed by hate and criticism that you missed it all,\" he said. \"To those behind their pens and papers, behind their screens spreading hate and false rumours, I want to say that while you are sitting behind, we at FIFA are on the front lines organising, working hard, and delivering the best ‌show in the world.",
+      "link": "https://www.rte.ie/sport/world-cup-2026/2026/0727/1585252-consumed-by-hate-infantino-hits-back-at-critics/",
+      "category": "Soccer",
+      "categoryIr": "Nuacht",
+      "published": "2026-07-27T08:39:29.000Z",
+      "timeAgo": "57m ago",
+      "levels": {
+        "10": "FIFA President Gianni Infantino has hit [[aniar|back]] at critics of the World Cup, accusing them of spreading hate and false narratives while defending the [[comórtas|tournament]] as a success that celebrated unity, safety and inclusion. In an open letter published on Monday, Infantino, 56, said [[imbhuailteoir|detractors]] had overlooked the joy and togetherness experienced by millions of fans around the world who witnessed the tournament, won by Spain and [[céimnithe|staged]] across the United States, Canada and Mexico. \"You were so consumed by hate and criticism that you missed it all,\" he said. \"To those behind their pens and papers, [[cúl|behind]] their screens spreading hate and false rumours, I want to say that while you are sitting behind, we at FIFA are on the [[aghaidh|front]] lines organising, working hard, and delivering the best ‌show in the world.",
+        "25": "FIFA President Gianni Infantino has hit [[aniar|back]] at critics of the World Cup, accusing them of [[leathadh|spreading]] hate and false narratives [[comhad|while]] defending the tournament as a [[rath|success]] that celebrated unity, safety and [[cuimsitheacht|inclusion]]. In an open letter published on Monday, Infantino, 56, said [[imbhuailteoir|detractors]] had overlooked the joy and togetherness experienced by [[milliún|millions]] of fans around the world who [[fianaithe|witnessed]] the tournament, won by Spain and staged [[ar fud|across]] the United States, Canada and Mexico. \"You were so consumed by hate and criticism that you [[caillte|missed]] it all,\" he said. \"To those behind their pens and papers, [[cúl|behind]] their screens spreading hate and [[bréag-|false]] rumours, I want to say that while you are [[suí|sitting]] behind, we at FIFA are on the front [[cluiche línte|lines]] organising, working hard, and delivering the best ‌show in the world.",
+        "50": "FIFA President Gianni Infantino has [[aimsigh|hit]] back at [[léirmheastóirí|critics]] of the World Cup, accusing [[dóibh|them]] of spreading [[fuath|hate]] and false [[scéaltaí|narratives]] while [[cosaint|defending]] the tournament as a [[rath|success]] that celebrated [[aontacht|unity]], safety and [[cuimsitheacht|inclusion]]. In an open [[litir|letter]] published on Monday, Infantino, 56, said [[imbhuailteoir|detractors]] had overlooked the [[lúcháir|joy]] and togetherness [[taithí|experienced]] by millions of [[gaothráin|fans]] around the [[domhan|world]] who witnessed the [[comórtas|tournament]], won by Spain and [[céimnithe|staged]] across the United States, Canada and Mexico. \"You were so [[ídithe|consumed]] by hate and [[critic|criticism]] that you missed it [[an taobh|all]],\" he said. \"To those behind their [[pinn|pens]] and papers, [[cúl|behind]] their screens [[leathadh|spreading]] hate and [[bréag-|false]] rumours, I want to say that [[comhad|while]] you are sitting [[cúl|behind]], we at FIFA are on the front [[cluiche línte|lines]] organising, [[fuineadh|working]] hard, and delivering the best ‌[[léiríonn|show]] in the world."
+      }
+    },
+    {
       "id": "story-6",
+      "title": "Off-duty garda killed in single-vehicle crash in Co Clare",
+      "summary": "An off-duty garda was killed in a single-vehicle car crash in Co Clare yesterday evening. The collision happened shortly after 5.30pm yesterday on the R466 outside the village of Broadford. Gardaí and emergency services attended the scene, where the passenger of the car, was pronounced dead. The garda, a man in his 50s, was based at a station in Limerick city.",
+      "link": "https://www.rte.ie/news/2026/0727/1585245-car-crash-clare/",
+      "category": "Ireland",
+      "categoryIr": "Éire",
+      "published": "2026-07-27T08:09:03.000Z",
+      "timeAgo": "1h ago",
+      "levels": {
+        "10": "An off-[[dleacht|duty]] garda was killed in a single-vehicle car crash in Co Clare yesterday evening. The collision [[tharla|happened]] shortly after 5.30pm yesterday on the R466 outside the village of Broadford. Gardaí and emergency services [[freastal|attended]] the scene, where the passenger of the car, was pronounced dead. The garda, a man in his 50s, was based at a station in Limerick city.",
+        "25": "An off-[[dleacht|duty]] garda was killed in a single-vehicle car [[cliseadh|crash]] in Co Clare yesterday [[tráthnóna|evening]]. The collision happened shortly after 5.[[30i.n|30pm]] yesterday on the R466 outside the village of Broadford. Gardaí and [[éigeandáil|emergency]] services attended the scene, [[i gcás|where]] the passenger of the car, was pronounced [[marbh|dead]]. The garda, a man in his 50s, was based at a station in Limerick city.",
+        "50": "An [[as|off]]-duty garda was [[maraíodh|killed]] in a single-[[feithicil|vehicle]] car [[cliseadh|crash]] in Co Clare [[inné|yesterday]] evening. The [[imbhualadh|collision]] happened [[go gairid|shortly]] after 5.30pm [[inné|yesterday]] on the R466 outside the [[sráidbhaile|village]] of Broadford. Gardaí and [[éigeandáil|emergency]] services [[freastal|attended]] the scene, [[i gcás|where]] the passenger of the [[carr|car]], was pronounced [[marbh|dead]]. The garda, a man in his 50s, was based at a [[stáisiún|station]] in Limerick city."
+      }
+    },
+    {
+      "id": "story-7",
       "title": "Ukraine air barrage kills two, wounds 17 in Russia",
       "summary": "Ukraine fired hundreds of drones at Russia early today, killing two people and setting multiple buildings ablaze, according to Russian officials. Ukrainian President Volodymyr Zelensky said his forces had struck an export terminal in the western Rostov region, as well as oil facilities in the Yaroslavl and Udmurtia regions far from from the front line. \"Last night, our long-range sanctions were effective in the Rostov region. An export terminal approximately 250 kilometres (155 miles) from the front line was hit,\" Zelensky said in a post on Facebook. \"Deep strikes also targeted oil facilities in the Yaroslavl region and the Udmurt Republic, which is 1,300 kilometres from Ukraine's state border,\" he added.",
       "link": "https://www.rte.ie/news/world/2026/0727/1585223-ukraine-russia/",
@@ -105,21 +120,6 @@
         "10": "Ukraine [[breoslaithe|fired]] hundreds of drones at Russia early today, killing two people and setting multiple [[foirgnimh|buildings]] ablaze, according to Russian officials. Ukrainian President Volodymyr Zelensky said his forces had struck an export terminal in the western Rostov [[réigiún|region]], as well as oil facilities in the Yaroslavl and Udmurtia regions far from from the front line. \"Last night, our long-range sanctions were [[glan|effective]] in the Rostov region. An export terminal approximately 250 kilometres (155 miles) from the front line was hit,\" Zelensky said in a [[breac|post]] on Facebook. \"Deep strikes also targeted oil facilities in the Yaroslavl region and the Udmurt Republic, which is 1,300 kilometres from Ukraine's state border,\" he added.",
         "25": "Ukraine [[breoslaithe|fired]] hundreds of drones at Russia early [[inniu|today]], killing two people and setting [[il-|multiple]] buildings ablaze, [[de réir|according]] to Russian officials. Ukrainian President Volodymyr Zelensky said his forces had struck an [[earra easpórtála|export]] terminal in the western Rostov region, as well as oil [[áiseanna|facilities]] in the Yaroslavl and Udmurtia regions far from from the front line. \"Last [[oíche|night]], our long-range sanctions were effective in the Rostov region. An export [[ceann cúrsa|terminal]] approximately 250 kilometres (155 miles) from the [[aghaidh|front]] line was hit,\" Zelensky said in a post on Facebook. \"Deep strikes also [[sonraithe|targeted]] oil facilities in the Yaroslavl region and the Udmurt Republic, which is 1,300 [[ciliméadair|kilometres]] from Ukraine's state border,\" he added.",
         "50": "Ukraine [[breoslaithe|fired]] hundreds of [[dróin|drones]] at Russia early [[inniu|today]], killing [[dhá|two]] people and [[clóchur|setting]] multiple [[foirgnimh|buildings]] ablaze, [[de réir|according]] to Russian officials. Ukrainian President Volodymyr Zelensky said his [[fórsaí|forces]] had struck an [[earra easpórtála|export]] terminal in the [[an iarthair|western]] Rostov region, as well as [[ola|oil]] facilities in the Yaroslavl and Udmurtia [[gaeltachta|regions]] far from from the [[aghaidh|front]] line. \"Last [[oíche|night]], our long-[[leag amach|range]] sanctions were [[glan|effective]] in the Rostov region. An [[earra easpórtála|export]] terminal [[go neasach|approximately]] 250 kilometres (155 [[uimhreacha|miles]]) from the front [[cluiche|line]] was hit,\" Zelensky said in a [[breac|post]] on Facebook. \"Deep strikes also [[sonraithe|targeted]] oil [[áiseanna|facilities]] in the Yaroslavl region and the Udmurt Republic, which is 1,300 [[ciliméadair|kilometres]] from Ukraine's state [[teorainn|border]],\" he added."
-      }
-    },
-    {
-      "id": "story-7",
-      "title": "'Consumed by hate' - Infantino hits back at critics",
-      "summary": "FIFA President Gianni Infantino has hit back at critics of the World Cup, accusing them of spreading hate and false narratives while defending the tournament as a success that celebrated unity, safety and inclusion. In an open letter published on Monday, Infantino, 56, said detractors had overlooked the joy and togetherness experienced by millions of fans around the world who witnessed the tournament, won by Spain and staged across the United States, Canada and Mexico. \"You were so consumed by hate and criticism that you missed it all,\" he said. \"To those behind their pens and papers, behind their screens spreading hate and false rumours, I want to say that while you are sitting behind, we at FIFA are on the front lines organising, working hard, and delivering the best ‌show in the world.",
-      "link": "https://www.rte.ie/sport/world-cup-2026/2026/0727/1585252-consumed-by-hate-infantino-hits-back-at-critics/",
-      "category": "Soccer",
-      "categoryIr": "Nuacht",
-      "published": "2026-07-27T08:39:29.000Z",
-      "timeAgo": "46m ago",
-      "levels": {
-        "10": "FIFA President Gianni Infantino has hit [[aniar|back]] at critics of the World Cup, accusing them of spreading hate and false narratives while defending the [[comórtas|tournament]] as a success that celebrated unity, safety and inclusion. In an open letter published on Monday, Infantino, 56, said [[imbhuailteoir|detractors]] had overlooked the joy and togetherness experienced by millions of fans around the world who witnessed the tournament, won by Spain and [[céimnithe|staged]] across the United States, Canada and Mexico. \"You were so consumed by hate and criticism that you missed it all,\" he said. \"To those behind their pens and papers, [[cúl|behind]] their screens spreading hate and false rumours, I want to say that while you are sitting behind, we at FIFA are on the [[aghaidh|front]] lines organising, working hard, and delivering the best ‌show in the world.",
-        "25": "FIFA President Gianni Infantino has hit [[aniar|back]] at critics of the World Cup, accusing them of [[leathadh|spreading]] hate and false narratives [[comhad|while]] defending the tournament as a [[rath|success]] that celebrated unity, safety and [[cuimsitheacht|inclusion]]. In an open letter published on Monday, Infantino, 56, said [[imbhuailteoir|detractors]] had overlooked the joy and togetherness experienced by [[milliún|millions]] of fans around the world who [[fianaithe|witnessed]] the tournament, won by Spain and staged [[ar fud|across]] the United States, Canada and Mexico. \"You were so consumed by hate and criticism that you [[caillte|missed]] it all,\" he said. \"To those behind their pens and papers, [[cúl|behind]] their screens spreading hate and [[bréag-|false]] rumours, I want to say that while you are [[suí|sitting]] behind, we at FIFA are on the front [[cluiche línte|lines]] organising, working hard, and delivering the best ‌show in the world.",
-        "50": "FIFA President Gianni Infantino has [[aimsigh|hit]] back at [[léirmheastóirí|critics]] of the World Cup, accusing [[dóibh|them]] of spreading [[fuath|hate]] and false [[scéaltaí|narratives]] while [[cosaint|defending]] the tournament as a [[rath|success]] that celebrated [[aontacht|unity]], safety and [[cuimsitheacht|inclusion]]. In an open [[litir|letter]] published on Monday, Infantino, 56, said [[imbhuailteoir|detractors]] had overlooked the [[lúcháir|joy]] and togetherness [[taithí|experienced]] by millions of [[gaothráin|fans]] around the [[domhan|world]] who witnessed the [[comórtas|tournament]], won by Spain and [[céimnithe|staged]] across the United States, Canada and Mexico. \"You were so [[ídithe|consumed]] by hate and [[critic|criticism]] that you missed it [[an taobh|all]],\" he said. \"To those behind their [[pinn|pens]] and papers, [[cúl|behind]] their screens [[leathadh|spreading]] hate and [[bréag-|false]] rumours, I want to say that [[comhad|while]] you are sitting [[cúl|behind]], we at FIFA are on the front [[cluiche línte|lines]] organising, [[fuineadh|working]] hard, and delivering the best ‌[[léiríonn|show]] in the world."
       }
     },
     {
@@ -160,7 +160,7 @@
       "category": "World",
       "categoryIr": "Domhan",
       "published": "2026-07-27T00:27:04.000Z",
-      "timeAgo": "8h ago",
+      "timeAgo": "9h ago",
       "levels": {
         "10": "Ship [[trácht|traffic]] through Bab el-Mandeb has fallen after Yemeni Houthis attacked Saudi oil installations along the Red Sea coast. Transit through the Strait of Hormuz stayed low over the weekend, [[loingeas|shipping]] data from Kpler showed on Monday. Eleven commodity vessels passed through the Bab el-Mandeb strait yesterday, the lowest [[ar comhscór|level]] in months, the data showed. Red Sea traffic has been disrupted off the coast of Yemen since last week by the Tehran-[[ailínithe|aligned]] Houthis, who want to blockade Saudi exports, expanding the US-Iran conflict that has already choked oil supply through the Strait of Hormuz.",
         "25": "Ship [[trácht|traffic]] through Bab el-Mandeb has fallen after Yemeni Houthis attacked Saudi oil [[suiteálacha|installations]] along the Red Sea coast. Transit through the Strait of Hormuz [[fanacht|stayed]] low over the weekend, shipping data from Kpler [[taispeáin|showed]] on Monday. Eleven commodity vessels passed [[trí|through]] the Bab el-Mandeb strait yesterday, the lowest [[ar comhscór|level]] in months, the data showed. Red Sea [[trácht|traffic]] has been disrupted off the coast of Yemen since [[ceann deireanach|last]] week by the Tehran-aligned Houthis, who want to [[imshuí|blockade]] Saudi exports, expanding the US-Iran conflict that has [[cheana féin|already]] choked oil supply through the Strait of Hormuz.",
@@ -205,7 +205,7 @@
       "category": "Football",
       "categoryIr": "Peil",
       "published": "2026-07-26T22:28:45.000Z",
-      "timeAgo": "10h ago",
+      "timeAgo": "11h ago",
       "levels": {
         "10": "No [[amárach|tomorrow]], no yesterday, just the here and now and the afterglow of Mayo's magnificent achievement in ending a 75-year famine to become All-Ireland Senior Football Champions again. How they [[fulaingthe|suffered]] down the years; now they can host the mother of all parties in the erstwhile named House of Pain. No one deserves it more. It will hardly [[tar|come]] as any surprise that Ryan O'Donoghue has been named as the All-Ireland final man of the match and The Sunday Game player of the season. The commentators on Midwest Radio, in the throes of delirium as they [[d'iarr|called]] the magic moments following the final whistle of their 1-20 to 1-17 win over Kerry, declared it a done deal. Who could argue.",
         "25": "No [[amárach|tomorrow]], no yesterday, just the here and now and the afterglow of Mayo's magnificent [[baint amach|achievement]] in ending a 75-year famine to become All-Ireland Senior Football Champions again. How they suffered down the [[blianta|years]]; now they can host the mother of all parties in the [[idirlinn|erstwhile]] named House of Pain. No one deserves it more. It will hardly [[tar|come]] as any surprise that Ryan O'Donoghue has been named as the All-Ireland final man of the [[cluiche|match]] and The Sunday Game player of the season. The commentators on Midwest Radio, in the [[draoithe|throes]] of delirium as they called the magic [[miontuairiscí|moments]] following the final whistle of their 1-20 to 1-17 win over Kerry, [[dearbhaithe|declared]] it a done deal. Who could argue.",
