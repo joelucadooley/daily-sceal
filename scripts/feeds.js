@@ -28,16 +28,16 @@ const RTE_BASE = "https://www.rte.ie/feeds/rss/?index=";
 // categoryIr wins when it maps to something in SECTION_CATS below, because the
 // /news feed tags its items individually (Football, World, Business...).
 //
-// Keep this in step with SECTIONS in src/App.jsx. The app reads the `section`
-// field written into today.json, and only falls back to its own copy of this
-// map for older archive files that predate the field.
+// Five sections, matching the five tabs. `eile` is the catch-all: politics,
+// business, culture, entertainment and lifestyle all land there and each story
+// keeps its own finer label in gold, the same way sport does with Peil and
+// Rugbaí. To give one of them its own tab, split it out here and in
+// SECTIONS in src/App.jsx.
 export const SECTION_CATS = {
-  eire:        ["Éire", "Baile Átha Cliath", "Nuacht", "Coireacht", "Cúirt", "Tithíocht", "Oideachas"],
-  polaitiocht: ["Polaitíocht", "Toghchán"],
-  gno:         ["Gnó", "Eacnamaíocht"],
-  domhan:      ["Domhan"],
-  sport:       ["Spórt", "Peil", "Iomáint", "Sacar", "Rugbaí", "CLG"],
-  saol:        ["Cultúr", "Siamsaíocht", "Saol", "Taisteal", "Sláinte", "Eolaíocht", "Teicneolaíocht", "Aimsir", "Ealaíon", "Comhshaol"],
+  eire:   ["Éire", "Baile Átha Cliath", "Nuacht", "Coireacht", "Cúirt", "Tithíocht", "Oideachas"],
+  sport:  ["Spórt", "Peil", "Iomáint", "Sacar", "Rugbaí", "CLG"],
+  domhan: ["Domhan"],
+  eile:   ["Polaitíocht", "Toghchán", "Gnó", "Eacnamaíocht", "Cultúr", "Siamsaíocht", "Saol", "Taisteal", "Sláinte", "Eolaíocht", "Teicneolaíocht", "Aimsir", "Ealaíon", "Comhshaol"],
 };
 
 export const RTE_FEEDS = [
@@ -46,8 +46,8 @@ export const RTE_FEEDS = [
   // Football...) so it feeds several sections at once and stays weighted high.
   { id: "news",     label: "Top stories",   index: "/news",            catIr: "Nuacht",      section: "eire",        on: true, max: 8, verified: true },
   { id: "ireland",  label: "Ireland",       index: "/news/ireland",    catIr: "Éire",        section: "eire",        on: true, max: 5, verified: false },
-  { id: "politics", label: "Politics",      index: "/news/politics",   catIr: "Polaitíocht", section: "polaitiocht", on: true, max: 4, verified: true },
-  { id: "business", label: "Business",      index: "/news/business",   catIr: "Gnó",         section: "gno",         on: true, max: 3, verified: true },
+  { id: "politics", label: "Politics",      index: "/news/politics",   catIr: "Polaitíocht", section: "eile",        on: true, max: 4, verified: true },
+  { id: "business", label: "Business",      index: "/news/business",   catIr: "Gnó",         section: "eile",        on: true, max: 3, verified: true },
   { id: "world",    label: "World",         index: "/news/world",      catIr: "Domhan",      section: "domhan",      on: true, max: 4, verified: false },
 
   // --- sport ----------------------------------------------------------
@@ -60,9 +60,9 @@ export const RTE_FEEDS = [
 
   // --- culture, entertainment, lifestyle ------------------------------
   // Mixed into one Saol tab the same way sport is.
-  { id: "culture",  label: "Culture",       index: "/culture",         catIr: "Cultúr",      section: "saol",        on: true, max: 2, verified: true },
-  { id: "ents",     label: "Entertainment", index: "/entertainment",   catIr: "Siamsaíocht", section: "saol",        on: true, max: 2, verified: true },
-  { id: "life",     label: "Lifestyle",     index: "/lifestyle",       catIr: "Saol",        section: "saol",        on: true, max: 2, verified: true },
+  { id: "culture",  label: "Culture",       index: "/culture",         catIr: "Cultúr",      section: "eile",        on: true, max: 2, verified: true },
+  { id: "ents",     label: "Entertainment", index: "/entertainment",   catIr: "Siamsaíocht", section: "eile",        on: true, max: 2, verified: true },
+  { id: "life",     label: "Lifestyle",     index: "/lifestyle",       catIr: "Saol",        section: "eile",        on: true, max: 2, verified: true },
 ];
 
 /** Which toolbar section a story belongs to. */
@@ -70,7 +70,7 @@ export function sectionForStory(categoryIr, feedId) {
   for (const [section, cats] of Object.entries(SECTION_CATS)) {
     if (cats.includes(categoryIr)) return section;
   }
-  return feedById(feedId)?.section || "eire";
+  return feedById(feedId)?.section || "eile";
 }
 
 /** How many items to read from each feed before filtering. */
