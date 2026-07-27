@@ -6,7 +6,7 @@ const RSS_URL = "https://www.rte.ie/feeds/rss/?index=/news";
 // funding goals in the app — the sentence-alignment approach isn't reliable
 // enough to ship, so we don't generate them at all.
 const LEVELS = [10, 25, 50];
-const STORY_COUNT = 8;
+const STORY_COUNT = 20;
 
 const CAT_MAP = {
   ireland: "Éire", sport: "Spórt", politics: "Polaitíocht",
