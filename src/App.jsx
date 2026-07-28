@@ -1,4 +1,10 @@
 import { useState, useEffect } from "react";
+// Single source of truth for RTÉ categories, shared with scripts/generate.js.
+// Pure ESM with no Node APIs, so Vite bundles it for the browser fine.
+import { catInfo } from "../scripts/categories.js";
+// The county list the generator already maintains. Vite bundles JSON directly,
+// so no extra fetch, and it works for backfilled archive stories too.
+import places from "../scripts/places.json";
 
 const C = {
   navy: "#0d2137",
@@ -25,13 +31,13 @@ const C = {
 //
 // generate.js writes a `section` field onto every story, so this map is only
 // consulted for the built-in fallback stories and for older archive files.
-// Keep it in step with SECTION_CATS in scripts/feeds.js.
+// Categories and their sections live in scripts/categories.js, imported above.
 const SECTIONS = [
-  { id: "inniu",  label: "Inniu",  cats: null },
-  { id: "eire",   label: "Éire",   cats: ["Éire", "Baile Átha Cliath", "Nuacht", "Coireacht", "Cúirt", "Tithíocht", "Oideachas"] },
-  { id: "sport",  label: "Spórt",  cats: ["Spórt", "Peil", "Iomáint", "Sacar", "Rugbaí", "CLG"] },
-  { id: "domhan", label: "Domhan", cats: ["Domhan"] },
-  { id: "eile",   label: "Eile",   cats: ["Polaitíocht", "Toghchán", "Gnó", "Eacnamaíocht", "Cultúr", "Siamsaíocht", "Saol", "Taisteal", "Sláinte", "Eolaíocht", "Teicneolaíocht", "Aimsir", "Ealaíon", "Comhshaol"] },
+  { id: "inniu",  label: "Inniu"  },
+  { id: "eire",   label: "Éire"   },
+  { id: "sport",  label: "Spórt"  },
+  { id: "domhan", label: "Domhan" },
+  { id: "eile",   label: "Eile"   },
 ];
 
 // How many stories the Inniu tab shows.
@@ -48,9 +54,58 @@ const BACKFILL_DAYS = 4;
 // Eile is the catch-all, so an RTÉ category nobody has mapped yet still shows
 // up somewhere sensible instead of being quietly filed under Éire.
 const sectionOf = s => {
+  // Written by generate.js from today onwards
   if (s.section) return s.section;
-  const hit = SECTIONS.find(sec => sec.cats && sec.cats.includes(s.categoryIr));
-  return hit ? hit.id : "eile";
+  // Archive files predate that field but do carry the raw RTÉ category, so a
+  // story tagged "Europe" still reaches Domhan rather than being filed under
+  // Éire because its categoryIr was baked as the generic "Nuacht".
+  const info = catInfo(s.category);
+  if (info) return info[1];
+  return "eile";
+};
+
+// County names that are also ordinary English words or first names. A bare
+// match on these produces nonsense ("stepped down" becoming An Dún), so they
+// only count when the text actually says "Co" or "County" in front.
+const RISKY_PLACES = new Set(["down", "clare", "bray", "lu", "sord", "laois", "ennis", "naas", "meath", "mayo"]);
+
+// Longest first, so "londonderry" wins over "derry". Compiled once.
+const PLACE_RX = Object.keys(places)
+  .filter(k => k !== "ireland")
+  .sort((a, b) => b.length - a.length)
+  .map(k => ({
+    ir: places[k],
+    risky: RISKY_PLACES.has(k),
+    re: new RegExp(`(^|\\s)(co |county )?${k}(\\s|$)`),
+  }));
+
+function placeIn(text) {
+  if (!text) return null;
+  const t = " " + text.toLowerCase().replace(/[^a-z\s]/g, " ") + " ";
+  for (const p of PLACE_RX) {
+    const m = t.match(p.re);
+    if (m && (!p.risky || m[2])) return p.ir;
+  }
+  return null;
+}
+
+// Labels too broad to be worth repeating down a whole tab. When one of these
+// comes up we look for a county in the story and show that instead, so Éire
+// reads AN CLÁR, LIATROIM, PORT LÁIRGE rather than ÉIRE eight times over.
+// Domhan is deliberately NOT here: county names are Irish, and a world story
+// that happens to mention Cork should not end up labelled CORCAIGH.
+const BROAD_LABELS = new Set(["Éire", "Ulaidh", "Laighin", "An Mhumhain", "Connachta", "Nuacht"]);
+
+// Gold label on the card. Prefer the freshly resolved category so older archive
+// stories show AN EORAIP rather than the generic NUACHT they were saved with,
+// then sharpen a broad label into a county where the story names one.
+const displayCat = s => {
+  const info = catInfo(s.category);
+  const label = (info && info[0]) || s.categoryIr || "Nuacht";
+  if (!BROAD_LABELS.has(label)) return label;
+  // Headline first; only the opening of the summary, so a passing mention
+  // further down cannot hijack the label.
+  return placeIn(s.title) || placeIn((s.summary || "").slice(0, 200)) || label;
 };
 
 /** Stories for a tab. Inniu gets a spread across sections, newest first. */
@@ -463,7 +518,7 @@ function FeedView({ stories, loading, onStoryClick, sectionLabel }) {
           onMouseLeave={e => e.currentTarget.querySelector("h3").style.color = C.text}
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-            <span style={{ fontSize: "0.65rem", fontFamily: "system-ui, sans-serif", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", color: C.amber }}>{s.categoryIr}</span>
+            <span style={{ fontSize: "0.65rem", fontFamily: "system-ui, sans-serif", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", color: C.amber }}>{displayCat(s)}</span>
             <span style={{ color: C.faint, fontSize: "0.7rem", fontFamily: "system-ui, sans-serif" }}>{storyTimeAgo(s)}</span>
           </div>
           <h3 style={{ margin: "0 0 8px", fontSize: "clamp(1rem,2.8vw,1.15rem)", lineHeight: 1.3, fontWeight: 700, color: C.text, fontFamily: "Georgia, serif", transition: "color 0.15s" }}>{s.title}</h3>
