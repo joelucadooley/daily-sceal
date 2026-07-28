@@ -23,22 +23,10 @@
 
 const RTE_BASE = "https://www.rte.ie/feeds/rss/?index=";
 
-// Toolbar sections. A story belongs to exactly one, which decides the tab it
-// appears under on the site. `section` on a feed is the fallback; a story's own
-// categoryIr wins when it maps to something in SECTION_CATS below, because the
-// /news feed tags its items individually (Football, World, Business...).
-//
-// Five sections, matching the five tabs. `eile` is the catch-all: politics,
-// business, culture, entertainment and lifestyle all land there and each story
-// keeps its own finer label in gold, the same way sport does with Peil and
-// Rugbaí. To give one of them its own tab, split it out here and in
-// SECTIONS in src/App.jsx.
-export const SECTION_CATS = {
-  eire:   ["Éire", "Baile Átha Cliath", "Nuacht", "Coireacht", "Cúirt", "Tithíocht", "Oideachas"],
-  sport:  ["Spórt", "Peil", "Iomáint", "Sacar", "Rugbaí", "CLG"],
-  domhan: ["Domhan"],
-  eile:   ["Polaitíocht", "Toghchán", "Gnó", "Eacnamaíocht", "Cultúr", "Siamsaíocht", "Saol", "Taisteal", "Sláinte", "Eolaíocht", "Teicneolaíocht", "Aimsir", "Ealaíon", "Comhshaol"],
-};
+// Toolbar sections live in scripts/categories.js, which maps every RTÉ
+// category to both its Irish label and its section. Each feed still declares a
+// `section` here, used only when a story's own category is a programme tag
+// ("Analysis and Comment") or something unrecognised.
 
 export const RTE_FEEDS = [
   // --- general news ---------------------------------------------------
@@ -65,13 +53,6 @@ export const RTE_FEEDS = [
   { id: "life",     label: "Lifestyle",     index: "/lifestyle",       catIr: "Saol",        section: "eile",        on: true, max: 2, verified: true },
 ];
 
-/** Which toolbar section a story belongs to. */
-export function sectionForStory(categoryIr, feedId) {
-  for (const [section, cats] of Object.entries(SECTION_CATS)) {
-    if (cats.includes(categoryIr)) return section;
-  }
-  return feedById(feedId)?.section || "eile";
-}
 
 /** How many items to read from each feed before filtering. */
 export const FETCH_PER_FEED = 25;
