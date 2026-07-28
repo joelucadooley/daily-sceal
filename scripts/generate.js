@@ -2,8 +2,9 @@ import { writeFileSync, readFileSync, mkdirSync } from "fs";
 import { DOMParser } from "@xmldom/xmldom";
 import {
   activeFeeds, feedUrl, FETCH_PER_FEED,
-  isUsable, dedupe, balance, sectionForStory,
+  isUsable, dedupe, balance,
 } from "./feeds.js";
+import { catInfo } from "./categories.js";
 // Levels actually generated. 75 (Advanced) and 100 (As Gaeilge) are locked
 // funding goals in the app — the sentence-alignment approach isn't reliable
 // enough to ship, so we don't generate them at all.
@@ -404,11 +405,13 @@ async function fetchFeed(feed) {
       const rssCat = g("category").trim();
       const d = g("pubDate") ? new Date(g("pubDate")) : new Date();
       // The item's own <category> is more specific than the feed it came from
-      // (the /news feed tags things Ireland, World, Football and so on), so
-      // prefer it and fall back to the feed's label only when it tells us
-      // nothing. This keeps the category chips in the export tool meaningful.
-      const fromRss = rssCat ? getIrCat(rssCat) : null;
-      const categoryIr = fromRss && fromRss !== "Nuacht" ? fromRss : feed.catIr;
+      // (the /news feed tags things Ireland, Europe, Middle East, Football and
+      // so on), so it decides both the gold label and the tab. catInfo returns
+      // null for programme tags like "Analysis and Comment" and for anything
+      // unrecognised, and only then does the feed decide.
+      const info = catInfo(rssCat);
+      const categoryIr = info ? info[0] : feed.catIr;
+      const section = info ? info[1] : feed.section;
       return {
         id: `${feed.id}-${i}`,
         title: g("title").trim(),
@@ -417,9 +420,9 @@ async function fetchFeed(feed) {
         category: rssCat || feed.label,
         categoryIr,
         feed: feed.id,
-        // Toolbar section on the site. Derived from the item's own category
-        // where possible, falling back to the feed's section.
-        section: sectionForStory(categoryIr, feed.id),
+        // Toolbar section on the site, resolved above from the item's own
+        // category where possible, else from the feed.
+        section,
         published: d.toISOString(),
         timeAgo: msAgo(d), // kept for backwards-compatibility; app recomputes live from `published`
       };
