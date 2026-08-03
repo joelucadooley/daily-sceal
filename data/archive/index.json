@@ -1,5 +1,257 @@
 [
   {
+    "date": "2026-08-03",
+    "generated": "2026-08-03T08:52:49.024Z",
+    "stories": [
+      {
+        "title": "Trump says new Iran talks set to start, calls off strikes",
+        "category": "An Meánoirthear"
+      },
+      {
+        "title": "Man, 50s, dies in incident off Castletownbere Pier",
+        "category": "Éire"
+      },
+      {
+        "title": "Ceuta crisis puts Ireland's EU presidency to the test",
+        "category": "Polaitíocht"
+      },
+      {
+        "title": "Netflix's stock flop: Is streaming passed its peak?",
+        "category": "Gnó"
+      },
+      {
+        "title": "French wildfires: Record-breaking for the wrong reasons",
+        "category": "Domhan"
+      },
+      {
+        "title": "Moynihan: 'There's a lot of pressure from the outside'",
+        "category": "Peil"
+      },
+      {
+        "title": "Maunsell stars as Abbeydorney win Kerry hurling title",
+        "category": "Iomáint"
+      },
+      {
+        "title": "Skinner leaves role as Manchester United head coach",
+        "category": "Sacar"
+      },
+      {
+        "title": "Scottish chief Williamson sacked follow SRU investigation",
+        "category": "Rugbaí"
+      },
+      {
+        "title": "inside The Centre Culturel Irlandais: where Ireland & Europe meet",
+        "category": "Cultúr"
+      },
+      {
+        "title": "Buffalo Traffic Jam: best pals, one of 2026's best albums",
+        "category": "Ceol"
+      },
+      {
+        "title": "26 women shaping Ireland's food scene in 2026",
+        "category": "Bia"
+      },
+      {
+        "title": "Public wake for Glen Hansard to be held in Kilmainham",
+        "category": "Éire"
+      },
+      {
+        "title": "Thousands attend Bray Air Display in Wicklow",
+        "category": "Éire"
+      },
+      {
+        "title": "Labour's Bev Craig elected mayor of Greater Manchester",
+        "category": "Domhan"
+      },
+      {
+        "title": "Bank of Ireland's H1 pre-tax profits jump 33% to €960m",
+        "category": "Gnó"
+      },
+      {
+        "title": "13 dead after tourist plane crashes in southern Peru",
+        "category": "Domhan"
+      },
+      {
+        "title": "Bríd Stack: LGFA should bring two-point arc in closer",
+        "category": "Peil"
+      },
+      {
+        "title": "Preview: Galway and Kerry set for Croke Park shootout",
+        "category": "CLG"
+      },
+      {
+        "title": "Ferguson making 'daily progress' on road to recovery",
+        "category": "Sacar"
+      },
+      {
+        "title": "Ospreys or Scarlets face axe as WRU outlines cut plans",
+        "category": "Rugbaí"
+      },
+      {
+        "title": "RTÉ Supporting the Arts this August",
+        "category": "Ealaíon"
+      },
+      {
+        "title": "Sun shining and spirits high at All Together Now",
+        "category": "Ceol"
+      },
+      {
+        "title": "Met Gala 2027 will honour controversial designer John Galliano",
+        "category": "Saol"
+      },
+      {
+        "title": "Israel conveys 'concerns' to US on Gaza peace plan",
+        "category": "An Meánoirthear"
+      },
+      {
+        "title": "High Court finds Tusla in contempt of court",
+        "category": "Cúirt"
+      },
+      {
+        "title": "NI Secretary arrives with 'check list' not 'cheque book'",
+        "category": "Polaitíocht"
+      },
+      {
+        "title": "Aer Lingus posts half-year loss of €34m ahead of job cuts",
+        "category": "Gnó"
+      },
+      {
+        "title": "Spain says migrant crossings into Ceuta stopped overnight",
+        "category": "An Eoraip"
+      },
+      {
+        "title": "Tyrrell: Final ref Farrelly got two big calls 'spot on'",
+        "category": "CLG"
+      }
+    ]
+  },
+  {
+    "date": "2026-08-02",
+    "generated": "2026-08-02T07:49:21.767Z",
+    "stories": [
+      {
+        "title": "US to hold off on Iran attack in hope of deal - Trump",
+        "category": "An Meánoirthear"
+      },
+      {
+        "title": "High Court finds Tusla in contempt of court",
+        "category": "Cúirt"
+      },
+      {
+        "title": "Labour's Bev Craig elected mayor of Greater Manchester",
+        "category": "Domhan"
+      },
+      {
+        "title": "Bank of Ireland's H1 pre-tax profits jump 33% to €960m",
+        "category": "Gnó"
+      },
+      {
+        "title": "Renowned climber confirmed dead after Pakistan avalanche",
+        "category": "Domhan"
+      },
+      {
+        "title": "O'Leary suffers 10th-round knock-out loss to Chamberlain",
+        "category": "Dornálaíocht"
+      },
+      {
+        "title": "Tyrrell: Galway have yet to show 'mettle' in decider",
+        "category": "Peil"
+      },
+      {
+        "title": "Sligo strike late to snatch priceless point at Dundalk",
+        "category": "Sacar"
+      },
+      {
+        "title": "Scottish chief Williamson sacked follow SRU investigation",
+        "category": "Rugbaí"
+      },
+      {
+        "title": "Get Creative: The art of hospitality – self-portrait as a host",
+        "category": "Cultúr"
+      },
+      {
+        "title": "Buffalo Traffic Jam: best pals, one of 2026's best albums",
+        "category": "Ceol"
+      },
+      {
+        "title": "Met Gala 2027 will honour controversial designer John Galliano",
+        "category": "Saol"
+      },
+      {
+        "title": "Three killed after bomb attack near Moscow restaurant",
+        "category": "Domhan"
+      },
+      {
+        "title": "Fleadh Cheoil na hÉireann to begin in Belfast",
+        "category": "Ulaidh"
+      },
+      {
+        "title": "NI Secretary arrives with 'check list' not 'cheque book'",
+        "category": "Polaitíocht"
+      },
+      {
+        "title": "Aer Lingus posts half-year loss of €34m ahead of job cuts",
+        "category": "Gnó"
+      },
+      {
+        "title": "US drops vandalism charge against former Olympian",
+        "category": "Meiriceá"
+      },
+      {
+        "title": "Limerick fighter Reeves hospitalised after Dublin defeat",
+        "category": "Dornálaíocht"
+      },
+      {
+        "title": "Women's football finals: All you need to know",
+        "category": "Peil"
+      },
+      {
+        "title": "Trump denies discussing FIFA plans with Infantino",
+        "category": "Sacar"
+      },
+      {
+        "title": "Ospreys or Scarlets face axe as WRU outlines cut plans",
+        "category": "Rugbaí"
+      },
+      {
+        "title": "Cork storytelling festival keeping 'the gift of the gab' alive",
+        "category": "Cultúr"
+      },
+      {
+        "title": "Fair City on Sunday: 'She's trampling all over you, son'",
+        "category": "Siamsaíocht"
+      },
+      {
+        "title": "6 thrifty ways to save on back-to-school costs",
+        "category": "Saol"
+      },
+      {
+        "title": "New EU rules on AI deepfakes and chatbots",
+        "category": "An Eoraip"
+      },
+      {
+        "title": "Company fined €1.2m over breaches after fatal crash",
+        "category": "Éire"
+      },
+      {
+        "title": "Chambers calls for 'efficiencies' on health staff levels",
+        "category": "Polaitíocht"
+      },
+      {
+        "title": "Primeline and Waterland announce €500m partnership",
+        "category": "Gnó"
+      },
+      {
+        "title": "Italy suspends Schengen pact with Spain over Ceuta crisis",
+        "category": "An Eoraip"
+      },
+      {
+        "title": "Arteta promises to splash the cash to help title defence",
+        "category": "Sacar"
+      }
+    ]
+  },
+  {
     "date": "2026-08-01",
     "generated": "2026-08-01T07:47:05.312Z",
     "stories": [
