@@ -338,7 +338,15 @@ function speakWord(word) {
 }
 
 async function fetchTodayContent() {
-  const r = await fetch(`${import.meta.env.BASE_URL}data/today.json`, { signal: AbortSignal.timeout(5000) });
+  // today.json keeps the same filename every day, so unlike the content-hashed
+  // JS bundle it will happily sit in the browser and CDN cache after a deploy,
+  // leaving people looking at yesterday's stories. "no-cache" does not disable
+  // caching, it forces a revalidation: a cheap 304 when nothing has changed,
+  // and fresh data the moment the morning run has been.
+  const r = await fetch(`${import.meta.env.BASE_URL}data/today.json`, {
+    cache: "no-cache",
+    signal: AbortSignal.timeout(5000),
+  });
   if (!r.ok) throw new Error("not found");
   return await r.json();
 }
@@ -349,11 +357,11 @@ async function fetchWeekWords(days = 7) {
   const base = import.meta.env.BASE_URL;
   let verified = new Set();
   try {
-    const vr = await fetch(`${base}data/verified.json`, { signal: AbortSignal.timeout(5000) });
+    const vr = await fetch(`${base}data/verified.json`, { cache: "no-cache", signal: AbortSignal.timeout(5000) });
     if (vr.ok) (await vr.json()).forEach(s => verified.add(s.toLowerCase()));
   } catch {}
   try {
-    const pr = await fetch(`${base}data/places.json`, { signal: AbortSignal.timeout(5000) });
+    const pr = await fetch(`${base}data/places.json`, { cache: "no-cache", signal: AbortSignal.timeout(5000) });
     if (pr.ok) Object.keys(await pr.json()).forEach(s => verified.add(s.toLowerCase()));
   } catch {}
 
@@ -1241,11 +1249,11 @@ function ExportView({ stories }) {
     (async () => {
       const set = new Set();
       try {
-        const vr = await fetch(`${base}data/verified.json`, { signal: AbortSignal.timeout(5000) });
+        const vr = await fetch(`${base}data/verified.json`, { cache: "no-cache", signal: AbortSignal.timeout(5000) });
         if (vr.ok) (await vr.json()).forEach(s => set.add(s.toLowerCase()));
       } catch {}
       try {
-        const pr = await fetch(`${base}data/places.json`, { signal: AbortSignal.timeout(5000) });
+        const pr = await fetch(`${base}data/places.json`, { cache: "no-cache", signal: AbortSignal.timeout(5000) });
         if (pr.ok) Object.keys(await pr.json()).forEach(s => set.add(s.toLowerCase()));
       } catch {}
       setVerifiedEng(set);
@@ -1253,30 +1261,186 @@ function ExportView({ stories }) {
   }, []);
   const levelLabel = LEVELS_CONFIG.find(l => l.pct === pct)?.label || "Beginner";
 
-  const HASHTAGS = "#gaeilge #irishlanguage #dailyscéal #nuacht #ireland";
-  const SUNDAY_CAPTION = `Focail na seachtaine ☘️\n\nA few words from this week's news. Can you guess them before the reveal? Comment your score 💚\n\nRead the news at your own level, link in bio 🗞️\n\n${HASHTAGS}`;
-  const HOOK_SUGGESTIONS = [
-    "A story from today's news, as Gaeilge.",
-    "Today's scéal, with some Irish to pick up along the way.",
-    "One from today's headlines, as Gaeilge.",
-    "A bit of Irish from today's news.",
-    "Today's story, with the focail to match.",
-  ];
-  function defaultHook() {
+  // ---------------------------------------------------------------------
+  // Caption building
+  //
+  // Everything below is seeded from the day of the year, so regenerating on
+  // the same day gives the same caption, but tomorrow's is different. The
+  // pools are stepped by different offsets so the cover line, the closing CTA
+  // and the hashtags don't all rotate in lockstep.
+  // ---------------------------------------------------------------------
+  const daySeed = () => {
     const now = new Date();
-    const start = new Date(now.getFullYear(), 0, 0);
-    const dayOfYear = Math.floor((now - start) / 86400000);
-    return HOOK_SUGGESTIONS[dayOfYear % HOOK_SUGGESTIONS.length];
+    return Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 86400000);
+  };
+  const pickFor = (arr, offset) => arr[(daySeed() + offset) % arr.length];
+
+  // Slide 1. Deliberately does NOT restate the headline: it is already on the
+  // image, so repeating it wastes the one line people actually read. No link
+  // push here either, that lives on slide 3.
+  const HOOK_SUGGESTIONS = [
+    "One story, a few new focail. That's the deal.",
+    "Today's scéal, and the words to go with it.",
+    "A bit of Irish hiding in today's news.",
+    "Read the news, pick up a few words on the way.",
+    "Today's story, at whatever level of Irish suits you.",
+    "Some focail worth stealing from today's headlines.",
+    "Your daily bit of Gaeilge, straight from the news.",
+  ];
+  const defaultHook = () => pickFor(HOOK_SUGGESTIONS, 0);
+
+  // Build slide 1's line out of the story itself without restating the
+  // headline. Two ingredients, both already to hand: the place the story is
+  // about (via the same place list the gold labels use, so it comes out in
+  // Irish) and the strongest noun from the markers. Whichever are available
+  // decide which pool of templates we draw from; the plain lines above are
+  // the fallback when a story offers neither.
+  function storyHook(story, words) {
+    const w = (words && words.length) ? keyWords(words, 1)[0] : null;
+    const ir = w && w.irish;
+    const en = w && w.english;
+    const place = placeIn((story && story.title) || "");
+
+    if (place && ir) {
+      return pickFor([
+        `${place} in the news today, and ${ir} is the word to take from it.`,
+        `Today's scéal comes from ${place}. Start with ${ir}, meaning ${en}.`,
+        `${place} today. One word worth keeping: ${ir} (${en}).`,
+        `Something from ${place} this morning, plus ${ir} for the notebook.`,
+      ], 1);
+    }
+    if (ir) {
+      // two of these open the sentence with the Irish word, so it needs a capital
+      const Ir = ir.charAt(0).toUpperCase() + ir.slice(1);
+      return pickFor([
+        `New word from today's news: ${ir}, meaning ${en}.`,
+        `${Ir} means ${en}. Here's the story it turned up in.`,
+        `One to take away from today's scéal: ${ir} (${en}).`,
+        `Today's story, and the word ${ir} to go with it.`,
+        `${Ir} (${en}) is doing the heavy lifting in today's story.`,
+      ], 1);
+    }
+    return defaultHook();
   }
-  const CLOSING_CTA = "That's just one of today's stories. Every story and every translation is on the site, at whatever level of Irish suits you. Link in bio 🗞️";
+
+  // Slide 2 tail. Mentions the site but leaves the actual CTA to slide 3.
+  const TRANS_TAILS = [
+    "Every other word is glossed on the site.",
+    "The rest of the translations are waiting on the site.",
+    "More words in the full story on the site.",
+    "The whole piece is glossed, word by word, on the site.",
+    "Every marker in the article is translated on the site.",
+  ];
+
+  // Slide 3. The only slide carrying the link.
+  const CLOSING_CTAS = [
+    "That's one of today's stories. The rest are on the site, at whatever level of Irish you like. Link in bio 🔗",
+    "Every story and every translation is on the site. Slide from Béarla to as Gaeilge. Link in bio 🔗",
+    "A new scéal every day, glossed word by word. Pick your level on the site. Link in bio 🔗",
+    "There's more where this came from. Real news, your level of Irish. Link in bio 🔗",
+    "Today's other stories are all up on the site, translated as you read. Link in bio 🔗",
+    "Read the whole thing as Gaeilge, or half of it. Your call. Link in bio 🔗",
+  ];
+
+  // Hashtags: never more than 5. Two always-on, then anything topical for the
+  // story's category, then the rotating pool fills the rest.
+  const CORE_TAGS = ["#gaeilge", "#dailyscéal"];
+  const ROTATING_TAGS = [
+    "#irishlanguage", "#ireland", "#nuacht", "#foghlaimgaeilge",
+    "#gaeilgegachlá", "#irish", "#éire", "#learnirish",
+  ];
+  const TOPICAL_TAGS = {
+    "Spórt": ["#spórt"], "Peil": ["#peil", "#gaa"], "Iomáint": ["#iomáint", "#gaa"],
+    "CLG": ["#gaa"], "Camógaíocht": ["#camógaíocht", "#gaa"], "Sacar": ["#sacar"],
+    "Rugbaí": ["#rugbaí"], "Dornálaíocht": ["#dornálaíocht"],
+    "Polaitíocht": ["#polaitíocht"], "Gnó": ["#gnó"], "Eacnamaíocht": ["#gnó"],
+    "Domhan": ["#domhan"], "An Eoraip": ["#eoraip"], "An Meánoirthear": ["#domhan"],
+    "Cultúr": ["#cultúr"], "Ceol": ["#ceol"], "Siamsaíocht": ["#siamsaíocht"],
+    "Sláinte": ["#sláinte"], "Aimsir": ["#aimsir"], "Comhshaol": ["#comhshaol"],
+    "Baile Átha Cliath": ["#bac"],
+  };
+  function hashtagsFor(story) {
+    const out = [...CORE_TAGS];
+    for (const t of (TOPICAL_TAGS[story && story.categoryIr] || [])) {
+      if (out.length < 4 && !out.includes(t)) out.push(t);
+    }
+    for (let i = 0; out.length < 5 && i < ROTATING_TAGS.length; i++) {
+      const t = pickFor(ROTATING_TAGS, i * 3);
+      if (!out.includes(t)) out.push(t);
+    }
+    return out.slice(0, 5).join(" ");
+  }
+
+  // Prefer nouns for the three words on slide 2. A concrete noun is worth more
+  // to a learner than a participle or a function word, and it reads better in
+  // a caption. Order is always the order they appear in the story.
+  const CAPTION_STOP = new Set([
+    "the", "a", "an", "and", "or", "but", "with", "as", "at", "by", "for",
+    "from", "in", "into", "of", "on", "to", "over", "under", "between",
+    "already", "also", "always", "never", "today", "later", "now", "then",
+    "more", "most", "much", "many", "very", "just", "still", "here", "there",
+    "this", "that", "these", "those", "which", "while", "when", "where",
+    "is", "are", "was", "were", "be", "been", "has", "had", "have", "will",
+    // single-word prepositions and connectives: grammar, not vocabulary
+    "within", "without", "through", "throughout", "during", "across",
+    "among", "against", "before", "after", "since", "until", "upon",
+    "toward", "towards", "above", "below", "beyond", "despite", "per",
+    "ahead", "instead", "rather", "together", "anymore", "eventually",
+    // Bare verb forms. -ing and -ed are caught by pattern below, but these
+    // are not, and a verb makes a poorer caption word than a noun. Purely a
+    // heuristic list: extend it when a verb slips through.
+    "say", "says", "said", "take", "takes", "took", "make", "makes", "made",
+    "give", "gives", "gave", "get", "gets", "got", "go", "goes", "went",
+    "come", "comes", "came", "run", "runs", "ran", "win", "wins", "won",
+    "put", "puts", "keep", "keeps", "kept", "know", "knows", "knew",
+    "seal", "close", "miss", "hurt", "grow", "grows", "set", "sets",
+    "publish", "increase", "announce", "announces", "remain", "remains",
+    "become", "becomes", "operate", "operates", "mandate", "mandates",
+    "fly", "flies", "flew", "hold", "holds", "held", "buy", "buys", "bought",
+  ]);
+  // English phrases ending in a preposition are grammatical scaffolding
+  // ("due to", "ahead of", "look forward to"), never the word a learner wants.
+  const TRAILING_PREP = /\b(to|of|for|with|on|in|at|from|than|by|into|onto|about)$/;
+  function looksLikeNoun(w) {
+    const e = (w.english || "").toLowerCase().trim();
+    const ir = (w.irish || "").toLowerCase().trim();
+    if (!e) return false;
+    if (CAPTION_STOP.has(e)) return false;
+    if (TRAILING_PREP.test(e)) return false;
+    if (/^(ag|a|i|le|ar|do|de|chun|seachas)\s/.test(ir)) return false; // verbal noun / prep phrase
+    if (/^(at\u00e1|t\u00e1|is|n\u00edl|ba)\s/.test(ir)) return false;          // relative / copula forms
+    if (/(ing|ed)$/.test(e)) return false;                             // participles
+    if (e.split(/\s+/).length > 2) return false;                       // long phrases read badly
+    return true;
+  }
+  function keyWords(words, n = 3) {
+    const nouny = words.filter(looksLikeNoun);
+    const rest = words.filter(w => !looksLikeNoun(w));
+    const chosen = [...nouny, ...rest].slice(0, n);
+    // present them in the order they appear in the story, not by preference
+    return chosen.sort((a, b) => words.indexOf(a) - words.indexOf(b));
+  }
+
+  const SUNDAY_CAPTIONS = [
+    "Focail na seachtaine ☘️\n\nA few words from this week's news. Can you guess them before the reveal? Comment your score 💚\n\nRead the news at your own level. Link in bio 🔗",
+    "Focail na seachtaine ☘️\n\nSeven days of news, boiled down to a handful of words. How many do you know? 💚\n\nEvery story is on the site. Link in bio 🔗",
+    "Focail na seachtaine ☘️\n\nThis week's words. Guess before you swipe, no cheating 💚\n\nRead them in context on the site. Link in bio 🔗",
+  ];
+  const SUNDAY_CAPTION = pickFor(SUNDAY_CAPTIONS, 0) + "\n\n" + hashtagsFor(stories[storyIdx]);
 
   function loadStoryText() {
     const story = stories[storyIdx];
     if (!story) return;
     setLoaded(true);
-    setCardText(story.levels[pct] || story.summary);
+    const text = story.levels[pct] || story.summary;
+    setCardText(text);
     setCards([]);
-    setHook(`Today's scéal: ${story.title}`);
+    // Derive the caption line from this story's own markers rather than the
+    // headline, which is already on the image.
+    const markers = parseText(text)
+      .filter(p => p.t === "ir")
+      .map(p => ({ irish: p.irish, english: p.english }));
+    setHook(storyHook(story, markers));
     // Automatically add Irish to the headline (editable after)
     prepareCoverHeadline();
   }
@@ -1289,14 +1453,13 @@ function ExportView({ stories }) {
   }
 
   function coverCaption() {
-    return `Scéalta an lae ☘️\n\n${(hook || defaultHook()).trim()}\n\nLink in bio 🗞️\n\n${HASHTAGS}`;
+    return `Scéalta an lae ☘️\n\n${(hook || defaultHook()).trim()}\n\n${hashtagsFor(stories[storyIdx])}`;
   }
 
   function translationsCaption(words) {
-    // Three key words (longest = most substantial), rest on the site
-    const chosen = words.slice().sort((a, b) => b.english.length - a.english.length).slice(0, 3);
-    const lines = chosen.map(w => `${w.irish} (${w.english})`).join("\n");
-    return `TRANSLATIONS ⬇️\n\n${lines}\n\nEvery other translation is on the site, link in bio 🗞️`;
+    // Nouns preferred, but always listed in the order they appear in the story
+    const lines = keyWords(words, 3).map(w => `${w.irish} (${w.english})`).join("\n");
+    return `TRANSLATIONS ⬇️\n\n${lines}\n\n${pickFor(TRANS_TAILS, 2)}`;
   }
 
   function generateCards() {
@@ -1316,7 +1479,7 @@ function ExportView({ stories }) {
     setCards([
       { id: "cover", title: "1 · Cover", url: makeCoverCanvas(story, coverParts).toDataURL("image/png"), caption: coverCaption() },
       { id: "story", title: "2 · Story", url: storyCanvas.toDataURL("image/png"), caption: translationsCaption(words) },
-      { id: "closing", title: "3 · Closing", url: makeClosingCanvas().toDataURL("image/png"), caption: CLOSING_CTA },
+      { id: "closing", title: "3 · Closing", url: makeClosingCanvas().toDataURL("image/png"), caption: pickFor(CLOSING_CTAS, 4) },
     ]);
   }
 
@@ -1365,7 +1528,7 @@ function ExportView({ stories }) {
     const title = story.title;
     let places = {};
     try {
-      const pr = await fetch(`${import.meta.env.BASE_URL}data/places.json`, { signal: AbortSignal.timeout(5000) });
+      const pr = await fetch(`${import.meta.env.BASE_URL}data/places.json`, { cache: "no-cache", signal: AbortSignal.timeout(5000) });
       if (pr.ok) places = await pr.json();
     } catch {}
 
