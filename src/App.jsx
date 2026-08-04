@@ -290,6 +290,7 @@ const FALLBACK_STORIES = [
   },
 ];
 
+const VISIBLE_LEVELS = ["10", "25", "50"];
 const SNAP_LEVELS = [10, 25, 50];
 const LEVELS_CONFIG = [
   { pct: 10, label: "Beginner", color: "#16a34a", bg: "#f0fdf4", tip: "Key nouns only" },
@@ -379,7 +380,13 @@ async function fetchWeekWords(days = 7) {
       if (!r.ok) continue;
       const data = await r.json();
       (data.stories || []).forEach(story => {
-        Object.values(story.levels || {}).forEach(levelText => {
+        // Only the levels the site actually shows. Older archive files also
+        // carry 75 and 100, produced by a generator whose word alignment was
+        // off by one, so every gloss in them is attached to the wrong word.
+        // Reading those would poison the word suggestions.
+        VISIBLE_LEVELS.forEach(lv => {
+          const levelText = (story.levels || {})[lv];
+          if (!levelText) return;
           const re = /\[\[([^|\]]+)\|([^\]]+)\]\]/g;
           let m;
           while ((m = re.exec(levelText)) !== null) {
