@@ -16,6 +16,7 @@ jobs:
     permissions:
       contents: write
       actions: write
+      issues: write
 
     steps:
       - name: Checkout repo
@@ -33,6 +34,21 @@ jobs:
         env:
           FEEDS: ${{ github.event.inputs.feeds }}
         run: node scripts/generate.js
+
+      # Belt and braces: generate.js already refuses to write a thin day, but
+      # check the file that is about to be committed actually looks like today.
+      - name: Sanity check today.json
+        run: |
+          node -e "
+            const t = require('./public/data/today.json');
+            const n = (t.stories || []).length;
+            const today = new Date().toISOString().slice(0,10);
+            if (n < 8) { console.error('Only ' + n + ' stories'); process.exit(1); }
+            if (t.date !== today) { console.error('today.json is dated ' + t.date + ', expected ' + today); process.exit(1); }
+            const withLevels = t.stories.filter(s => s.levels && Object.keys(s.levels).length).length;
+            if (withLevels < n * 0.8) { console.error('Only ' + withLevels + '/' + n + ' stories have levels'); process.exit(1); }
+            console.log('OK: ' + n + ' stories, ' + withLevels + ' with levels, dated ' + t.date);
+          "
 
       - name: Commit and push today.json
         run: |
@@ -52,3 +68,70 @@ jobs:
             -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
             https://api.github.com/repos/joelucadooley/daily-sceal/actions/workflows/deploy.yml/dispatches \
             -d '{"ref":"main"}'
+
+      # Runs only when something above failed. Opens an issue, or comments on
+      # the existing one, so GitHub emails you rather than the run failing in
+      # silence. No secrets or third-party services needed.
+      - name: Raise an issue on failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = "🔴 Daily generation failed";
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const body = [
+              `The daily run failed on ${new Date().toISOString().slice(0,10)}.`,
+              ``,
+              `**The site is not broken.** today.json was left untouched, so yesterday's`,
+              `stories are still live. Nothing new was published.`,
+              ``,
+              `[View the failed run](${runUrl})`,
+              ``,
+              `Common causes: an RTÉ feed moved or 404s (run \`node scripts/check-feeds.mjs\`),`,
+              `MyMemory hit its daily quota, or fewer than 8 stories survived filtering.`,
+              ``,
+              `Re-run manually from the Actions tab once fixed.`,
+            ].join("\n");
+
+            const existing = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: "open",
+              labels: "automated",
+            });
+            const open = existing.data.find(i => i.title === title);
+            if (open) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: open.number, body,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner, repo: context.repo.repo,
+                title, body, labels: ["automated"],
+              });
+            }
+
+      # Tidy up: if a previous day failed and today worked, close the issue.
+      - name: Close the failure issue on success
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = "🔴 Daily generation failed";
+            const existing = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo,
+              state: "open", labels: "automated",
+            });
+            const open = existing.data.find(i => i.title === title);
+            if (open) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: open.number,
+                body: "Today's run succeeded. Closing.",
+              });
+              await github.rest.issues.update({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: open.number, state: "closed",
+              });
+            }
