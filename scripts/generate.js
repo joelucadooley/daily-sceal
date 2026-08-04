@@ -17,6 +17,11 @@ const LEVELS = [10, 25, 50];
 // HOMEPAGE_COUNT of these; the rest live under their section. At ~50 lookups
 // per story this is still well inside MyMemory's daily allowance.
 const STORY_COUNT = 30;
+// Below this, something is wrong upstream (feeds down, RTÉ layout change,
+// MyMemory quota) and publishing would replace a good day with a broken one.
+// Failing loudly leaves yesterday's today.json in place, which is the better
+// outcome, and the workflow raises an issue so it does not pass unnoticed.
+const MIN_STORIES = 8;
 
 const CAT_MAP = {
   ireland: "Éire", sport: "Spórt", politics: "Polaitíocht",
@@ -185,10 +190,26 @@ async function translate(word) {
 
 const translationCache = {};
 
+// Place keys that are also ordinary English words. Matching these on a
+// lowercase token turns "stepped down" into County Down, so they only count
+// when the source text capitalised them as a proper noun.
+const RISKY_PLACE_KEYS = new Set([
+  "down", "clare", "bray", "lu", "sord", "laois", "ennis", "naas",
+  "meath", "mayo", "trim", "cork", "clones", "athlone", "cobh",
+]);
+
+function placeFor(word) {
+  const key = word.toLowerCase();
+  if (PLACES[key] === undefined) return undefined;
+  if (RISKY_PLACE_KEYS.has(key) && word[0] !== word[0].toUpperCase()) return undefined;
+  return PLACES[key];
+}
+
 async function translateCached(word) {
   const key = word.toLowerCase();
   // Verified place names win first, with their proper capitalisation
-  if (PLACES[key] !== undefined) return PLACES[key];
+  const place = placeFor(word);
+  if (place !== undefined) return place;
   // Curated overrides win over MyMemory
   if (OVERRIDES[key] !== undefined) return OVERRIDES[key];
   if (translationCache[key] !== undefined) return translationCache[key];
@@ -246,7 +267,7 @@ async function buildLevel(sentence, pct) {
       try {
         const irish = await translateCached(tok);
         const lower = tok.toLowerCase();
-        const isPlace = PLACES[lower] !== undefined;
+        const isPlace = placeFor(tok) !== undefined;
         const isOverride = OVERRIDES[lower] !== undefined;
         if (isPlace) {
           // Keep proper capitalisation, don't run matchCase
@@ -351,7 +372,7 @@ async function buildLevelWordByWord(sentence, pct) {
       try {
         const irish = await translateCached(tok);
         const lower = tok.toLowerCase();
-        const isPlace = PLACES[lower] !== undefined;
+        const isPlace = placeFor(tok) !== undefined;
         const isOverride = OVERRIDES[lower] !== undefined;
         if (isPlace) {
           result.push(`[[${irish}|${tok}]]`);
@@ -502,6 +523,13 @@ async function main() {
       stories: processed,
     };
     mkdirSync("public/data", { recursive: true });
+    if (output.stories.length < MIN_STORIES) {
+      throw new Error(
+        `Only ${output.stories.length} stories survived (minimum ${MIN_STORIES}). ` +
+        `Refusing to publish; yesterday's file stays live.`
+      );
+    }
+
     writeFileSync("public/data/today.json", JSON.stringify(output, null, 2));
     console.log(`\n✓ Written public/data/today.json with ${processed.length} stories`);
 
