@@ -1232,6 +1232,8 @@ function ExportView({ stories }) {
   // --- Daily single-story workflow ---
   const [pct, setPct] = useState(10);
   const [storyIdx, setStoryIdx] = useState(0);
+  // Which section tab the picker is filtered to. "all" shows everything.
+  const [pickSection, setPickSection] = useState("all");
   const [cardText, setCardText] = useState("");
   const [textCopied, setTextCopied] = useState(false);
   const [coverHeadline, setCoverHeadline] = useState("");
@@ -1600,6 +1602,27 @@ function ExportView({ stories }) {
     setWeeklyImages(out);
   }
 
+  // Sections present in today's pull, with counts, so the buttons only offer
+  // what actually exists and you can see at a glance where the stories are.
+  const pickCounts = SECTIONS.filter(sec => sec.id !== "inniu").map(sec => ({
+    id: sec.id,
+    label: sec.label,
+    n: stories.filter(st => sectionOf(st) === sec.id).length,
+  })).filter(sec => sec.n > 0);
+
+  // Keep the original index so storyIdx still points into `stories`
+  const pickList = stories
+    .map((st, i) => ({ st, i }))
+    .filter(({ st }) => pickSection === "all" || sectionOf(st) === pickSection);
+
+  // If the current story is filtered out, move to the first one showing
+  useEffect(() => {
+    if (pickList.length && !pickList.some(v => v.i === storyIdx)) {
+      setStoryIdx(pickList[0].i);
+      setCardText(""); setCards([]); setCoverHeadline(""); setLoaded(false);
+    }
+  }, [pickSection]);
+
   const selectedStory = stories[storyIdx];
 
   return (
@@ -1618,10 +1641,31 @@ function ExportView({ stories }) {
             </button>
           ))}
         </div>
+        {/* Filter the list by section. Counts come from today's pull, so an
+            empty section simply does not appear. */}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 10 }}>
+          {[{ id: "all", label: "Gach ceann", n: stories.length }, ...pickCounts].map(sec => {
+            const on = pickSection === sec.id;
+            return (
+              <button key={sec.id} onClick={() => setPickSection(sec.id)}
+                style={{
+                  background: on ? C.navy : "transparent",
+                  color: on ? "#fff" : C.muted,
+                  border: `1px solid ${on ? C.navy : C.border}`,
+                  borderRadius: 999, padding: "5px 11px", cursor: "pointer",
+                  fontFamily: "system-ui, sans-serif", fontSize: "0.64rem",
+                  fontWeight: 600, whiteSpace: "nowrap", transition: "all 0.12s",
+                }}>
+                {sec.label} {sec.n}
+              </button>
+            );
+          })}
+        </div>
+
         <select value={storyIdx} onChange={e => { setStoryIdx(+e.target.value); setCardText(""); setCards([]); setCoverHeadline(""); setLoaded(false); }}
           style={{ width: "100%", padding: "10px", borderRadius: 8, border: `1px solid ${C.border}`, fontSize: "0.8rem", marginBottom: 12, background: "#fff", color: C.text, fontFamily: "system-ui, sans-serif" }}>
-          {stories.map((s, i) => (
-            <option key={s.id} value={i}>{i + 1}. {s.title}</option>
+          {pickList.map(({ st, i }) => (
+            <option key={st.id} value={i}>{st.categoryIr} · {st.title}</option>
           ))}
         </select>
         <button onClick={loadStoryText}
