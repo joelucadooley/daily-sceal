@@ -32,25 +32,25 @@ export const RTE_FEEDS = [
   // --- general news ---------------------------------------------------
   // /news carries its own per-item categories (Ireland, World, Business,
   // Football...) so it feeds several sections at once and stays weighted high.
-  { id: "news",     label: "Top stories",   index: "/news",            catIr: "Nuacht",      section: "eire",        on: true, max: 8, verified: true },
-  { id: "ireland",  label: "Ireland",       index: "/news/ireland",    catIr: "Éire",        section: "eire",        on: true, max: 5, verified: false },
+  { id: "news",     label: "Top stories",   index: "/news",            catIr: "Nuacht",      section: "eire",        on: true, max: 7, verified: true },
+  { id: "ireland",  label: "Ireland",       index: "/news/ireland",    catIr: "Éire",        section: "eire",        on: true, max: 9, verified: false },
   { id: "politics", label: "Politics",      index: "/news/politics",   catIr: "Polaitíocht", section: "eile",        on: true, max: 4, verified: true },
   { id: "business", label: "Business",      index: "/news/business",   catIr: "Gnó",         section: "eile",        on: true, max: 3, verified: true },
-  { id: "world",    label: "World",         index: "/news/world",      catIr: "Domhan",      section: "domhan",      on: true, max: 4, verified: false },
+  { id: "world",    label: "World",         index: "/news/world",      catIr: "Domhan",      section: "domhan",      on: true, max: 2, verified: false },
 
   // --- sport ----------------------------------------------------------
   // All four land in the one Spórt tab; each story keeps its finer label
   // (Peil, Iomáint, Sacar, Rugbaí) in the gold category line.
   { id: "sport",    label: "Sport",         index: "/sport",           catIr: "Spórt",       section: "sport",       on: true, max: 4, verified: true },
-  { id: "gaa",      label: "GAA",           index: "/sport/gaa",       catIr: "CLG",         section: "sport",       on: true, max: 3, verified: false },
+  { id: "gaa",      label: "GAA",           index: "/sport/gaa",       catIr: "CLG",         section: "sport",       on: true, max: 4, verified: false },
   { id: "soccer",   label: "Soccer",        index: "/sport/soccer",    catIr: "Sacar",       section: "sport",       on: true, max: 2, verified: true },
   { id: "rugby",    label: "Rugby",         index: "/sport/rugby",     catIr: "Rugbaí",      section: "sport",       on: true, max: 2, verified: true },
 
   // --- culture, entertainment, lifestyle ------------------------------
   // Mixed into one Saol tab the same way sport is.
-  { id: "culture",  label: "Culture",       index: "/culture",         catIr: "Cultúr",      section: "eile",        on: true, max: 2, verified: true },
+  { id: "culture",  label: "Culture",       index: "/culture",         catIr: "Cultúr",      section: "eile",        on: true, max: 3, verified: true },
   { id: "ents",     label: "Entertainment", index: "/entertainment",   catIr: "Siamsaíocht", section: "eile",        on: true, max: 2, verified: true },
-  { id: "life",     label: "Lifestyle",     index: "/lifestyle",       catIr: "Saol",        section: "eile",        on: true, max: 2, verified: true },
+  { id: "life",     label: "Lifestyle",     index: "/lifestyle",       catIr: "Saol",        section: "eile",        on: true, max: 3, verified: true },
 ];
 
 
