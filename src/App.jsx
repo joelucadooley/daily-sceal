@@ -1236,6 +1236,8 @@ function ExportView({ stories }) {
   const [pickSection, setPickSection] = useState("all");
   const [cardText, setCardText] = useState("");
   const [textCopied, setTextCopied] = useState(false);
+  const [bothCopied, setBothCopied] = useState(false);
+  const [pasteOk, setPasteOk] = useState(false);
   const [coverHeadline, setCoverHeadline] = useState("");
   const [coverBusy, setCoverBusy] = useState(false);
   const [hook, setHook] = useState("");
@@ -1461,6 +1463,39 @@ function ExportView({ stories }) {
     });
   }
 
+  // Headline and story in one copy, blank line between them. That blank line is
+  // the whole convention: first block is the slide 1 headline, everything after
+  // is the slide 2 story. Nothing else about the workflow changes.
+  function copyBoth() {
+    const both = `${coverHeadline.trim()}\n\n${cardText.trim()}`;
+    navigator.clipboard?.writeText(both).then(() => {
+      setBothCopied(true);
+      setTimeout(() => setBothCopied(false), 2000);
+    });
+  }
+
+  // Paste the corrected pair back in one go. Splits on the first blank line, so
+  // it round-trips whatever copyBoth produced. If there's no blank line we treat
+  // the first line as the headline, which is what a lightly-reformatted paste
+  // usually looks like.
+  function pasteBoth(raw) {
+    const text = raw.replace(/\r\n/g, "\n").trim();
+    if (!text) return;
+    // Split at the first line break of any kind. Taking the first BLANK line
+    // would be wrong whenever the pasted headline is followed by a single
+    // newline and the story itself contains paragraph breaks: the split would
+    // land inside the story instead of after the headline.
+    const nl = text.indexOf("\n");
+    if (nl === -1) return;            // one line only: nothing to split
+    const head = text.slice(0, nl).trim();
+    const body = text.slice(nl + 1).trim();
+    if (!head || !body) return;
+    setCoverHeadline(head);
+    setCardText(body);
+    setPasteOk(true);
+    setTimeout(() => setPasteOk(false), 2000);
+  }
+
   function coverCaption() {
     return `Scéalta an lae ☘️\n\n${(hook || defaultHook()).trim()}\n\n${hashtagsFor(stories[storyIdx])}`;
   }
@@ -1674,22 +1709,40 @@ function ExportView({ stories }) {
         </button>
       </div>
 
-      {/* Step 2: headline (Irish added automatically, editable) */}
+      {/* Step 2: check the translations. Headline and story live together now,
+          because the copy and paste buttons act on both at once and splitting
+          them across two panels made the buttons look like they only applied
+          to the story. */}
       {loaded && (
-        <div style={{ background: "#f8fafc", border: `1px solid ${C.border}`, borderRadius: 10, padding: "14px 16px", marginBottom: 16 }}>
-          <div style={{ fontWeight: 700, fontSize: "0.78rem", color: C.navy, marginBottom: 4 }}>2 · Check the headline</div>
-          <div style={{ fontSize: "0.72rem", color: C.muted, marginBottom: 10 }}>Irish is added automatically. Check the words, edit if wrong. Format: <code>[[irish|english]]</code></div>
+        <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 10, padding: "14px 16px", marginBottom: 16 }}>
+          <div style={{ fontWeight: 700, fontSize: "0.78rem", color: "#854d0e", marginBottom: 4 }}>2 · Check the translations</div>
+          <div style={{ fontSize: "0.72rem", color: "#a16207", marginBottom: 10 }}>Irish is added automatically. Copy both out to check them, then paste the corrected version back. Irish words use <code>[[irish|english]]</code>.</div>
+
+          {/* Headline and story in one copy, blank line between them. */}
+          <button onClick={copyBoth}
+            style={{ width: "100%", background: bothCopied ? "#16a34a" : C.navy, color: "#fff", border: "none", borderRadius: 8, padding: "11px", fontSize: "0.82rem", fontWeight: 700, cursor: "pointer", marginBottom: 6 }}>
+            {bothCopied ? "Copied ✓" : "Copy headline + story"}
+          </button>
+
+          {/* Paste the corrected pair straight back into both boxes. */}
+          <button onClick={() => navigator.clipboard?.readText().then(pasteBoth).catch(() => {})}
+            style={{ width: "100%", background: pasteOk ? "#16a34a" : "transparent", color: pasteOk ? "#fff" : "#854d0e", border: `1px solid ${pasteOk ? "#16a34a" : "#fde68a"}`, borderRadius: 8, padding: "9px", fontSize: "0.78rem", fontWeight: 600, cursor: "pointer", marginBottom: 14 }}>
+            {pasteOk ? "Pasted into both ✓" : "Paste corrected version back"}
+          </button>
+
+          {/* --- headline --- */}
+          <div style={{ fontSize: "0.68rem", fontWeight: 700, color: "#854d0e", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Headline · slide 1</div>
           {coverBusy ? (
             <div style={{ fontSize: "0.78rem", color: C.faint, padding: "8px 0" }}>Adding Irish to the headline...</div>
           ) : (
             <>
               <textarea value={coverHeadline} onChange={e => setCoverHeadline(e.target.value)}
                 rows={2}
-                style={{ width: "100%", padding: "10px", borderRadius: 8, border: `1px solid ${C.border}`, fontSize: "0.8rem", fontFamily: "monospace", marginBottom: 6, resize: "vertical", boxSizing: "border-box" }} />
+                style={{ width: "100%", padding: "10px", borderRadius: 8, border: "1px solid #fde68a", fontSize: "0.8rem", fontFamily: "monospace", marginBottom: 6, resize: "vertical", boxSizing: "border-box", background: "#fff" }} />
               {(() => {
                 const irishWords = parseHeadlineParts(coverHeadline).filter(p => p.irish);
                 return irishWords.length > 0 ? (
-                  <div style={{ fontSize: "0.72rem" }}>
+                  <div style={{ fontSize: "0.72rem", marginBottom: 12 }}>
                     {irishWords.map((p, i) => (
                       <a key={i} href={`https://www.teanglann.ie/en/fgb/${encodeURIComponent(p.text)}`} target="_blank" rel="noopener noreferrer"
                         style={{ color: C.amber, fontWeight: 700, textDecoration: "none", marginRight: 12, borderBottom: `1px solid ${C.border}` }}>
@@ -1697,36 +1750,34 @@ function ExportView({ stories }) {
                       </a>
                     ))}
                   </div>
-                ) : null;
+                ) : <div style={{ marginBottom: 12 }} />;
               })()}
             </>
           )}
-        </div>
-      )}
 
-      {/* Step 3: check the story text */}
-      {loaded && (
-        <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 10, padding: "14px 16px", marginBottom: 16 }}>
-          <div style={{ fontWeight: 700, fontSize: "0.78rem", color: "#854d0e", marginBottom: 4 }}>3 · Check the text</div>
-          <div style={{ fontSize: "0.72rem", color: "#a16207", marginBottom: 10 }}>Copy it out to check the translations, then paste the corrected version back in. Irish words use <code>[[irish|english]]</code>.</div>
-          <button onClick={copyCheckText}
-            style={{ width: "100%", background: textCopied ? "#16a34a" : C.amber, color: "#fff", border: "none", borderRadius: 8, padding: "10px", fontSize: "0.8rem", fontWeight: 600, cursor: "pointer", marginBottom: 10 }}>
-            {textCopied ? "Copied ✓" : "Copy text for checking"}
-          </button>
+          {/* --- story --- */}
+          <div style={{ fontSize: "0.68rem", fontWeight: 700, color: "#854d0e", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 5 }}>Story · slide 2</div>
           <textarea value={cardText} onChange={e => setCardText(e.target.value)}
             rows={8}
             style={{ width: "100%", padding: "10px", borderRadius: 8, border: "1px solid #fde68a", fontSize: "0.78rem", fontFamily: "monospace", resize: "vertical", boxSizing: "border-box", background: "#fff" }} />
-          <a href="https://github.com/joelucadooley/daily-sceal/edit/main/scripts/overrides.json" target="_blank" rel="noopener noreferrer"
-            style={{ display: "inline-block", marginTop: 8, fontSize: "0.72rem", color: "#854d0e", fontWeight: 600, textDecoration: "none", borderBottom: "1px solid #fde68a" }}>
-            Add permanent fixes to overrides.json ↗
-          </a>
+
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8, gap: 10 }}>
+            <a href="https://github.com/joelucadooley/daily-sceal/edit/main/scripts/overrides.json" target="_blank" rel="noopener noreferrer"
+              style={{ fontSize: "0.72rem", color: "#854d0e", fontWeight: 600, textDecoration: "none", borderBottom: "1px solid #fde68a" }}>
+              Add permanent fixes to overrides.json ↗
+            </a>
+            <button onClick={copyCheckText}
+              style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontSize: "0.72rem", color: textCopied ? "#16a34a" : "#a16207", fontWeight: 600 }}>
+              {textCopied ? "Copied ✓" : "Copy story only"}
+            </button>
+          </div>
         </div>
       )}
 
-      {/* Step 4: caption line + generate */}
+      {/* Step 3: caption line + generate */}
       {loaded && (
         <div style={{ background: "#f8fafc", border: `1px solid ${C.border}`, borderRadius: 10, padding: "14px 16px", marginBottom: 16 }}>
-          <div style={{ fontWeight: 700, fontSize: "0.78rem", color: C.navy, marginBottom: 4 }}>4 · Slide 1 caption line</div>
+          <div style={{ fontWeight: 700, fontSize: "0.78rem", color: C.navy, marginBottom: 4 }}>3 · Slide 1 caption line</div>
           <div style={{ fontSize: "0.72rem", color: C.muted, marginBottom: 8 }}>Auto-filled from the story. Edit to give it a hook, e.g. a question.</div>
           <input value={hook} onChange={e => setHook(e.target.value)}
             style={{ width: "100%", padding: "10px", borderRadius: 8, border: `1px solid ${C.border}`, fontSize: "0.8rem", boxSizing: "border-box", marginBottom: 12 }} />
