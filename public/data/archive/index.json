@@ -1,38 +1,86 @@
 [
   {
     "date": "2026-08-28",
-    "generated": "2026-08-28T09:30:28.826Z",
+    "generated": "2026-08-28T17:38:39.165Z",
     "stories": [
       {
-        "title": "Nepal floods: 469 killed almost 1,000 still missing",
-        "category": "Domhan"
+        "title": "New AI tech considered to tackle wrong-way driving",
+        "category": "Éire"
       },
       {
-        "title": "Vhi to increase prices by average of 2.75% from October",
+        "title": "Consumer sentiment edges up to near pre-Iran war level",
+        "category": "Éire"
+      },
+      {
+        "title": "Forum recommends tackling energy costs for businesses",
         "category": "Gnó"
       },
       {
-        "title": "Minister, RSA, gardaí to meet on motorway road safety",
-        "category": "Polaitíocht"
-      },
-      {
-        "title": "Stripe, Advent consortium said to drop pursuit of PayPal",
+        "title": "Fed has 'work to do' if above-target inflation remains",
         "category": "Gnó"
       },
       {
-        "title": "Rescue efforts paused in Nepal, Tibet due to flood risk",
-        "category": "Domhan"
+        "title": "US seeks to limit internships for international students",
+        "category": "Oideachas"
       },
       {
-        "title": "Confident Hyde and Cremen 'can win' World final - Coakley",
-        "category": "Spórt"
+        "title": "Ireland keeper Bazunu makes permanent move to Bolton",
+        "category": "Sacar"
       },
       {
         "title": "Solan bound for Offaly, Hegarty remains as Wexford boss",
         "category": "Peil"
       },
       {
-        "title": "Carragher faces bankruptcy petition over tax debts",
+        "title": "Bradley: Hard to qualify if you give up soft goals",
+        "category": "Sacar"
+      },
+      {
+        "title": "Munster setback as Crowley ruled out until the new year",
+        "category": "Rugbaí"
+      },
+      {
+        "title": "Who are pop idols Katseye and why have 2 of them gone on hiatus?",
+        "category": "Cultúr"
+      },
+      {
+        "title": "CMAT forced to cancel Paris gig due to ill health",
+        "category": "Ceol"
+      },
+      {
+        "title": "How can you spot a liar? An expert weighs in",
+        "category": "Saol"
+      },
+      {
+        "title": "Over 2,400 missing after deadly Nepal, China floods",
+        "category": "Domhan"
+      },
+      {
+        "title": "Mortgage approvals reached 15-year monthly high in July",
+        "category": "Éire"
+      },
+      {
+        "title": "Higher Education Minister supports calls for CAO reform",
+        "category": "Oideachas"
+      },
+      {
+        "title": "Deliveroo's Italian arm to pay workers 40% more",
+        "category": "Gnó"
+      },
+      {
+        "title": "King Harald, 'symbol' of Norway, dies aged 89",
+        "category": "Domhan"
+      },
+      {
+        "title": "Ireland's Dunbar eighth as Leknessund takes stage win",
+        "category": "Rothaíocht"
+      },
+      {
+        "title": "Cian O'Neill appointed head coach of Cork hurlers",
+        "category": "Iomáint"
+      },
+      {
+        "title": "Hoops' away-day blues continue as they exit Europe",
         "category": "Sacar"
       },
       {
@@ -40,11 +88,11 @@
         "category": "Rugbaí"
       },
       {
-        "title": "Slí na Samhlaíochta - celebrating the legacy of Manchán Magan",
-        "category": "Ceol"
+        "title": "Dublin Fringe: Crisis Actor explores trauma, truth and role play",
+        "category": "Baile Átha Cliath"
       },
       {
-        "title": "From JADE to Geese: Ten acts to see at Electric Picnic",
+        "title": "Dolly Parton offered to test experimental drugs - sister",
         "category": "Ceol"
       },
       {
@@ -52,72 +100,24 @@
         "category": "Saol"
       },
       {
-        "title": "Rain caused 'worst flooding in lifetime' - mayor in Kerry",
+        "title": "Hyde and Cremen take gold at World Rowing Championships",
+        "category": "Nuacht"
+      },
+      {
+        "title": "Agreement reached in Oberstown dispute",
         "category": "Éire"
       },
       {
-        "title": "DCU students unveil Ireland's first solar racing car",
-        "category": "Éire"
+        "title": "New levy for sustainable flood insurance fund proposed",
+        "category": "Comhshaol"
       },
       {
-        "title": "Fiscal watchdog 'right' to highlight Govt overspend",
-        "category": "Polaitíocht"
-      },
-      {
-        "title": "Gas demand increases by 5% in July from June",
+        "title": "Foreign Affairs Dept spent almost €17,000 for Davos hotel",
         "category": "Gnó"
       },
       {
-        "title": "Hundreds killed, nearly 1,000 missing after Nepal floods",
-        "category": "Domhan"
-      },
-      {
-        "title": "European exit further compounds flat atmosphere at Rovers",
-        "category": "Sacar"
-      },
-      {
-        "title": "Cian O'Neill appointed head coach of Cork hurlers",
-        "category": "Iomáint"
-      },
-      {
-        "title": "Rovers must find their form with Europe in the balance",
-        "category": "Sacar"
-      },
-      {
-        "title": "Leinster CEO coy on potential O'Gara appointment",
-        "category": "Rugbaí"
-      },
-      {
-        "title": "Dublin Fringe: How do you turn Kafka into a show for children?",
-        "category": "Cultúr"
-      },
-      {
-        "title": "Electric Picnic 2026: Everything you need to know",
-        "category": "Siamsaíocht"
-      },
-      {
-        "title": "5 sensible and stylish shoe swaps to make this autumn",
-        "category": "Saol"
-      },
-      {
-        "title": "Dáil to defer planned increases in motor fuel excise",
-        "category": "Polaitíocht"
-      },
-      {
-        "title": "Mater to compensate employee for racial discrimination",
-        "category": "Sláinte"
-      },
-      {
-        "title": "Harris indicates further budget measures on fuel poverty",
-        "category": "Polaitíocht"
-      },
-      {
-        "title": "More EU nationals declaring themselves bankrupt here",
-        "category": "Gnó"
-      },
-      {
-        "title": "LOI preview: Chasing pack look to put pressure on Rovers",
-        "category": "Sacar"
+        "title": "Cavan GAA probe cause of Breffni Park fire",
+        "category": "Peil"
       },
       {
         "title": "Sligo reshuffle management as Sloyan takes sole charge",
