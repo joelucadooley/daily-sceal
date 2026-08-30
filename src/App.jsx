@@ -41,7 +41,7 @@ const SECTIONS = [
 ];
 
 // How many stories the Inniu tab shows.
-const HOMEPAGE_COUNT = 8;
+const HOMEPAGE_COUNT = 6;
 
 // A section tab wants at least this many stories. If today's pull is short, we
 // top it up from the archive rather than showing a nearly empty tab.
@@ -2319,10 +2319,14 @@ export default function DailySceal() {
           /* Inniu is a set of highlights rather than a full section, so its
              stories run larger and keep their summaries. The section tabs stay
              on the denser grid above. */
-          .ds-highlights .ds-grid { grid-template-columns: repeat(2, 1fr); column-gap: 44px; }
-          .ds-highlights .ds-grid .ds-story { padding: 26px 0; }
-          .ds-highlights .ds-grid .ds-story h3 { font-size: 1.4rem; line-height: 1.24; letter-spacing: -0.01em; }
-          .ds-highlights .ds-grid .ds-summary { display: -webkit-box; font-size: 0.88rem; -webkit-line-clamp: 3; }
+          .ds-highlights .ds-grid { grid-template-columns: repeat(2, 1fr); column-gap: 48px; }
+          .ds-highlights .ds-grid .ds-story { padding: 30px 0; }
+          .ds-highlights .ds-grid .ds-story h3 { font-size: 1.6rem; line-height: 1.22; letter-spacing: -0.012em; }
+          .ds-highlights .ds-grid .ds-summary { display: -webkit-box; font-size: 0.92rem; line-height: 1.65; -webkit-line-clamp: 3; }
+          /* Five stories in two columns leaves one on its own, so the odd one
+             out runs the full width rather than sitting in a half-empty row. */
+          .ds-highlights .ds-grid .ds-story:last-child:nth-child(odd) { grid-column: 1 / -1; }
+          .ds-highlights .ds-grid .ds-story:last-child:nth-child(odd) h3 { font-size: 1.75rem; }
           .ds-grid .ds-summary { display: none; }
 
           /* The article column is sized in characters rather than fractions, so
@@ -2367,7 +2371,6 @@ export default function DailySceal() {
         /* Wide monitors: a fourth column rather than three very wide ones. */
         @media (min-width: 1500px) {
           .ds-grid { grid-template-columns: repeat(4, 1fr); }
-          .ds-highlights .ds-grid { grid-template-columns: repeat(3, 1fr); }
         }
       `}</style>
 
