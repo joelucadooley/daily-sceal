@@ -623,7 +623,22 @@ function SectionBar({ sections, active, onSelect }) {
 // One story in the list. Identical on mobile whatever its position; on desktop
 // the lead gets a bigger headline and the grid cells drop their summary, both
 // driven by CSS classes on the containers rather than by measuring the window.
-function StoryRow({ story, index, onClick, showSummary = true, noBorder = false }) {
+/**
+ * Cut a summary at the last sentence that fits. RTÉ summaries run anywhere from
+ * 500 to 3,000 characters, so the lead needs a limit, but ending mid-word on an
+ * ellipsis looks broken. Ending on a full stop reads as a paragraph.
+ */
+function trimToSentence(text, max) {
+  const t = (text || "").trim();
+  if (t.length <= max) return t;
+  const cut = t.slice(0, max);
+  const end = Math.max(cut.lastIndexOf(". "), cut.lastIndexOf("? "), cut.lastIndexOf("! "));
+  if (end > max * 0.4) return cut.slice(0, end + 1);
+  const space = cut.lastIndexOf(" ");
+  return (space > 0 ? cut.slice(0, space) : cut) + "…";
+}
+
+function StoryRow({ story, index, onClick, showSummary = true, noBorder = false, fullSummary = false }) {
   return (
     <div className="ds-story" onClick={() => onClick(story)}
       style={{
@@ -641,7 +656,12 @@ function StoryRow({ story, index, onClick, showSummary = true, noBorder = false 
       </div>
       <h3 style={{ margin: "0 0 8px", fontSize: "clamp(1rem,2.8vw,1.15rem)", lineHeight: 1.3, fontWeight: 700, color: C.text, fontFamily: "Georgia, serif", transition: "color 0.15s" }}>{story.title}</h3>
       {showSummary && (
-        <p className="ds-summary" style={{ margin: 0, fontSize: "0.82rem", color: C.muted, lineHeight: 1.6, fontFamily: "system-ui, sans-serif", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{story.summary}</p>
+        <p className="ds-summary" style={{
+          margin: 0, fontSize: "0.82rem", color: C.muted, lineHeight: 1.6, fontFamily: "system-ui, sans-serif",
+          ...(fullSummary
+            ? {}
+            : { display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }),
+        }}>{fullSummary ? trimToSentence(story.summary, 460) : story.summary}</p>
       )}
     </div>
   );
@@ -673,7 +693,7 @@ function FeedView({ stories, loading, onStoryClick, sectionLabel }) {
           <div className="ds-lead">
             <div>
               <div className="ds-lead-title-wrap">
-                <StoryRow story={lead} index={0} onClick={onStoryClick} noBorder={beside.length > 0} />
+                <StoryRow story={lead} index={0} onClick={onStoryClick} noBorder={beside.length > 0} fullSummary />
               </div>
             </div>
             {beside.length > 0 && (
@@ -2272,10 +2292,12 @@ export default function DailySceal() {
              the wordmark and the first headline share a left edge. */
           .ds-head-pad { padding: 18px 40px !important; }
 
-          .ds-lead { display: grid; grid-template-columns: 1.9fr 1fr; gap: 30px; align-items: start; }
+          .ds-lead { display: grid; grid-template-columns: 1.65fr 1fr; gap: 36px; align-items: start; }
           .ds-lead-side { border-left: 1px solid ${C.border}; padding-left: 28px; }
           .ds-lead-title-wrap .ds-story h3 { font-size: 1.85rem; line-height: 1.18; color: ${C.navy}; }
-          .ds-lead-title-wrap .ds-summary { font-size: 0.9rem; -webkit-line-clamp: 3; max-width: 56ch; }
+          /* The lead runs its full summary at a readable measure, so the block
+             fills its column instead of trailing off into an ellipsis. */
+          .ds-lead-title-wrap .ds-summary { font-size: 0.95rem; line-height: 1.7; max-width: 68ch; }
           .ds-lead-side .ds-story h3 { font-size: 1rem; }
           .ds-lead-side .ds-story:first-child { padding-top: 0; }
           .ds-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0 28px; }
