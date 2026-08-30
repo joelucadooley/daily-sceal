@@ -678,8 +678,14 @@ function StoryRow({ story, index, onClick, showSummary = true, noBorder = false,
   );
 }
 
-function FeedView({ stories, loading, onStoryClick, sectionLabel, highlights = false }) {
-  const [lead, ...rest] = stories;
+function FeedView({ stories, loading, onStoryClick, sectionLabel, highlights = false, avoidLeadId = null }) {
+  // Lead with the first story that is not already leading Inniu. If this
+  // section only has that one story, it leads anyway rather than showing none.
+  const leadIndex = avoidLeadId && stories.length > 1
+    ? Math.max(0, stories.findIndex(s => s.id !== avoidLeadId))
+    : 0;
+  const lead = stories[leadIndex];
+  const rest = stories.filter((_, i) => i !== leadIndex);
 
   return (
     <div className={highlights ? "ds-highlights" : undefined}>
@@ -2239,6 +2245,10 @@ export default function DailySceal() {
 
   const sections = availableSections(stories);
   const shown = storiesForSection(stories, section);
+  // Inniu's lead is also the newest story in its own section, so switching tabs
+  // would show the same headline twice. Section tabs lead with something else
+  // and keep that story further down the page instead.
+  const inniuLeadId = storiesForSection(stories, "inniu")[0]?.id;
   const sectionLabel = SECTIONS.find(s => s.id === section)?.label || "";
 
   // If today's pull has nothing for the selected section, fall back to Inniu
@@ -2394,7 +2404,7 @@ export default function DailySceal() {
           {!isExport && view === "feed" && (
             <>
               <SectionBar sections={sections} active={section} onSelect={pickSection} />
-              <FeedView stories={shown} loading={loading} onStoryClick={openStory} sectionLabel={sectionLabel} highlights={section === "inniu"} />
+              <FeedView stories={shown} loading={loading} onStoryClick={openStory} sectionLabel={sectionLabel} highlights={section === "inniu"} avoidLeadId={section === "inniu" ? null : inniuLeadId} />
             </>
           )}
           {!isExport && view === "reading" && activeStory && (
