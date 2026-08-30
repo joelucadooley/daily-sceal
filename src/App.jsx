@@ -2263,7 +2263,10 @@ export default function DailySceal() {
         .ds-panel { display: none; }
 
         @media (min-width: 1000px) {
-          .ds-shell { max-width: 1080px; }
+          /* Fill the screen rather than sitting in a cream frame. Capped so it
+             stops growing on very large monitors, where the white would
+             otherwise run edge to edge. */
+          .ds-shell { max-width: min(1600px, 94vw); }
 
           /* Header padding matches the sheet's inner padding at this width, so
              the wordmark and the first headline share a left edge. */
@@ -2278,9 +2281,16 @@ export default function DailySceal() {
           .ds-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0 28px; }
           .ds-grid .ds-summary { display: none; }
 
-          .ds-read { display: grid; grid-template-columns: minmax(0, 1fr) 268px; gap: 40px; align-items: start; }
-          .ds-article { max-width: 62ch; }
+          /* The article column is sized in characters rather than fractions, so
+             the line length stays readable however wide the sheet gets, and the
+             pair is centred inside it instead of stranded on the left. */
+          .ds-read { display: grid; grid-template-columns: minmax(0, 66ch) 268px; gap: 48px; align-items: start; justify-content: center; }
           .ds-panel { display: block; position: sticky; top: 20px; }
+        }
+
+        /* Wide monitors: a fourth column rather than three very wide ones. */
+        @media (min-width: 1500px) {
+          .ds-grid { grid-template-columns: repeat(4, 1fr); }
         }
       `}</style>
 
