@@ -1341,7 +1341,7 @@ function ReadingView({ story, onBack }) {
               Tap any <span style={{ color: C.blue, fontWeight: 600 }}>blue word</span> to see the English and hear it spoken
             </div>
           </div>
-          <button onClick={handleShare} disabled={shareLoading}
+          <button className="ds-share" onClick={handleShare} disabled={shareLoading}
             style={{ width: "100%", marginTop: 14, background: C.navy, color: "#fff", border: "none", borderRadius: 8, padding: "13px", fontFamily: "system-ui, sans-serif", fontSize: "0.88rem", fontWeight: 600, cursor: shareLoading ? "wait" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: shareLoading ? 0.6 : 1 }}>
             {shareLoading ? "Ag ullmhú..." : "Roinn · Share ↗"}
           </button>
@@ -1351,7 +1351,7 @@ function ReadingView({ story, onBack }) {
               Léigh ar RTÉ →
             </a>
           )}
-          <div style={{ height: "1.5rem" }} />
+          <div className="ds-tail" style={{ height: "1.5rem" }} />
         </>
       )}
      </div>
@@ -2328,7 +2328,14 @@ export default function DailySceal() {
           }
           .ds-read-head { grid-area: head; }
           .ds-article { grid-area: body; }
-          .ds-panel { grid-area: panel; display: block; position: sticky; top: 20px; }
+          /* The panel ends short of the sheet's edge, so Reveal all is not sitting
+             on the boundary when the word list is long enough to scroll. */
+          .ds-panel { grid-area: panel; display: block; position: sticky; top: 20px; margin-bottom: 30px; }
+
+          /* Put the breathing room between the story and the buttons rather than
+             below the buttons, so the actions sit just above the sheet's edge. */
+          .ds-article .ds-share { margin-top: 42px !important; }
+          .ds-article .ds-tail { height: 30px !important; }
 
           /* The article already sits on a white sheet, so the inner card just
              drew a box inside a box. Flatten it on desktop. */
