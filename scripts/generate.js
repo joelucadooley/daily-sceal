@@ -241,6 +241,57 @@ function shouldTranslate(tok, pct) {
   return true;
 }
 
+// Words that read as nouns often enough to be worth marking, and endings that
+// give a word away as a verb or adverb. There is no part-of-speech tagger here,
+// so this is a heuristic, but it is a great deal better than picking by
+// position, which is what this used to do.
+const NOUN_ENDINGS = [/tion$/, /sion$/, /ment$/, /ness$/, /ity$/, /ance$/, /ence$/, /ship$/, /hood$/, /ism$/, /ist$/, /age$/, /ure$/];
+const NOT_NOUN_ENDINGS = [/ly$/, /ing$/, /ed$/, /ise$/, /ize$/, /ful$/, /ous$/, /ive$/, /able$/, /ible$/];
+const DETERMINERS = new Set(["the","a","an","its","their","his","her","this","that","these","those","our","some","any","each","every","no"]);
+
+function nounScore(tok, prevWord) {
+  const w = tok.toLowerCase();
+  let score = 0;
+  if (OVERRIDES[w] !== undefined) score += 4;        // curated vocabulary, already trusted
+  if (PLACES[w] !== undefined) score += 3;
+  if (DETERMINERS.has((prevWord || "").toLowerCase())) score += 3;  // "the depot", "a warehouse"
+  if (NOUN_ENDINGS.some(re => re.test(w))) score += 3;
+  if (NOT_NOUN_ENDINGS.some(re => re.test(w))) score -= 4;
+  if (/[^s]s$/.test(w) && !/(ss|us|is)$/.test(w)) score += 1;       // plurals read as nouns
+  if (w.length >= 6) score += 1;
+  return score;
+}
+
+// Choose which words get marked. Two rules that the old even-spacing version
+// had no way to express: prefer whole nouns, and never mark two words that sit
+// side by side, so a reader always gets a standalone word rather than a
+// fragment of a phrase.
+function selectMarkerIndices(tokens, candidates, targetCount) {
+  // Position of each candidate in the sequence of words, so "adjacent" means
+  // adjacent words rather than adjacent tokens, which include whitespace.
+  const wordPos = new Map();
+  let n = 0;
+  tokens.forEach((tok, i) => { if (/^\w/.test(tok)) wordPos.set(i, n++); });
+
+  const prevWordOf = i => {
+    for (let j = i - 1; j >= 0; j--) if (/^\w/.test(tokens[j])) return tokens[j];
+    return "";
+  };
+
+  const scored = candidates
+    .map(c => ({ ...c, score: nounScore(c.tok, prevWordOf(c.i)), pos: wordPos.get(c.i) }))
+    .sort((a, b) => b.score - a.score || a.pos - b.pos);
+
+  const chosen = [];
+  for (const c of scored) {
+    if (chosen.length >= targetCount) break;
+    if (c.score < 0) continue;                                       // clearly not a noun
+    if (chosen.some(p => Math.abs(p.pos - c.pos) < 2)) continue;     // no side-by-side markers
+    chosen.push(c);
+  }
+  return new Set(chosen.map(c => c.i));
+}
+
 async function buildLevel(sentence, pct) {
   // For Advanced (75%), translate the whole sentence at once for much better Irish density
   if (pct >= 75) {
@@ -254,12 +305,7 @@ async function buildLevel(sentence, pct) {
     .filter(({ tok, isWord }) => isWord && shouldTranslate(tok, pct));
 
   const targetCount = Math.ceil(candidates.length * (pct / 100));
-  const step = candidates.length / Math.max(targetCount, 1);
-  const toTranslateIndices = new Set(
-    Array.from({ length: targetCount }, (_, k) =>
-      candidates[Math.min(Math.round(k * step), candidates.length - 1)]?.i
-    ).filter(i => i !== undefined)
-  );
+  const toTranslateIndices = selectMarkerIndices(tokens, candidates, targetCount);
 
   const result = [];
   for (const { tok, i, isWord } of tokens.map((tok, i) => ({ tok, i, isWord: /^\w/.test(tok) }))) {
@@ -360,12 +406,7 @@ async function buildLevelWordByWord(sentence, pct) {
     .map((tok, i) => ({ tok, i, isWord: /^\w/.test(tok) }))
     .filter(({ tok, isWord }) => isWord && shouldTranslate(tok, pct));
   const targetCount = Math.ceil(candidates.length * (pct / 100));
-  const step = candidates.length / Math.max(targetCount, 1);
-  const toTranslateIndices = new Set(
-    Array.from({ length: targetCount }, (_, k) =>
-      candidates[Math.min(Math.round(k * step), candidates.length - 1)]?.i
-    ).filter(i => i !== undefined)
-  );
+  const toTranslateIndices = selectMarkerIndices(tokens, candidates, targetCount);
   const result = [];
   for (const { tok, i, isWord } of tokens.map((tok, i) => ({ tok, i, isWord: /^\w/.test(tok) }))) {
     if (isWord && toTranslateIndices.has(i)) {
