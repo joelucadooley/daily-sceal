@@ -661,13 +661,18 @@ function StoryRow({ story, index, onClick, showSummary = true, noBorder = false,
         letterSpacing: lead ? "-0.015em" : "normal",
         fontWeight: 700, color: C.text, fontFamily: "Georgia, serif", transition: "color 0.15s",
       }}>{story.title}</h3>
-      {showSummary && (
+      {lead && showSummary && (
+        <p className="ds-summary" style={{ margin: 0, fontSize: "0.82rem", color: C.muted, lineHeight: 1.6, fontFamily: "system-ui, sans-serif" }}>
+          {trimToSentence(story.summary, 460)}
+        </p>
+      )}
+      {!lead && showSummary && (
         <p className="ds-summary" style={{
           margin: 0, fontSize: "0.82rem", color: C.muted, lineHeight: 1.6, fontFamily: "system-ui, sans-serif",
           ...(fullSummary
             ? {}
             : { display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }),
-        }}>{fullSummary ? trimToSentence(story.summary, 460) : story.summary}</p>
+        }}>{story.summary}</p>
       )}
     </div>
   );
@@ -1210,7 +1215,7 @@ function ReadingView({ story, onBack }) {
 
   return (
     <div className="ds-read" style={{ animation: "fadeIn 0.2s ease" }}>
-     <div className="ds-article">
+     <div className="ds-read-head">
       {/* Nav */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: 20, borderBottom: `1px solid ${C.border}`, marginBottom: 20 }}>
         <button onClick={onBack} style={{ background: "none", border: "none", color: C.muted, fontFamily: "system-ui, sans-serif", fontSize: "0.8rem", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", gap: 5 }}>
@@ -1224,7 +1229,9 @@ function ReadingView({ story, onBack }) {
         <h1 style={{ margin: "0 0 8px", color: C.navy, fontSize: "clamp(1.3rem,4vw,1.75rem)", lineHeight: 1.2, fontFamily: "Georgia, serif", fontWeight: 700 }}>{story.title}</h1>
         <div style={{ fontSize: "0.72rem", color: C.faint, fontFamily: "system-ui, sans-serif" }}>{storyTimeAgo(story)}</div>
       </div>
+     </div>
 
+     <div className="ds-article">
       {/* Level selector */}
       <div style={{ background: C.card, borderRadius: 10, border: `1px solid ${C.border}`, padding: "16px 18px", marginBottom: 20 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
@@ -1317,7 +1324,7 @@ function ReadingView({ story, onBack }) {
         </>
       ) : (
         <>
-          <div style={{ background: C.card, borderRadius: 10, border: `1px solid ${C.border}`, padding: "22px 20px" }} key={pct}>
+          <div className="ds-body-card" style={{ background: C.card, borderRadius: 10, border: `1px solid ${C.border}`, padding: "22px 20px" }} key={pct}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18, paddingBottom: 14, borderBottom: `1px solid ${C.border}` }}>
               <span style={{ fontFamily: "system-ui, sans-serif", fontSize: "0.72rem", color: C.muted }}>
                 <span style={{ color: C.blue, fontWeight: 600 }}>{irishCount}</span> Irish {irishCount === 1 ? "word" : "words"} in this story
@@ -2294,11 +2301,18 @@ export default function DailySceal() {
              the rest of the band looking like an empty column. The column width
              is fixed and the count follows the space, so it is two columns on a
              laptop and three on a wide monitor. */
-          .ds-lead-title-wrap .ds-summary {
-            font-size: 0.95rem; line-height: 1.7;
-            column-width: 38ch; column-gap: 40px; column-fill: balance;
-            orphans: 2; widows: 2;
+          /* Headline on the left, summary in a single readable column on the
+             right, so the band fills without breaking the text into stubs. */
+          .ds-lead-title-wrap .ds-story {
+            display: grid;
+            grid-template-columns: minmax(0, 1.9fr) minmax(0, 1fr);
+            grid-template-areas: "meta meta" "title summary";
+            column-gap: 44px;
+            align-items: start;
           }
+          .ds-lead-title-wrap .ds-story > div:first-child { grid-area: meta; }
+          .ds-lead-title-wrap .ds-story h3 { grid-area: title; margin-bottom: 0; }
+          .ds-lead-title-wrap .ds-summary { grid-area: summary; font-size: 0.92rem; line-height: 1.75; }
           .ds-lead-title-wrap .ds-story { padding-bottom: 26px; }
           .ds-lead-side .ds-story h3 { font-size: 1rem; }
           .ds-lead-side .ds-story:first-child { padding-top: 0; }
@@ -2309,8 +2323,24 @@ export default function DailySceal() {
           /* The article column is sized in characters rather than fractions, so
              the line length stays readable however wide the sheet gets, and the
              pair is centred inside it instead of stranded on the left. */
-          .ds-read { display: grid; grid-template-columns: minmax(0, 66ch) 268px; gap: 48px; align-items: start; justify-content: center; }
-          .ds-panel { display: block; position: sticky; top: 20px; }
+          .ds-read {
+            display: grid;
+            grid-template-columns: minmax(0, 66ch) 268px;
+            grid-template-areas: "head head" "body panel";
+            column-gap: 48px; align-items: start; justify-content: center;
+          }
+          .ds-read-head { grid-area: head; }
+          .ds-article { grid-area: body; }
+          .ds-panel { grid-area: panel; display: block; position: sticky; top: 20px; }
+
+          /* The article already sits on a white sheet, so the inner card just
+             drew a box inside a box. Flatten it on desktop. */
+          .ds-article .ds-body-card {
+            background: transparent !important;
+            border: none !important;
+            border-radius: 0 !important;
+            padding: 0 !important;
+          }
         }
 
         /* Wide monitors: a fourth column rather than three very wide ones. */
