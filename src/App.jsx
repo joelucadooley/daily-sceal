@@ -678,11 +678,11 @@ function StoryRow({ story, index, onClick, showSummary = true, noBorder = false,
   );
 }
 
-function FeedView({ stories, loading, onStoryClick, sectionLabel }) {
+function FeedView({ stories, loading, onStoryClick, sectionLabel, highlights = false }) {
   const [lead, ...rest] = stories;
 
   return (
-    <div>
+    <div className={highlights ? "ds-highlights" : undefined}>
       {loading && <Spinner />}
 
       {!loading && stories.length === 0 && (
@@ -2315,6 +2315,14 @@ export default function DailySceal() {
           .ds-lead-side .ds-story:first-child { padding-top: 0; }
           /* Same track count and same gap as the lead row above it. */
           .ds-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0 28px; }
+
+          /* Inniu is a set of highlights rather than a full section, so its
+             stories run larger and keep their summaries. The section tabs stay
+             on the denser grid above. */
+          .ds-highlights .ds-grid { grid-template-columns: repeat(2, 1fr); column-gap: 44px; }
+          .ds-highlights .ds-grid .ds-story { padding: 26px 0; }
+          .ds-highlights .ds-grid .ds-story h3 { font-size: 1.4rem; line-height: 1.24; letter-spacing: -0.01em; }
+          .ds-highlights .ds-grid .ds-summary { display: -webkit-box; font-size: 0.88rem; -webkit-line-clamp: 3; }
           .ds-grid .ds-summary { display: none; }
 
           /* The article column is sized in characters rather than fractions, so
@@ -2359,6 +2367,7 @@ export default function DailySceal() {
         /* Wide monitors: a fourth column rather than three very wide ones. */
         @media (min-width: 1500px) {
           .ds-grid { grid-template-columns: repeat(4, 1fr); }
+          .ds-highlights .ds-grid { grid-template-columns: repeat(3, 1fr); }
         }
       `}</style>
 
@@ -2382,7 +2391,7 @@ export default function DailySceal() {
           {!isExport && view === "feed" && (
             <>
               <SectionBar sections={sections} active={section} onSelect={pickSection} />
-              <FeedView stories={shown} loading={loading} onStoryClick={openStory} sectionLabel={sectionLabel} />
+              <FeedView stories={shown} loading={loading} onStoryClick={openStory} sectionLabel={sectionLabel} highlights={section === "inniu"} />
             </>
           )}
           {!isExport && view === "reading" && activeStory && (
