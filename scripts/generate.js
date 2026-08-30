@@ -17,6 +17,11 @@ const LEVELS = [10, 25, 50];
 // HOMEPAGE_COUNT of these; the rest live under their section. At ~50 lookups
 // per story this is still well inside MyMemory's daily allowance.
 const STORY_COUNT = 30;
+
+// How many paragraphs of each article to keep. Raising this makes the stories
+// longer but multiplies the translation calls, so watch the run log for quota
+// warnings after any change.
+const PARAGRAPH_LIMIT = 6;
 // Below this, something is wrong upstream (feeds down, RTÉ layout change,
 // MyMemory quota) and publishing would replace a good day with a broken one.
 // Failing loudly leaves yesterday's today.json in place, which is the better
@@ -152,7 +157,13 @@ async function scrapeArticle(url) {
         paragraphs.push(text);
       }
     }
-    const article = paragraphs.slice(0, 4).join(" ");
+    // Six paragraphs rather than four. Longer stories read better on a wide
+    // screen, but every extra paragraph costs MyMemory calls across all three
+    // levels and all thirty stories, so this is not a free number to raise.
+    const article = paragraphs.slice(0, PARAGRAPH_LIMIT).join(" ");
+    if (paragraphs.length) {
+      console.log(`    ${paragraphs.length} usable paragraphs found, using ${Math.min(paragraphs.length, PARAGRAPH_LIMIT)}`);
+    }
     return article.length > 100 ? article : null;
   } catch (e) {
     console.warn(`  Could not scrape ${url}: ${e.message}`);
