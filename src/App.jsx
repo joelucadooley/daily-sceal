@@ -674,8 +674,8 @@ function StoryRow({ story, index, onClick, showSummary = true, noBorder = false,
       onMouseEnter={e => e.currentTarget.querySelector("h3").style.color = C.blue}
       onMouseLeave={e => e.currentTarget.querySelector("h3").style.color = C.text}
     >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-        <span style={{ fontSize: "0.65rem", fontFamily: "system-ui, sans-serif", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", color: C.amber }}>{displayCat(story)}</span>
+      <div className="ds-meta" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+        <span className="ds-cat" style={{ fontSize: "0.65rem", fontFamily: "system-ui, sans-serif", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", color: C.amber }}>{displayCat(story)}</span>
         <span style={{ color: C.faint, fontSize: "0.7rem", fontFamily: "system-ui, sans-serif" }}>{storyTimeAgo(story)}</span>
       </div>
       <h3 style={{
@@ -2378,13 +2378,17 @@ export default function DailySceal() {
           .ds-lead-side .ds-story:first-child { padding-top: 0; }
           /* Sub-category headings on the section tabs. */
           .ds-group { padding-top: 10px; }
+          /* The group heading carries the amber label, so each story underneath
+             does not repeat it. */
           .ds-group-head {
-            font-family: Georgia, serif; font-size: 0.82rem; font-weight: 700;
-            text-transform: uppercase; letter-spacing: 0.12em; color: ${C.navy};
-            margin: 24px 0 4px; padding-bottom: 9px;
-            border-bottom: 2px solid ${C.navy};
+            font-family: system-ui, sans-serif; font-size: 0.72rem; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.1em; color: ${C.amber};
+            margin: 26px 0 0; padding-bottom: 10px;
+            border-bottom: 1px solid ${C.border};
           }
           .ds-group:first-of-type .ds-group-head { margin-top: 14px; }
+          .ds-group .ds-cat { display: none; }
+          .ds-group .ds-meta { justify-content: flex-end; }
 
           /* Same track count and same gap as the lead row above it. */
           .ds-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0 28px; }
@@ -2392,10 +2396,10 @@ export default function DailySceal() {
           /* Inniu is a set of highlights rather than a full section, so its
              stories run larger and keep their summaries. The section tabs stay
              on the denser grid above. */
-          .ds-highlights .ds-grid { grid-template-columns: 1fr; }
-          .ds-highlights .ds-grid .ds-story { padding: 30px 0; }
-          .ds-highlights .ds-grid .ds-story h3 { font-size: 1.7rem; line-height: 1.2; letter-spacing: -0.012em; max-width: 34ch; }
-          .ds-highlights .ds-grid .ds-summary { display: -webkit-box; font-size: 1rem; line-height: 1.7; -webkit-line-clamp: 2; max-width: 92ch; }
+          .ds-highlights .ds-grid { grid-template-columns: repeat(2, 1fr); column-gap: 50px; }
+          .ds-highlights .ds-grid .ds-story { padding: 28px 0; }
+          .ds-highlights .ds-grid .ds-story h3 { font-size: 1.5rem; line-height: 1.22; letter-spacing: -0.012em; }
+          .ds-highlights .ds-grid .ds-summary { display: -webkit-box; font-size: 0.95rem; line-height: 1.7; -webkit-line-clamp: 3; }
           .ds-grid .ds-summary { display: none; }
 
           /* The article column is sized in characters rather than fractions, so
