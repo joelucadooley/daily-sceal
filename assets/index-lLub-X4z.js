@@ -90,7 +90,10 @@ tithíocht`,style:{width:"100%",padding:"10px",borderRadius:8,border:`1px solid 
         .ds-panel { display: none; }
 
         @media (min-width: 1000px) {
-          .ds-shell { max-width: 1080px; }
+          /* Fill the screen rather than sitting in a cream frame. Capped so it
+             stops growing on very large monitors, where the white would
+             otherwise run edge to edge. */
+          .ds-shell { max-width: min(1600px, 94vw); }
 
           /* Header padding matches the sheet's inner padding at this width, so
              the wordmark and the first headline share a left edge. */
@@ -105,8 +108,15 @@ tithíocht`,style:{width:"100%",padding:"10px",borderRadius:8,border:`1px solid 
           .ds-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0 28px; }
           .ds-grid .ds-summary { display: none; }
 
-          .ds-read { display: grid; grid-template-columns: minmax(0, 1fr) 268px; gap: 40px; align-items: start; }
-          .ds-article { max-width: 62ch; }
+          /* The article column is sized in characters rather than fractions, so
+             the line length stays readable however wide the sheet gets, and the
+             pair is centred inside it instead of stranded on the left. */
+          .ds-read { display: grid; grid-template-columns: minmax(0, 66ch) 268px; gap: 48px; align-items: start; justify-content: center; }
           .ds-panel { display: block; position: sticky; top: 20px; }
+        }
+
+        /* Wide monitors: a fourth column rather than three very wide ones. */
+        @media (min-width: 1500px) {
+          .ds-grid { grid-template-columns: repeat(4, 1fr); }
         }
       `}),c.jsx("header",{style:{background:h.navy,borderBottom:`3px solid ${h.amber}`},children:c.jsxs("div",{className:"ds-shell ds-head-pad",style:{padding:"16px 20px",display:"flex",justifyContent:"space-between",alignItems:"center"},children:[c.jsxs("div",{onClick:()=>{y("inniu"),t("feed")},style:{cursor:"pointer"},children:[c.jsxs("div",{style:{fontSize:"clamp(1.2rem,3.5vw,1.5rem)",fontWeight:700,color:"#fff",fontFamily:"Georgia, serif",letterSpacing:"-0.01em",lineHeight:1},children:["Daily ",c.jsx("span",{style:{color:h.amber},children:"Scéal"})]}),c.jsx("div",{style:{fontSize:"0.62rem",color:"rgba(255,255,255,0.4)",fontFamily:"system-ui, sans-serif",marginTop:3,letterSpacing:"0.03em"},children:u})]}),c.jsx("div",{style:{fontFamily:"system-ui, sans-serif",fontSize:"0.7rem",color:"rgba(255,255,255,0.35)",letterSpacing:"0.03em"},children:"Cad é an scéal?"})]})}),c.jsx("main",{className:"ds-shell",style:{padding:"0 20px 120px"},children:c.jsxs("div",{style:{background:e==="about"||m?"transparent":h.card,borderLeft:m?"none":`1px solid ${h.border}`,borderRight:m?"none":`1px solid ${h.border}`,borderBottom:m?"none":`1px solid ${h.border}`,borderRadius:"0 0 12px 12px",padding:"0 20px",minHeight:400},children:[m&&c.jsx(Rm,{stories:i}),!m&&e==="feed"&&c.jsxs(c.Fragment,{children:[c.jsx(Sm,{sections:S,active:v,onSelect:E}),c.jsx(km,{stories:k,loading:o,onStoryClick:d,sectionLabel:x})]}),!m&&e==="reading"&&s&&c.jsx("div",{style:{paddingTop:20},children:c.jsx(Lm,{story:s,onBack:()=>t("feed")})}),!m&&e==="about"&&c.jsx("div",{style:{paddingTop:28},children:c.jsx(Nm,{})})]})}),c.jsx("nav",{style:{position:"fixed",bottom:0,left:0,right:0,background:"rgba(255,255,255,0.96)",borderTop:`1px solid ${h.border}`,backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)",zIndex:100},children:c.jsx("div",{style:{maxWidth:640,margin:"0 auto",display:"grid",gridTemplateColumns:"1fr 1fr"},children:[{id:"feed",label:"Nuacht",icon:"📰"},{id:"about",label:"Faoi",icon:"🍀"}].map(w=>{const j=e===w.id||w.id==="feed"&&e==="reading";return c.jsxs("button",{onClick:()=>{w.id==="feed"&&e==="feed"&&E("inniu"),t(w.id)},style:{background:"none",border:"none",padding:"11px 0 9px",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:3,position:"relative"},children:[j&&c.jsx("span",{style:{position:"absolute",top:0,left:"20%",right:"20%",height:2,background:h.navy,borderRadius:"0 0 2px 2px"}}),c.jsx("span",{style:{fontSize:"1.1rem"},children:w.icon}),c.jsx("span",{style:{fontFamily:"system-ui, sans-serif",fontSize:"0.6rem",fontWeight:700,letterSpacing:"0.07em",textTransform:"uppercase",color:j?h.navy:h.faint,transition:"color 0.15s"},children:w.label})]},w.id)})})})]})}gl.createRoot(document.getElementById("root")).render(c.jsx(Wd.StrictMode,{children:c.jsx(Pm,{})}));
