@@ -134,6 +134,30 @@ function storiesForSection(stories, sectionId) {
   return out;
 }
 
+/**
+ * Group a section's stories by their Irish sub-category, so Spórt reads as
+ * Peil, Rugbaí, Sacar and so on rather than one undifferentiated list. Groups
+ * are ordered by size, then alphabetically, and anything with a single story
+ * is swept into one group at the end rather than getting a heading of its own.
+ */
+function groupByCategory(stories) {
+  const buckets = new Map();
+  for (const s of stories) {
+    const k = displayCat(s) || "Eile";
+    if (!buckets.has(k)) buckets.set(k, []);
+    buckets.get(k).push(s);
+  }
+  const groups = [];
+  const singles = [];
+  for (const [label, items] of buckets) {
+    if (items.length === 1) singles.push(items[0]);
+    else groups.push({ label, items });
+  }
+  groups.sort((a, b) => b.items.length - a.items.length || a.label.localeCompare(b.label));
+  if (singles.length) groups.push({ label: "Eile", items: singles });
+  return groups;
+}
+
 /** Only show tabs that actually have something, plus Inniu. */
 function availableSections(stories) {
   const present = new Set(stories.map(sectionOf));
@@ -678,7 +702,22 @@ function StoryRow({ story, index, onClick, showSummary = true, noBorder = false,
   );
 }
 
+/** True on desktop widths. Used where CSS alone cannot restructure the list. */
+function useIsDesktop(min = 1000) {
+  const [is, setIs] = useState(() =>
+    typeof window !== "undefined" && window.matchMedia(`(min-width:${min}px)`).matches);
+  useEffect(() => {
+    const mq = window.matchMedia(`(min-width:${min}px)`);
+    const on = e => setIs(e.matches);
+    mq.addEventListener("change", on);
+    setIs(mq.matches);
+    return () => mq.removeEventListener("change", on);
+  }, [min]);
+  return is;
+}
+
 function FeedView({ stories, loading, onStoryClick, sectionLabel, highlights = false, avoidLeadId = null }) {
+  const isDesktop = useIsDesktop();
   // Lead with the first story that is not already leading Inniu. If this
   // section only has that one story, it leads anyway rather than showing none.
   const leadIndex = avoidLeadId && stories.length > 1
@@ -709,11 +748,24 @@ function FeedView({ stories, loading, onStoryClick, sectionLabel, highlights = f
             <StoryRow story={lead} index={0} onClick={onStoryClick} fullSummary lead />
           </div>
 
-          <div className="ds-grid">
-            {rest.map((s, i) => (
-              <StoryRow key={s.id} story={s} index={i + 1} onClick={onStoryClick} />
-            ))}
-          </div>
+          {!highlights && isDesktop ? (
+            groupByCategory(rest).map(group => (
+              <section key={group.label} className="ds-group">
+                <h2 className="ds-group-head">{group.label}</h2>
+                <div className="ds-grid">
+                  {group.items.map((s, i) => (
+                    <StoryRow key={s.id} story={s} index={i + 1} onClick={onStoryClick} />
+                  ))}
+                </div>
+              </section>
+            ))
+          ) : (
+            <div className="ds-grid">
+              {rest.map((s, i) => (
+                <StoryRow key={s.id} story={s} index={i + 1} onClick={onStoryClick} />
+              ))}
+            </div>
+          )}
         </>
       )}
 
@@ -2316,27 +2368,34 @@ export default function DailySceal() {
           /* Summary sits under the headline as a standfirst: larger than the
              card summaries and set wide, so it reads as part of the lead rather
              than as a narrow column with a gap beside it. */
-          .ds-lead-title-wrap .ds-story h3 { margin-bottom: 14px; }
+          .ds-lead-title-wrap .ds-story h3 { margin-bottom: 18px; }
           .ds-lead-title-wrap .ds-summary {
-            font-size: 1.05rem; line-height: 1.65; color: ${C.muted}; max-width: 82ch;
+            font-size: 1.2rem; line-height: 1.62; color: ${C.muted};
+            max-width: none; padding-bottom: 6px;
           }
           .ds-lead-title-wrap .ds-story { padding-bottom: 26px; }
           .ds-lead-side .ds-story h3 { font-size: 1rem; }
           .ds-lead-side .ds-story:first-child { padding-top: 0; }
+          /* Sub-category headings on the section tabs. */
+          .ds-group { padding-top: 10px; }
+          .ds-group-head {
+            font-family: Georgia, serif; font-size: 0.82rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.12em; color: ${C.navy};
+            margin: 24px 0 4px; padding-bottom: 9px;
+            border-bottom: 2px solid ${C.navy};
+          }
+          .ds-group:first-of-type .ds-group-head { margin-top: 14px; }
+
           /* Same track count and same gap as the lead row above it. */
           .ds-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0 28px; }
 
           /* Inniu is a set of highlights rather than a full section, so its
              stories run larger and keep their summaries. The section tabs stay
              on the denser grid above. */
-          .ds-highlights .ds-grid { grid-template-columns: repeat(2, 1fr); column-gap: 48px; }
+          .ds-highlights .ds-grid { grid-template-columns: 1fr; }
           .ds-highlights .ds-grid .ds-story { padding: 30px 0; }
-          .ds-highlights .ds-grid .ds-story h3 { font-size: 1.6rem; line-height: 1.22; letter-spacing: -0.012em; }
-          .ds-highlights .ds-grid .ds-summary { display: -webkit-box; font-size: 0.92rem; line-height: 1.65; -webkit-line-clamp: 3; }
-          /* Five stories in two columns leaves one on its own, so the odd one
-             out runs the full width rather than sitting in a half-empty row. */
-          .ds-highlights .ds-grid .ds-story:last-child:nth-child(odd) { grid-column: 1 / -1; }
-          .ds-highlights .ds-grid .ds-story:last-child:nth-child(odd) h3 { font-size: 1.75rem; }
+          .ds-highlights .ds-grid .ds-story h3 { font-size: 1.7rem; line-height: 1.2; letter-spacing: -0.012em; max-width: 34ch; }
+          .ds-highlights .ds-grid .ds-summary { display: -webkit-box; font-size: 1rem; line-height: 1.7; -webkit-line-clamp: 2; max-width: 92ch; }
           .ds-grid .ds-summary { display: none; }
 
           /* The article column is sized in characters rather than fractions, so
