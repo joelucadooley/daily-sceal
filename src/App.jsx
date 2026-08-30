@@ -531,24 +531,31 @@ function Spinner() {
 }
 
 function WordChip({ part, active, onToggle }) {
+  const [hover, setHover] = useState(false);
+  // Only real mice hover. A tap on a touchscreen fires a mouse event too, and
+  // acting on it would pop the tooltip open before the click is registered.
+  const show = active || hover;
   return (
     <span style={{ position: "relative", display: "inline" }}>
-      <span onClick={onToggle} style={{
+      <span onClick={onToggle}
+        onPointerEnter={e => { if (e.pointerType === "mouse") setHover(true); }}
+        onPointerLeave={() => setHover(false)}
+        style={{
         cursor: "pointer",
-        color: active ? "#1d4ed8" : C.blue,
+        color: show ? "#1d4ed8" : C.blue,
         fontWeight: 600,
         textDecoration: "underline",
-        textDecorationColor: active ? "#1d4ed8" : "#93c5fd",
+        textDecorationColor: show ? "#1d4ed8" : "#93c5fd",
         textDecorationThickness: "1.5px",
         textUnderlineOffset: "3px",
-        background: active ? C.blueLight : "transparent",
+        background: show ? C.blueLight : "transparent",
         borderRadius: 3,
         padding: "0 2px",
         transition: "all 0.1s",
       }}>
         {part.irish}
       </span>
-      {active && (
+      {show && (
         <span style={{
           position: "absolute", bottom: "calc(100% + 8px)", left: "50%", transform: "translateX(-50%)",
           background: C.navy, color: "#fff", borderRadius: 8, padding: "8px 12px",
@@ -613,7 +620,38 @@ function SectionBar({ sections, active, onSelect }) {
   );
 }
 
+// One story in the list. Identical on mobile whatever its position; on desktop
+// the lead gets a bigger headline and the grid cells drop their summary, both
+// driven by CSS classes on the containers rather than by measuring the window.
+function StoryRow({ story, index, onClick, showSummary = true, noBorder = false }) {
+  return (
+    <div className="ds-story" onClick={() => onClick(story)}
+      style={{
+        padding: "20px 0",
+        borderBottom: noBorder ? "none" : `1px solid ${C.border}`,
+        cursor: "pointer",
+        animation: `fadeIn ${0.1 + index * 0.04}s ease`,
+      }}
+      onMouseEnter={e => e.currentTarget.querySelector("h3").style.color = C.blue}
+      onMouseLeave={e => e.currentTarget.querySelector("h3").style.color = C.text}
+    >
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+        <span style={{ fontSize: "0.65rem", fontFamily: "system-ui, sans-serif", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", color: C.amber }}>{displayCat(story)}</span>
+        <span style={{ color: C.faint, fontSize: "0.7rem", fontFamily: "system-ui, sans-serif" }}>{storyTimeAgo(story)}</span>
+      </div>
+      <h3 style={{ margin: "0 0 8px", fontSize: "clamp(1rem,2.8vw,1.15rem)", lineHeight: 1.3, fontWeight: 700, color: C.text, fontFamily: "Georgia, serif", transition: "color 0.15s" }}>{story.title}</h3>
+      {showSummary && (
+        <p className="ds-summary" style={{ margin: 0, fontSize: "0.82rem", color: C.muted, lineHeight: 1.6, fontFamily: "system-ui, sans-serif", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{story.summary}</p>
+      )}
+    </div>
+  );
+}
+
 function FeedView({ stories, loading, onStoryClick, sectionLabel }) {
+  const [lead, ...others] = stories;
+  const beside = others.slice(0, 2);
+  const rest = others.slice(2);
+
   return (
     <div>
       {loading && <Spinner />}
@@ -630,25 +668,31 @@ function FeedView({ stories, loading, onStoryClick, sectionLabel }) {
         </div>
       )}
 
-      {!loading && stories.map((s, i) => (
-        <div key={s.id} onClick={() => onStoryClick(s)}
-          style={{
-            padding: "20px 0",
-            borderBottom: `1px solid ${C.border}`,
-            cursor: "pointer",
-            animation: `fadeIn ${0.1 + i * 0.04}s ease`,
-          }}
-          onMouseEnter={e => e.currentTarget.querySelector("h3").style.color = C.blue}
-          onMouseLeave={e => e.currentTarget.querySelector("h3").style.color = C.text}
-        >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-            <span style={{ fontSize: "0.65rem", fontFamily: "system-ui, sans-serif", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", color: C.amber }}>{displayCat(s)}</span>
-            <span style={{ color: C.faint, fontSize: "0.7rem", fontFamily: "system-ui, sans-serif" }}>{storyTimeAgo(s)}</span>
+      {!loading && lead && (
+        <>
+          <div className="ds-lead">
+            <div>
+              <div className="ds-lead-title-wrap">
+                <StoryRow story={lead} index={0} onClick={onStoryClick} noBorder={beside.length > 0} />
+              </div>
+            </div>
+            {beside.length > 0 && (
+              <div className="ds-lead-side">
+                {beside.map((s, i) => (
+                  <StoryRow key={s.id} story={s} index={i + 1} onClick={onStoryClick}
+                    showSummary={false} noBorder={i === beside.length - 1} />
+                ))}
+              </div>
+            )}
           </div>
-          <h3 style={{ margin: "0 0 8px", fontSize: "clamp(1rem,2.8vw,1.15rem)", lineHeight: 1.3, fontWeight: 700, color: C.text, fontFamily: "Georgia, serif", transition: "color 0.15s" }}>{s.title}</h3>
-          <p style={{ margin: 0, fontSize: "0.82rem", color: C.muted, lineHeight: 1.6, fontFamily: "system-ui, sans-serif", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{s.summary}</p>
-        </div>
-      ))}
+
+          <div className="ds-grid" style={{ borderTop: `1px solid ${C.border}` }}>
+            {rest.map((s, i) => (
+              <StoryRow key={s.id} story={s} index={i + 3} onClick={onStoryClick} />
+            ))}
+          </div>
+        </>
+      )}
 
       <div style={{ paddingTop: 32, textAlign: "center", fontFamily: "system-ui, sans-serif", fontSize: "0.7rem", color: C.faint, lineHeight: 1.9 }}>
         <div>News from RTÉ · Updated daily</div>
@@ -1141,8 +1185,20 @@ function ReadingView({ story, onBack }) {
     }
   }
 
+  // Unique Irish words in the order they appear, for the desktop side panel.
+  const panelWords = [];
+  const panelSeen = new Set();
+  parts.forEach(p => {
+    if (p.t !== "ir") return;
+    const k = p.irish.toLowerCase();
+    if (panelSeen.has(k)) return;
+    panelSeen.add(k);
+    panelWords.push({ irish: p.irish, english: p.english });
+  });
+
   return (
-    <div style={{ animation: "fadeIn 0.2s ease" }}>
+    <div className="ds-read" style={{ animation: "fadeIn 0.2s ease" }}>
+     <div className="ds-article">
       {/* Nav */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: 20, borderBottom: `1px solid ${C.border}`, marginBottom: 20 }}>
         <button onClick={onBack} style={{ background: "none", border: "none", color: C.muted, fontFamily: "system-ui, sans-serif", fontSize: "0.8rem", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", gap: 5 }}>
@@ -1279,7 +1335,73 @@ function ReadingView({ story, onBack }) {
           <div style={{ height: "1.5rem" }} />
         </>
       )}
+     </div>
+
+      {/* Desktop only. A running list of the Irish in this story, English
+          hidden until you ask, so you can read straight through and check
+          without losing your place in the text. */}
+      <WordPanel words={panelWords} />
     </div>
+  );
+}
+
+/**
+ * The translations panel. Rebuilt whenever the level changes, since the words
+ * in the story change with it. Hidden below 1000px by CSS, so the phone never
+ * renders it.
+ */
+function WordPanel({ words }) {
+  const [shown, setShown] = useState({});
+  const [allOpen, setAllOpen] = useState(false);
+
+  // A new level means a new word list, so forget what was revealed.
+  useEffect(() => { setShown({}); setAllOpen(false); }, [words.map(w => w.irish).join("|")]);
+
+  if (!words.length) return null;
+
+  const isOpen = i => allOpen || !!shown[i];
+
+  return (
+    <aside className="ds-panel">
+      <div style={{ border: `1px solid ${C.border}`, borderRadius: 8, background: C.card, overflow: "hidden" }}>
+        <div style={{ padding: "13px 16px", borderBottom: `1px solid ${C.border}` }}>
+          <div style={{ fontFamily: "Georgia, serif", color: C.navy, fontSize: "0.95rem" }}>Focail an scéil</div>
+          <div style={{ fontFamily: "system-ui, sans-serif", fontSize: "0.68rem", color: C.faint, marginTop: 3 }}>
+            {words.length} {words.length === 1 ? "word" : "words"} · click to reveal
+          </div>
+        </div>
+
+        <div style={{ maxHeight: "52vh", overflowY: "auto" }}>
+          {words.map((w, i) => (
+            <div key={w.irish + i} onClick={() => setShown(o => ({ ...o, [i]: !o[i] }))}
+              style={{
+                padding: "10px 16px",
+                borderBottom: i === words.length - 1 ? "none" : `1px solid ${C.border}`,
+                cursor: "pointer",
+                background: isOpen(i) ? C.blueLight : "transparent",
+                transition: "background 0.12s",
+              }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                <span style={{ color: C.blue, fontWeight: 600, fontSize: "0.88rem", fontFamily: "Georgia, serif" }}>{w.irish}</span>
+                <button onClick={e => { e.stopPropagation(); speakWord(w.irish); }}
+                  title={`Éist le ${w.irish}`}
+                  style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.78rem", padding: 0, opacity: 0.55 }}>
+                  🔊
+                </button>
+              </div>
+              <div style={{ fontFamily: "system-ui, sans-serif", fontSize: isOpen(i) ? "0.78rem" : "0.72rem", color: isOpen(i) ? C.muted : C.faint, fontStyle: isOpen(i) ? "normal" : "italic", marginTop: 2 }}>
+                {isOpen(i) ? w.english : "click to reveal"}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <button onClick={() => { setAllOpen(o => !o); setShown({}); }}
+          style={{ width: "100%", background: "#fdfcfa", border: "none", borderTop: `1px solid ${C.border}`, padding: "11px 16px", fontFamily: "system-ui, sans-serif", fontSize: "0.73rem", color: C.muted, cursor: "pointer", textAlign: "left" }}>
+          {allOpen ? "Hide all" : "Reveal all"}
+        </button>
+      </div>
+    </aside>
   );
 }
 
@@ -2131,11 +2253,40 @@ export default function DailySceal() {
         .sceal-sections::-webkit-scrollbar { display: none; }
         button:active { opacity: 0.7; }
         a:hover { opacity: 0.75; }
+
+        /* ------------------------------------------------------------------
+           Desktop only. Everything below 1000px is left exactly as it was, so
+           the phone layout is untouched. Above it the shell widens, the feed
+           becomes a lead story plus a grid, and the story page grows a panel.
+           ------------------------------------------------------------------ */
+        .ds-shell { max-width: 640px; margin: 0 auto; }
+        .ds-panel { display: none; }
+
+        @media (min-width: 1000px) {
+          .ds-shell { max-width: 1080px; }
+
+          /* Header padding matches the sheet's inner padding at this width, so
+             the wordmark and the first headline share a left edge. */
+          .ds-head-pad { padding: 18px 40px !important; }
+
+          .ds-lead { display: grid; grid-template-columns: 1.9fr 1fr; gap: 30px; align-items: start; }
+          .ds-lead-side { border-left: 1px solid ${C.border}; padding-left: 28px; }
+          .ds-lead-title-wrap .ds-story h3 { font-size: 1.85rem; line-height: 1.18; color: ${C.navy}; }
+          .ds-lead-title-wrap .ds-summary { font-size: 0.9rem; -webkit-line-clamp: 3; max-width: 56ch; }
+          .ds-lead-side .ds-story h3 { font-size: 1rem; }
+          .ds-lead-side .ds-story:first-child { padding-top: 0; }
+          .ds-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0 28px; }
+          .ds-grid .ds-summary { display: none; }
+
+          .ds-read { display: grid; grid-template-columns: minmax(0, 1fr) 268px; gap: 40px; align-items: start; }
+          .ds-article { max-width: 62ch; }
+          .ds-panel { display: block; position: sticky; top: 20px; }
+        }
       `}</style>
 
       {/* Header */}
       <header style={{ background: C.navy, borderBottom: `3px solid ${C.amber}` }}>
-        <div style={{ maxWidth: 640, margin: "0 auto", padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div className="ds-shell ds-head-pad" style={{ padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div onClick={() => { setSection("inniu"); setView("feed"); }} style={{ cursor: "pointer" }}>
             <div style={{ fontSize: "clamp(1.2rem,3.5vw,1.5rem)", fontWeight: 700, color: "#fff", fontFamily: "Georgia, serif", letterSpacing: "-0.01em", lineHeight: 1 }}>
               Daily <span style={{ color: C.amber }}>Scéal</span>
@@ -2147,7 +2298,7 @@ export default function DailySceal() {
       </header>
 
       {/* Content */}
-      <main style={{ maxWidth: 640, margin: "0 auto", padding: "0 20px 120px" }}>
+      <main className="ds-shell" style={{ padding: "0 20px 120px" }}>
         <div style={{ background: view === "about" || isExport ? "transparent" : C.card, borderLeft: isExport ? "none" : `1px solid ${C.border}`, borderRight: isExport ? "none" : `1px solid ${C.border}`, borderBottom: isExport ? "none" : `1px solid ${C.border}`, borderRadius: "0 0 12px 12px", padding: "0 20px", minHeight: 400 }}>
           {isExport && <ExportView stories={todayOnly} />}
           {!isExport && view === "feed" && (
