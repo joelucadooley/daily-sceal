@@ -2290,7 +2290,15 @@ export default function DailySceal() {
           .ds-lead-title-wrap .ds-story h3 { font-size: 1.85rem; line-height: 1.18; color: ${C.navy}; }
           /* The lead runs its full summary at a readable measure, so the block
              fills its column instead of trailing off into an ellipsis. */
-          .ds-lead-title-wrap .ds-summary { font-size: 0.95rem; line-height: 1.7; max-width: 68ch; }
+          /* Set the lead summary in columns rather than one 68ch line that left
+             the rest of the band looking like an empty column. The column width
+             is fixed and the count follows the space, so it is two columns on a
+             laptop and three on a wide monitor. */
+          .ds-lead-title-wrap .ds-summary {
+            font-size: 0.95rem; line-height: 1.7;
+            column-width: 38ch; column-gap: 40px; column-fill: balance;
+            orphans: 2; widows: 2;
+          }
           .ds-lead-title-wrap .ds-story { padding-bottom: 26px; }
           .ds-lead-side .ds-story h3 { font-size: 1rem; }
           .ds-lead-side .ds-story:first-child { padding-top: 0; }
