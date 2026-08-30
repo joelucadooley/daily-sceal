@@ -2303,16 +2303,13 @@ export default function DailySceal() {
              laptop and three on a wide monitor. */
           /* Headline on the left, summary in a single readable column on the
              right, so the band fills without breaking the text into stubs. */
-          .ds-lead-title-wrap .ds-story {
-            display: grid;
-            grid-template-columns: minmax(0, 1.9fr) minmax(0, 1fr);
-            grid-template-areas: "meta meta" "title summary";
-            column-gap: 44px;
-            align-items: start;
+          /* Summary sits under the headline as a standfirst: larger than the
+             card summaries and set wide, so it reads as part of the lead rather
+             than as a narrow column with a gap beside it. */
+          .ds-lead-title-wrap .ds-story h3 { margin-bottom: 14px; }
+          .ds-lead-title-wrap .ds-summary {
+            font-size: 1.05rem; line-height: 1.65; color: ${C.muted}; max-width: 82ch;
           }
-          .ds-lead-title-wrap .ds-story > div:first-child { grid-area: meta; }
-          .ds-lead-title-wrap .ds-story h3 { grid-area: title; margin-bottom: 0; }
-          .ds-lead-title-wrap .ds-summary { grid-area: summary; font-size: 0.92rem; line-height: 1.75; }
           .ds-lead-title-wrap .ds-story { padding-bottom: 26px; }
           .ds-lead-side .ds-story h3 { font-size: 1rem; }
           .ds-lead-side .ds-story:first-child { padding-top: 0; }
@@ -2325,9 +2322,9 @@ export default function DailySceal() {
              pair is centred inside it instead of stranded on the left. */
           .ds-read {
             display: grid;
-            grid-template-columns: minmax(0, 66ch) 268px;
+            grid-template-columns: minmax(0, 1fr) 288px;
             grid-template-areas: "head head" "body panel";
-            column-gap: 48px; align-items: start; justify-content: center;
+            column-gap: 52px; align-items: start;
           }
           .ds-read-head { grid-area: head; }
           .ds-article { grid-area: body; }
@@ -2339,8 +2336,17 @@ export default function DailySceal() {
             background: transparent !important;
             border: none !important;
             border-radius: 0 !important;
-            padding: 0 !important;
+            padding: 6px 0 0 !important;
           }
+          /* Longer measure and a little more air now the box is gone. */
+          .ds-article .ds-body-card > div:nth-child(2) {
+            font-size: 1.1rem !important;
+            line-height: 2.05 !important;
+          }
+
+          /* A story page is prose, so the sheet narrows to fit it rather than
+             leaving a wide white field with a column of text in one corner. */
+          .ds-shell-read { max-width: min(1120px, 94vw); }
         }
 
         /* Wide monitors: a fourth column rather than three very wide ones. */
@@ -2363,7 +2369,7 @@ export default function DailySceal() {
       </header>
 
       {/* Content */}
-      <main className="ds-shell" style={{ padding: "0 20px 120px" }}>
+      <main className={`ds-shell${view === "reading" ? " ds-shell-read" : ""}`} style={{ padding: "0 20px 120px" }}>
         <div style={{ background: view === "about" || isExport ? "transparent" : C.card, borderLeft: isExport ? "none" : `1px solid ${C.border}`, borderRight: isExport ? "none" : `1px solid ${C.border}`, borderBottom: isExport ? "none" : `1px solid ${C.border}`, borderRadius: "0 0 12px 12px", padding: "0 20px", minHeight: 400 }}>
           {isExport && <ExportView stories={todayOnly} />}
           {!isExport && view === "feed" && (
