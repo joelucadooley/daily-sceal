@@ -674,9 +674,7 @@ function StoryRow({ story, index, onClick, showSummary = true, noBorder = false,
 }
 
 function FeedView({ stories, loading, onStoryClick, sectionLabel }) {
-  const [lead, ...others] = stories;
-  const beside = others.slice(0, 2);
-  const rest = others.slice(2);
+  const [lead, ...rest] = stories;
 
   return (
     <div>
@@ -696,25 +694,13 @@ function FeedView({ stories, loading, onStoryClick, sectionLabel }) {
 
       {!loading && lead && (
         <>
-          <div className="ds-lead">
-            <div>
-              <div className="ds-lead-title-wrap">
-                <StoryRow story={lead} index={0} onClick={onStoryClick} noBorder={beside.length > 0} fullSummary lead />
-              </div>
-            </div>
-            {beside.length > 0 && (
-              <div className="ds-lead-side">
-                {beside.map((s, i) => (
-                  <StoryRow key={s.id} story={s} index={i + 1} onClick={onStoryClick}
-                    showSummary={false} noBorder={i === beside.length - 1} />
-                ))}
-              </div>
-            )}
+          <div className="ds-lead-title-wrap">
+            <StoryRow story={lead} index={0} onClick={onStoryClick} fullSummary lead />
           </div>
 
-          <div className="ds-grid" style={{ borderTop: `1px solid ${C.border}` }}>
+          <div className="ds-grid">
             {rest.map((s, i) => (
-              <StoryRow key={s.id} story={s} index={i + 3} onClick={onStoryClick} />
+              <StoryRow key={s.id} story={s} index={i + 1} onClick={onStoryClick} />
             ))}
           </div>
         </>
@@ -2298,9 +2284,9 @@ export default function DailySceal() {
              the wordmark and the first headline share a left edge. */
           .ds-head-pad { padding: 18px 40px !important; }
 
-          .ds-lead { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0 28px; align-items: start; }
-          .ds-lead-title-wrap { grid-column: span 2; }
-          .ds-lead-side { grid-column: span 1; }
+          /* The lead runs the full width as a band across the top; every other
+             story sits in the grid below it. */
+          .ds-lead-title-wrap .ds-story { padding-top: 26px; }
           .ds-lead-title-wrap .ds-story h3 { font-size: 1.85rem; line-height: 1.18; color: ${C.navy}; }
           /* The lead runs its full summary at a readable measure, so the block
              fills its column instead of trailing off into an ellipsis. */
@@ -2321,8 +2307,6 @@ export default function DailySceal() {
 
         /* Wide monitors: a fourth column rather than three very wide ones. */
         @media (min-width: 1500px) {
-          .ds-lead { grid-template-columns: repeat(4, 1fr); }
-          .ds-lead-title-wrap { grid-column: span 3; }
           .ds-grid { grid-template-columns: repeat(4, 1fr); }
         }
       `}</style>
