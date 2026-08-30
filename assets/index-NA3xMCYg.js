@@ -127,10 +127,9 @@ tithíocht`,style:{width:"100%",padding:"10px",borderRadius:8,border:`1px solid 
           /* The group heading carries the amber label, so each story underneath
              does not repeat it. */
           .ds-group-head {
-            font-family: system-ui, sans-serif; font-size: 0.72rem; font-weight: 600;
+            font-family: system-ui, sans-serif; font-size: 0.88rem; font-weight: 700;
             text-transform: uppercase; letter-spacing: 0.1em; color: ${p.amber};
-            margin: 26px 0 0; padding-bottom: 10px;
-            border-bottom: 1px solid ${p.border};
+            margin: 30px 0 2px; padding-bottom: 0;
           }
           .ds-group:first-of-type .ds-group-head { margin-top: 14px; }
           .ds-group .ds-cat { display: none; }
