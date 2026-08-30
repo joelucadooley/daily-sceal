@@ -352,19 +352,128 @@ async function fetchTodayContent() {
   return await r.json();
 }
 
+// ---------------------------------------------------------------------
+// Posted-story record
+//
+// The export page knows exactly which story went to Instagram and exactly
+// which corrected words appeared on the card, but until now it threw that
+// away as soon as the PNGs were generated. We keep it instead, keyed by
+// date, so Focail na Seachtaine reads back seven posts rather than seven
+// days of thirty unposted stories.
+//
+// localStorage is the working copy. public/data/posted.json is the durable
+// copy: download the records and commit that file so the history survives a
+// cleared browser or a different machine.
+// ---------------------------------------------------------------------
+const POSTED_KEY = "ds-posted";
+
+function loadPostedLocal() {
+  try { return JSON.parse(localStorage.getItem(POSTED_KEY) || "{}"); } catch { return {}; }
+}
+
+function savePostedLocal(date, record) {
+  const all = loadPostedLocal();
+  all[date] = record;
+  try { localStorage.setItem(POSTED_KEY, JSON.stringify(all)); } catch {}
+}
+
+function lastNDateKeys(days) {
+  const keys = [];
+  const today = new Date();
+  for (let d = 0; d < days; d++) {
+    const dt = new Date(today);
+    dt.setDate(today.getDate() - d);
+    keys.push(dt.toISOString().slice(0, 10));
+  }
+  return keys;
+}
+
+// A word is only worth offering if it survives these. Same spirit as the old
+// archive filters, but multi-word English is allowed through now, since merged
+// adjective plus noun pairs are exactly the ones worth teaching.
+function usableWord(irish, english, places) {
+  if (!irish || !english) return false;
+  if (/\d/.test(irish) || /\d/.test(english)) return false;
+  if (WEEK_STOP.has(english.toLowerCase())) return false;
+  if (english.length < 4 || irish.length < 3) return false;
+  if (irish.toLowerCase() === english.toLowerCase()) return false;
+  if (/[()[\]{}]/.test(irish)) return false;
+  if (english.split(/\s+/).length > 3) return false;
+  if (places.has(english.toLowerCase())) return false;   // county and place names
+  return true;
+}
+
+const WEEK_STOP = new Set(["the","a","an","to","of","in","on","at","by","for","and","or","but","with","as","is","are","was","were","be","been","has","had","have","it","its","this","that","these","those","about","from","into","over","under","after","before","they","them","their","he","she","his","her","you","we","our","i"]);
+
+// Rank the words that actually went out this week. A word that carried the
+// headline, or turned up across several days, has earned its slide.
+function wordsFromRecords(records, verified, places) {
+  const seen = new Map();
+  records.forEach(rec => {
+    const headline = new Set((rec.headlineWords || []).map(s => s.toLowerCase()));
+    (rec.words || []).forEach(w => {
+      const irish = (w.irish || "").trim();
+      const english = (w.english || "").trim();
+      if (!usableWord(irish, english, places)) return;
+      const k = irish.toLowerCase();
+      const prev = seen.get(k);
+      if (prev) {
+        prev.days += 1;
+        prev.inHeadline = prev.inHeadline || headline.has(k);
+      } else {
+        seen.set(k, {
+          irish, english,
+          verified: verified.has(english.toLowerCase()),
+          days: 1,
+          inHeadline: headline.has(k),
+          date: rec.date,
+          title: rec.title,
+        });
+      }
+    });
+  });
+  return [...seen.values()].sort((a, b) =>
+    (b.inHeadline - a.inHeadline) ||
+    (b.days - a.days) ||
+    (b.verified - a.verified) ||
+    a.irish.localeCompare(b.irish)
+  );
+}
+
 // Pull the last `days` archived story files and collect unique Irish words used.
 // Marks each word verified if its English appears in the published overrides list.
 async function fetchWeekWords(days = 7) {
   const base = import.meta.env.BASE_URL;
   let verified = new Set();
+  let places = new Set();
   try {
     const vr = await fetch(`${base}data/verified.json`, { cache: "no-cache", signal: AbortSignal.timeout(5000) });
     if (vr.ok) (await vr.json()).forEach(s => verified.add(s.toLowerCase()));
   } catch {}
   try {
     const pr = await fetch(`${base}data/places.json`, { cache: "no-cache", signal: AbortSignal.timeout(5000) });
-    if (pr.ok) Object.keys(await pr.json()).forEach(s => verified.add(s.toLowerCase()));
+    if (pr.ok) Object.keys(await pr.json()).forEach(s => places.add(s.toLowerCase()));
   } catch {}
+
+  // Committed history first, then this browser's records on top of it.
+  let posted = {};
+  try {
+    const rr = await fetch(`${base}data/posted.json`, { cache: "no-cache", signal: AbortSignal.timeout(5000) });
+    if (rr.ok) posted = await rr.json();
+  } catch {}
+  posted = { ...posted, ...loadPostedLocal() };
+
+  const records = lastNDateKeys(days).map(k => posted[k]).filter(Boolean);
+  if (records.length) {
+    return { source: "posted", days: records.length, words: wordsFromRecords(records, verified, places) };
+  }
+
+  // Nothing recorded yet, so fall back to the old archive sweep.
+  verified = new Set([...verified, ...places]);
+  return { source: "archive", days: 0, words: await scanArchiveWords(days, verified, base) };
+}
+
+async function scanArchiveWords(days, verified, base) {
 
   // Common English function words we never want as "words of the week"
   const STOP = new Set(["the","a","an","to","of","in","on","at","by","for","and","or","but","with","as","is","are","was","were","be","been","has","had","have","it","its","this","that","these","those","about","from","into","over","under","after","before","they","them","their","he","she","his","her","you","we","our","i"]);
@@ -1254,6 +1363,10 @@ function ExportView({ stories }) {
   const [loadingWeek, setLoadingWeek] = useState(false);
   const [picked, setPicked] = useState({});
   const [verifiedEng, setVerifiedEng] = useState(new Set());
+  const [weekSource, setWeekSource] = useState(null);
+  const [postedCount, setPostedCount] = useState(0);
+
+  useEffect(() => { setPostedCount(Object.keys(loadPostedLocal()).length); }, []);
 
   useEffect(() => {
     const base = import.meta.env.BASE_URL;
@@ -1520,6 +1633,23 @@ function ExportView({ stories }) {
       const k = p.irish.toLowerCase();
       if (!seen.has(k)) { seen.add(k); words.push({ irish: p.irish, english: p.english }); }
     });
+    // This is the moment the day's choice is actually made, so write it down.
+    // `words` here is the corrected text as it appeared on the card, not
+    // generator output, which is what makes the weekly recap trustworthy.
+    const dateKey = new Date().toISOString().slice(0, 10);
+    savePostedLocal(dateKey, {
+      date: dateKey,
+      storyId: story.id,
+      title: story.title,
+      link: story.link,
+      level: levelLabel,
+      cardText: cardText.trim(),
+      headline: coverHeadline || "",
+      headlineWords: (coverParts || []).filter(p => p.irish).map(p => p.text.trim().toLowerCase()),
+      words,
+    });
+    setPostedCount(Object.keys(loadPostedLocal()).length);
+
     setCards([
       { id: "cover", title: "1 · Cover", url: makeCoverCanvas(story, coverParts).toDataURL("image/png"), caption: coverCaption() },
       { id: "story", title: "2 · Story", url: storyCanvas.toDataURL("image/png"), caption: translationsCaption(words) },
@@ -1611,9 +1741,27 @@ function ExportView({ stories }) {
 
   async function loadWeekWords() {
     setLoadingWeek(true);
-    const words = await fetchWeekWords(7);
-    setWeekSuggestions(words);
+    const res = await fetchWeekWords(7);
+    setWeekSuggestions(res.words);
+    setWeekSource(res);
     setLoadingWeek(false);
+  }
+
+  // Optional backup. On a phone this opens the share sheet, so the file can go
+  // to Files, Notes, iCloud or anywhere else in a couple of taps. Not part of
+  // the daily routine, just a safety net if the phone storage ever gets wiped.
+  async function backupRecords() {
+    const json = JSON.stringify(loadPostedLocal(), null, 2);
+    const file = new File([json], "posted.json", { type: "application/json" });
+    if (navigator.canShare?.({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: "Daily Scéal posts" }); return; } catch {}
+    }
+    const blob = new Blob([json], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "posted.json";
+    a.click();
+    URL.revokeObjectURL(a.href);
   }
 
   function generateWeekly() {
@@ -1817,8 +1965,23 @@ function ExportView({ stories }) {
 
         <button onClick={loadWeekWords} disabled={loadingWeek}
           style={{ width: "100%", background: C.navy, color: "#fff", border: "none", borderRadius: 8, padding: "12px", fontSize: "0.84rem", fontWeight: 600, cursor: loadingWeek ? "wait" : "pointer", marginBottom: 14, opacity: loadingWeek ? 0.6 : 1 }}>
-          {loadingWeek ? "Loading this week..." : "Load words from this week's stories"}
+          {loadingWeek ? "Loading this week..." : "Load words from this week's posts"}
         </button>
+
+        {weekSource && (
+          <p style={{ fontSize: "0.72rem", color: C.muted, margin: "-6px 0 12px" }}>
+            {weekSource.source === "posted"
+              ? `From ${weekSource.days} recorded ${weekSource.days === 1 ? "post" : "posts"}. Headline words first, then words that came up on more than one day.`
+              : "No posts recorded for this week yet, so this is the old sweep of every archived story. Generate a card and the recap will narrow itself."}
+          </p>
+        )}
+
+        {postedCount > 0 && (
+          <button onClick={backupRecords}
+            style={{ width: "100%", background: "none", border: `1px solid ${C.border}`, color: C.muted, borderRadius: 8, padding: "8px", fontSize: "0.72rem", cursor: "pointer", marginBottom: 14 }}>
+            Back up {postedCount} saved {postedCount === 1 ? "post" : "posts"}
+          </button>
+        )}
 
         {weekSuggestions.length > 0 && (
           <div style={{ border: `1px solid ${C.border}`, borderRadius: 8, padding: "10px 12px", marginBottom: 16, maxHeight: 320, overflowY: "auto" }}>
