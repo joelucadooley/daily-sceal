@@ -132,7 +132,7 @@ tithíocht`,style:{width:"100%",padding:"10px",borderRadius:8,border:`1px solid 
             display: grid;
             grid-template-columns: minmax(0, 1fr) 288px;
             grid-template-areas: "head head" "body panel";
-            column-gap: 52px; align-items: start;
+            column-gap: 56px; align-items: start;
           }
           .ds-read-head { grid-area: head; }
           .ds-article { grid-area: body; }
@@ -154,7 +154,7 @@ tithíocht`,style:{width:"100%",padding:"10px",borderRadius:8,border:`1px solid 
 
           /* A story page is prose, so the sheet narrows to fit it rather than
              leaving a wide white field with a column of text in one corner. */
-          .ds-shell-read { max-width: min(1120px, 94vw); }
+          .ds-shell-read { max-width: min(1260px, 94vw); }
         }
 
         /* Wide monitors: a fourth column rather than three very wide ones. */
