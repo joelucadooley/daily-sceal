@@ -638,7 +638,7 @@ function trimToSentence(text, max) {
   return (space > 0 ? cut.slice(0, space) : cut) + "…";
 }
 
-function StoryRow({ story, index, onClick, showSummary = true, noBorder = false, fullSummary = false }) {
+function StoryRow({ story, index, onClick, showSummary = true, noBorder = false, fullSummary = false, lead = false }) {
   return (
     <div className="ds-story" onClick={() => onClick(story)}
       style={{
@@ -654,7 +654,13 @@ function StoryRow({ story, index, onClick, showSummary = true, noBorder = false,
         <span style={{ fontSize: "0.65rem", fontFamily: "system-ui, sans-serif", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", color: C.amber }}>{displayCat(story)}</span>
         <span style={{ color: C.faint, fontSize: "0.7rem", fontFamily: "system-ui, sans-serif" }}>{storyTimeAgo(story)}</span>
       </div>
-      <h3 style={{ margin: "0 0 8px", fontSize: "clamp(1rem,2.8vw,1.15rem)", lineHeight: 1.3, fontWeight: 700, color: C.text, fontFamily: "Georgia, serif", transition: "color 0.15s" }}>{story.title}</h3>
+      <h3 style={{
+        margin: "0 0 10px",
+        fontSize: lead ? "clamp(1.15rem, 3.4vw, 2.5rem)" : "clamp(1rem,2.8vw,1.15rem)",
+        lineHeight: lead ? 1.12 : 1.3,
+        letterSpacing: lead ? "-0.015em" : "normal",
+        fontWeight: 700, color: C.text, fontFamily: "Georgia, serif", transition: "color 0.15s",
+      }}>{story.title}</h3>
       {showSummary && (
         <p className="ds-summary" style={{
           margin: 0, fontSize: "0.82rem", color: C.muted, lineHeight: 1.6, fontFamily: "system-ui, sans-serif",
@@ -693,7 +699,7 @@ function FeedView({ stories, loading, onStoryClick, sectionLabel }) {
           <div className="ds-lead">
             <div>
               <div className="ds-lead-title-wrap">
-                <StoryRow story={lead} index={0} onClick={onStoryClick} noBorder={beside.length > 0} fullSummary />
+                <StoryRow story={lead} index={0} onClick={onStoryClick} noBorder={beside.length > 0} fullSummary lead />
               </div>
             </div>
             {beside.length > 0 && (
@@ -2292,14 +2298,17 @@ export default function DailySceal() {
              the wordmark and the first headline share a left edge. */
           .ds-head-pad { padding: 18px 40px !important; }
 
-          .ds-lead { display: grid; grid-template-columns: 1.65fr 1fr; gap: 36px; align-items: start; }
-          .ds-lead-side { border-left: 1px solid ${C.border}; padding-left: 28px; }
+          .ds-lead { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0 28px; align-items: start; }
+          .ds-lead-title-wrap { grid-column: span 2; }
+          .ds-lead-side { grid-column: span 1; }
           .ds-lead-title-wrap .ds-story h3 { font-size: 1.85rem; line-height: 1.18; color: ${C.navy}; }
           /* The lead runs its full summary at a readable measure, so the block
              fills its column instead of trailing off into an ellipsis. */
           .ds-lead-title-wrap .ds-summary { font-size: 0.95rem; line-height: 1.7; max-width: 68ch; }
+          .ds-lead-title-wrap .ds-story { padding-bottom: 26px; }
           .ds-lead-side .ds-story h3 { font-size: 1rem; }
           .ds-lead-side .ds-story:first-child { padding-top: 0; }
+          /* Same track count and same gap as the lead row above it. */
           .ds-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0 28px; }
           .ds-grid .ds-summary { display: none; }
 
@@ -2312,6 +2321,8 @@ export default function DailySceal() {
 
         /* Wide monitors: a fourth column rather than three very wide ones. */
         @media (min-width: 1500px) {
+          .ds-lead { grid-template-columns: repeat(4, 1fr); }
+          .ds-lead-title-wrap { grid-column: span 3; }
           .ds-grid { grid-template-columns: repeat(4, 1fr); }
         }
       `}</style>
