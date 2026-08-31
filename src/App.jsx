@@ -952,9 +952,9 @@ function makeClosingCanvas() {
   ctx.fillText("your own level of Irish.", W / 2, 680);
 
   // URL
-  ctx.font = "bold 38px Arial, sans-serif";
+  ctx.font = "bold 46px Arial, sans-serif";
   ctx.fillStyle = "#e8951e";
-  ctx.fillText("joelucadooley.github.io/daily-sceal", W / 2, 800);
+  ctx.fillText("dailysceal.com", W / 2, 800);
 
   // Follow line
   ctx.font = "30px Arial, sans-serif";
@@ -1108,7 +1108,7 @@ function makeWeeklyClosingCanvas() {
 
   ctx.font = "30px Arial, sans-serif";
   ctx.fillStyle = "rgba(13,33,55,0.5)";
-  ctx.fillText("Follow @dailysceal · link in bio", W / 2, 840);
+  ctx.fillText("Follow @dailysceal · dailysceal.com", W / 2, 840);
   ctx.textAlign = "left";
   return canvas;
 }
@@ -1213,7 +1213,7 @@ function makeShareCanvas(story, parts, levelLabel) {
   ctx.textAlign = "right";
   ctx.font = "26px Arial, sans-serif";
   ctx.fillStyle = "rgba(255,255,255,0.3)";
-  ctx.fillText("joelucadooley.github.io/daily-sceal", W - 80, H - 72);
+  ctx.fillText("dailysceal.com", W - 80, H - 72);
   ctx.textAlign = "left";
 
   return canvas;
@@ -1252,8 +1252,8 @@ function ReadingView({ story, onBack }) {
     } catch {
       // Fallback to URL share
       try {
-        if (navigator.share) await navigator.share({ title: story.title, url: story.link || "https://joelucadooley.github.io/daily-sceal" });
-        else await navigator.clipboard?.writeText(story.link || "https://joelucadooley.github.io/daily-sceal");
+        if (navigator.share) await navigator.share({ title: story.title, url: story.link || "https://dailysceal.com" });
+        else await navigator.clipboard?.writeText(story.link || "https://dailysceal.com");
       } catch {}
     } finally {
       setShareLoading(false);
@@ -1648,21 +1648,21 @@ function ExportView({ stories }) {
 
   // Slide 2 tail. Mentions the site but leaves the actual CTA to slide 3.
   const TRANS_TAILS = [
-    "Every other word is glossed on the site.",
-    "The rest of the translations are waiting on the site.",
-    "More words in the full story on the site.",
-    "The whole piece is glossed, word by word, on the site.",
-    "Every marker in the article is translated on the site.",
+    "Every other word is translated at dailysceal.com.",
+    "The rest of the translations are waiting at dailysceal.com.",
+    "More words in the full story at dailysceal.com.",
+    "The whole piece is translated, word by word, at dailysceal.com.",
+    "Every Irish word in the article is translated at dailysceal.com.",
   ];
 
   // Slide 3. The only slide carrying the link.
   const CLOSING_CTAS = [
-    "That's one of today's stories. The rest are on the site, at whatever level of Irish you like. Link in bio 🔗",
-    "Every story and every translation is on the site. Slide from Béarla to as Gaeilge. Link in bio 🔗",
-    "A new scéal every day, glossed word by word. Pick your level on the site. Link in bio 🔗",
-    "There's more where this came from. Real news, your level of Irish. Link in bio 🔗",
-    "Today's other stories are all up on the site, translated as you read. Link in bio 🔗",
-    "Read the whole thing as Gaeilge, or half of it. Your call. Link in bio 🔗",
+    "That's one of today's stories. The rest are on the site, at whatever level of Irish you like. dailysceal.com 🔗",
+    "Every story and every translation is on the site. Slide from Béarla to as Gaeilge. dailysceal.com 🔗",
+    "A new scéal every day, translated word by word. Pick your level. dailysceal.com 🔗",
+    "There's more where this came from. Real news, your level of Irish. dailysceal.com 🔗",
+    "Today's other stories are all up on the site, translated as you read. dailysceal.com 🔗",
+    "Read the whole thing as Gaeilge, or half of it. Your call. dailysceal.com 🔗",
   ];
 
   // Hashtags: never more than 5. Two always-on, then anything topical for the
@@ -1745,9 +1745,9 @@ function ExportView({ stories }) {
   }
 
   const SUNDAY_CAPTIONS = [
-    "Focail na seachtaine ☘️\n\nA few words from this week's news. Can you guess them before the reveal? Comment your score 💚\n\nRead the news at your own level. Link in bio 🔗",
-    "Focail na seachtaine ☘️\n\nSeven days of news, boiled down to a handful of words. How many do you know? 💚\n\nEvery story is on the site. Link in bio 🔗",
-    "Focail na seachtaine ☘️\n\nThis week's words. Guess before you swipe, no cheating 💚\n\nRead them in context on the site. Link in bio 🔗",
+    "Focail na seachtaine ☘️\n\nA few words from this week's news. Can you guess them before the reveal? Comment your score 💚\n\nRead the news at your own level. dailysceal.com 🔗",
+    "Focail na seachtaine ☘️\n\nSeven days of news, boiled down to a handful of words. How many do you know? 💚\n\nEvery story is on the site. dailysceal.com 🔗",
+    "Focail na seachtaine ☘️\n\nThis week's words. Guess before you swipe, no cheating 💚\n\nRead them in context on the site. dailysceal.com 🔗",
   ];
   const SUNDAY_CAPTION = pickFor(SUNDAY_CAPTIONS, 0) + "\n\n" + hashtagsFor(stories[storyIdx]);
 
