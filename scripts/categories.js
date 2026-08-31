@@ -29,6 +29,14 @@ export const RTE_CAT = {
   "housing":            ["Tithíocht", "eire"],
   "education":          ["Oideachas", "eire"],
   "leaving cert":       ["Ardteist", "eire"],
+  // Domestic in all but name: an RTÉ story tagged politics, health or weather
+  // is about Ireland nearly every time, and routing these to Eile was leaving
+  // Éire thin enough to trigger the archive backfill on a normal news day.
+  "politics":           ["Polaitíocht", "eire"],
+  "eu presidency":      ["Polaitíocht", "eire"],
+  "election":           ["Toghchán", "eire"],
+  "health":             ["Sláinte", "eire"],
+  "weather":            ["Aimsir", "eire"],
 
   // --- World --------------------------------------------------------
   "world":              ["Domhan", "domhan"],
@@ -69,16 +77,14 @@ export const RTE_CAT = {
   "tennis":             ["Leadóg", "sport"],
 
   // --- Everything else (Eile tab) -----------------------------------
-  "politics":           ["Polaitíocht", "eile"],
-  "eu presidency":      ["Polaitíocht", "eile"],
-  "election":           ["Toghchán", "eile"],
+  // Business, economy, environment and climate stay here on purpose: those
+  // split between domestic and international and the tag alone cannot tell
+  // you which.
   "business":           ["Gnó", "eile"],
   "economy":            ["Eacnamaíocht", "eile"],
-  "health":             ["Sláinte", "eile"],
   "environment":        ["Comhshaol", "eile"],
   "climate change":     ["Athrú Aeráide", "eile"],
   "climate":            ["Athrú Aeráide", "eile"],
-  "weather":            ["Aimsir", "eile"],
   "science":            ["Eolaíocht", "eile"],
   "technology":         ["Teicneolaíocht", "eile"],
   "artificial intelligence": ["Intleacht Shaorga", "eile"],
