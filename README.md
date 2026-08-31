@@ -2,7 +2,7 @@
 
 **Cad é an scéal? · Learn Irish through today's news**
 
-**Live site:** [joelucadooley.github.io/daily-sceal](https://joelucadooley.github.io/daily-sceal) · **Instagram:** [@dailysceal](https://instagram.com/dailysceal)
+**Live site:** [dailysceal.com](https://dailysceal.com) · **Instagram:** [@dailysceal](https://instagram.com/dailysceal)
 
 [![Sponsor on GitHub](https://img.shields.io/badge/Sponsor%20on-GitHub-black?logo=github&style=for-the-badge)](https://github.com/joelucadooley)
 [![Support me on Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/joelucadooley)
