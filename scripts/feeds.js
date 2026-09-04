@@ -36,7 +36,7 @@ export const RTE_FEEDS = [
   { id: "ireland",  label: "Ireland",       index: "/news/ireland",    catIr: "Éire",        section: "eire",        on: true, max: 9, verified: false },
   { id: "politics", label: "Politics",      index: "/news/politics",   catIr: "Polaitíocht", section: "eile",        on: true, max: 4, verified: true },
   { id: "business", label: "Business",      index: "/news/business",   catIr: "Gnó",         section: "eile",        on: true, max: 3, verified: true },
-  { id: "world",    label: "World",         index: "/news/world",      catIr: "Domhan",      section: "domhan",      on: true, max: 2, verified: false },
+  { id: "world",    label: "World",         index: "/news/world",      catIr: "Domhan",      section: "domhan",      on: true, max: 6, verified: false },
 
   // --- sport ----------------------------------------------------------
   // All four land in the one Spórt tab; each story keeps its finer label
