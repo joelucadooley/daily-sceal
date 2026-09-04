@@ -45,11 +45,19 @@ const HOMEPAGE_COUNT = 6;
 
 // A section tab wants at least this many stories. If today's pull is short, we
 // top it up from the archive rather than showing a nearly empty tab.
-const MIN_PER_SECTION = 6;
-const TARGET_PER_SECTION = 8;
-// How far back to look when topping up. Four days keeps things recent enough
+//
+// Both numbers are deliberately small. Backfill exists to fill a hole, not to
+// pad a section out, so it stops as soon as the tab has one usable row. Topping
+// up to 8 used to leave counts like 5, which spills into a second row and
+// leaves three dead cells on a four-column grid.
+const MIN_PER_SECTION = 4;
+const TARGET_PER_SECTION = 4;
+// How far back to look when topping up. Two days keeps things recent enough
 // that a story still feels like news.
-const BACKFILL_DAYS = 4;
+const BACKFILL_DAYS = 2;
+// Grid columns, matching the CSS breakpoints on .ds-grid below.
+const GRID_COLS = 3;
+const GRID_COLS_WIDE = 4;
 
 // Eile is the catch-all, so an RTÉ category nobody has mapped yet still shows
 // up somewhere sensible instead of being quietly filed under Éire.
@@ -140,7 +148,12 @@ function storiesForSection(stories, sectionId) {
  * are ordered by size, then alphabetically, and anything with a single story
  * is swept into one group at the end rather than getting a heading of its own.
  */
-function groupByCategory(stories) {
+function groupByCategory(stories, cols = GRID_COLS) {
+  // Splitting is only worth it when there is enough to split. Below two full
+  // rows, sub-headings just carve the list into part-empty grids, which is
+  // where most of the white space on a quiet tab came from.
+  if (stories.length < cols * 2) return [{ label: null, items: stories }];
+
   const buckets = new Map();
   for (const s of stories) {
     const k = displayCat(s) || "Eile";
@@ -150,12 +163,27 @@ function groupByCategory(stories) {
   const groups = [];
   const singles = [];
   for (const [label, items] of buckets) {
-    if (items.length === 1) singles.push(items[0]);
+    // A group needs to fill a row to earn its own heading. Anything thinner
+    // goes to the catch-all, so we never render a grid with one item in it.
+    if (items.length < cols) singles.push(...items);
     else groups.push({ label, items });
   }
   groups.sort((a, b) => b.items.length - a.items.length || a.label.localeCompare(b.label));
   if (singles.length) groups.push({ label: "Eile", items: singles });
   return groups;
+}
+
+/**
+ * Trim a grid to whole rows.
+ *
+ * Five cards in a four-column grid means one full row and one lonely card with
+ * three empty cells beside it. Dropping to four costs one story and reads as a
+ * finished block. Anything that does not even fill one row is left alone, since
+ * there is nothing to trim back to.
+ */
+function wholeRows(items, cols) {
+  if (items.length <= cols) return items;
+  return items.slice(0, Math.floor(items.length / cols) * cols);
 }
 
 /** Only show tabs that actually have something, plus Inniu. */
@@ -716,8 +744,16 @@ function useIsDesktop(min = 1000) {
   return is;
 }
 
+/** How many columns .ds-grid is actually showing, so trims match what is drawn. */
+function useGridCols(highlights) {
+  const wide = useIsDesktop(1500);
+  if (highlights) return 2;
+  return wide ? GRID_COLS_WIDE : GRID_COLS;
+}
+
 function FeedView({ stories, loading, onStoryClick, sectionLabel, highlights = false, avoidLeadId = null }) {
   const isDesktop = useIsDesktop();
+  const cols = useGridCols(highlights);
   // Lead with the first story that is not already leading Inniu. If this
   // section only has that one story, it leads anyway rather than showing none.
   const leadIndex = avoidLeadId && stories.length > 1
@@ -749,19 +785,23 @@ function FeedView({ stories, loading, onStoryClick, sectionLabel, highlights = f
           </div>
 
           {!highlights && isDesktop ? (
-            groupByCategory(rest).map(group => (
-              <section key={group.label} className="ds-group">
-                <h2 className="ds-group-head">{group.label}</h2>
-                <div className="ds-grid">
-                  {group.items.map((s, i) => (
-                    <StoryRow key={s.id} story={s} index={i + 1} onClick={onStoryClick} />
-                  ))}
-                </div>
-              </section>
-            ))
+            groupByCategory(rest, cols).map((group, gi) => {
+              const items = wholeRows(group.items, cols);
+              if (!items.length) return null;
+              return (
+                <section key={group.label || `group-${gi}`} className="ds-group">
+                  {group.label && <h2 className="ds-group-head">{group.label}</h2>}
+                  <div className="ds-grid">
+                    {items.map((s, i) => (
+                      <StoryRow key={s.id} story={s} index={i + 1} onClick={onStoryClick} />
+                    ))}
+                  </div>
+                </section>
+              );
+            })
           ) : (
             <div className="ds-grid">
-              {rest.map((s, i) => (
+              {wholeRows(rest, cols).map((s, i) => (
                 <StoryRow key={s.id} story={s} index={i + 1} onClick={onStoryClick} />
               ))}
             </div>
