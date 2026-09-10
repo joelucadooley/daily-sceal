@@ -382,6 +382,39 @@ function parseText(text) {
   return parts;
 }
 
+/**
+ * Group parsed parts into wrap units for canvas layout.
+ *
+ * A unit is a run of segments that must stay on one line together: an Irish
+ * word and the punctuation that follows it, a word and its closing quote.
+ * Only whitespace in the source text creates a break opportunity, so a full
+ * stop sitting after a marker can never be orphaned onto a line of its own,
+ * and no phantom space is drawn between the word and the stop.
+ *
+ * `textOf` and `irishOf` let this serve both the story parts ({t, irish, v})
+ * and the headline parts ({text, irish}), which are shaped differently.
+ */
+function buildWrapUnits(parts, textOf, irishOf) {
+  const units = [];
+  let current = null;
+  parts.forEach((part, pi) => {
+    const isIrish = irishOf(part);
+    const raw = textOf(part) || "";
+    if (!raw) return;
+    for (const chunk of raw.split(/(\s+)/)) {
+      if (!chunk) continue;
+      if (/^\s+$/.test(chunk)) { current = null; continue; }
+      if (!current) { current = { segs: [] }; units.push(current); }
+      current.segs.push({ text: chunk, isIrish, pi });
+    }
+  });
+  return units;
+}
+
+function measureUnit(ctx, unit) {
+  return unit.segs.reduce((acc, s) => acc + ctx.measureText(s.text).width, 0);
+}
+
 function speakWord(word) {
   if (!window.speechSynthesis) return;
   window.speechSynthesis.cancel();
@@ -893,13 +926,9 @@ function makeCoverCanvas(leadStory, headlineParts) {
   const parts = (headlineParts && headlineParts.length)
     ? headlineParts
     : [{ text: leadStory.title, irish: false }];
-  const words = [];
-  parts.forEach(p => {
-    p.text.split(/(\s+)/).forEach(tok => {
-      if (!tok || /^\s+$/.test(tok)) return;
-      words.push({ token: tok, irish: p.irish });
-    });
-  });
+  // Same unit grouping as the story card, so a headline ending on a marker
+  // keeps its closing quote or question mark on the same line as the word.
+  const units = buildWrapUnits(parts, p => p.text, p => p.irish);
 
   // Find a font size where the headline fits in up to 6 lines
   const maxW = W - 160;
@@ -907,13 +936,14 @@ function makeCoverCanvas(leadStory, headlineParts) {
   for (size = 66; size >= 40; size -= 2) {
     ctx.font = `bold ${size}px Georgia, serif`;
     lineHeight = Math.round(size * 1.18);
+    const spaceW = ctx.measureText(" ").width;
     lines = [];
     let cur = [];
     let curW = 0;
-    for (const w of words) {
-      const wW = ctx.measureText(w.token + " ").width;
-      if (curW + wW > maxW && cur.length) { lines.push(cur); cur = []; curW = 0; }
-      cur.push(w); curW += wW;
+    for (const u of units) {
+      const uW = measureUnit(ctx, u);
+      if (curW + uW > maxW && cur.length) { lines.push(cur); cur = []; curW = 0; }
+      cur.push(u); curW += uW + spaceW;
     }
     if (cur.length) lines.push(cur);
     if (lines.length <= 6) break;
@@ -921,14 +951,18 @@ function makeCoverCanvas(leadStory, headlineParts) {
 
   // Draw the headline lines, colouring Irish words amber
   ctx.font = `bold ${size}px Georgia, serif`;
+  const headSpaceW = ctx.measureText(" ").width;
   const startY = 620;
   lines.forEach((line, li) => {
     let x = 80;
     const y = startY + li * lineHeight;
-    line.forEach(w => {
-      ctx.fillStyle = w.irish ? "#e8951e" : "#ffffff";
-      ctx.fillText(w.token, x, y);
-      x += ctx.measureText(w.token + " ").width;
+    line.forEach(u => {
+      u.segs.forEach(s => {
+        ctx.fillStyle = s.isIrish ? "#e8951e" : "#ffffff";
+        ctx.fillText(s.text, x, y);
+        x += ctx.measureText(s.text).width;
+      });
+      x += headSpaceW;
     });
   });
 
@@ -1206,45 +1240,47 @@ function makeShareCanvas(story, parts, levelLabel) {
   const maxLines = Math.floor((H - textY - 150) / lineH);
   ctx.font = "36px Georgia, serif";
 
-  const words = [];
-  parts.forEach((part, pi) => {
-    const isIrish = part.t === "ir";
-    const raw = isIrish ? part.irish : (part.v || "");
-    for (const token of raw.split(/(\s+)/)) {
-      if (!token || /^\s+$/.test(token)) continue;
-      words.push({ token, isIrish, pi });
-    }
-  });
+  // Wrap units, not bare tokens: a marker and any punctuation stuck to it
+  // travel together, so "...den tír." can never leave the stop stranded.
+  const units = buildWrapUnits(parts, p => (p.t === "ir" ? p.irish : p.v), p => p.t === "ir");
+  const spaceW = ctx.measureText(" ").width;
+  units.forEach(u => { u.width = measureUnit(ctx, u); });
 
   let fitCount = 0, simX = 80, simLines = 0;
-  for (let i = 0; i < words.length; i++) {
-    const w = ctx.measureText(words[i].token + " ").width;
-    if (simX + w > W - 80) { simX = 80; simLines++; if (simLines >= maxLines) break; }
-    simX += w;
+  for (let i = 0; i < units.length; i++) {
+    const w = units[i].width;
+    if (simX > 80 && simX + w > W - 80) { simX = 80; simLines++; if (simLines >= maxLines) break; }
+    simX += w + spaceW;
     fitCount = i + 1;
   }
 
+  // Back up to the last unit that closes a sentence, allowing for a quote or
+  // bracket sitting after the stop.
   let endIndex = fitCount;
   for (let i = fitCount - 1; i >= 0; i--) {
-    if (/[.!?]$/.test(words[i].token)) { endIndex = i + 1; break; }
+    const segs = units[i].segs;
+    const tail = segs[segs.length - 1].text;
+    if (/[.!?]["'\u2019\u201d)\]]*$/.test(tail)) { endIndex = i + 1; break; }
   }
 
   // Record which Irish parts actually appear on the card, so callers can
   // limit word lists and captions to visible words only
   const visible = new Set();
   for (let i = 0; i < endIndex; i++) {
-    if (words[i].isIrish) visible.add(words[i].pi);
+    units[i].segs.forEach(s => { if (s.isIrish) visible.add(s.pi); });
   }
   canvas._visibleIrishParts = visible;
 
   let x = 80, y = textY;
   for (let i = 0; i < endIndex; i++) {
-    const { token, isIrish } = words[i];
-    const w = ctx.measureText(token + " ").width;
-    if (x + ctx.measureText(token).width > W - 80) { x = 80; y += lineH; }
-    ctx.fillStyle = isIrish ? "#e8951e" : "rgba(255,255,255,0.82)";
-    ctx.fillText(token, x, y);
-    x += w;
+    const u = units[i];
+    if (x > 80 && x + u.width > W - 80) { x = 80; y += lineH; }
+    u.segs.forEach(s => {
+      ctx.fillStyle = s.isIrish ? "#e8951e" : "rgba(255,255,255,0.82)";
+      ctx.fillText(s.text, x, y);
+      x += ctx.measureText(s.text).width;
+    });
+    x += spaceW;
   }
 
   ctx.font = "bold 26px Arial, sans-serif";
@@ -1641,14 +1677,18 @@ function ExportView({ stories }) {
   // Slide 1. Deliberately does NOT restate the headline: it is already on the
   // image, so repeating it wastes the one line people actually read. No link
   // push here either, that lives on slide 3.
+  // Slide 1 comments on the story itself. It never names a translation or
+  // points at the word list, because that is slide 2's job and saying it
+  // twice reads as filler. These are fallbacks: the hook field is editable,
+  // and a line written for the actual headline will always beat a template.
   const HOOK_SUGGESTIONS = [
-    "One story, a few new focail. That's the deal.",
-    "Today's scéal, and the words to go with it.",
-    "A bit of Irish hiding in today's news.",
-    "Read the news, pick up a few words on the way.",
-    "Today's story, at whatever level of Irish suits you.",
-    "Some focail worth stealing from today's headlines.",
-    "Your daily bit of Gaeilge, straight from the news.",
+    "The story everyone will be talking about today.",
+    "Today's headline, and what sits behind it.",
+    "One story worth your two minutes this morning.",
+    "What made the news in Ireland today.",
+    "Today's scéal, in plain terms.",
+    "The bit of today's news worth slowing down for.",
+    "Out of Ireland this morning.",
   ];
   const defaultHook = () => pickFor(HOOK_SUGGESTIONS, 0);
 
@@ -1659,50 +1699,41 @@ function ExportView({ stories }) {
   // decide which pool of templates we draw from; the plain lines above are
   // the fallback when a story offers neither.
   function storyHook(story, words) {
-    const w = (words && words.length) ? keyWords(words, 1)[0] : null;
-    const ir = w && w.irish;
-    const en = w && w.english;
     const place = placeIn((story && story.title) || "");
 
-    if (place && ir) {
+    // Place is the one ingredient we can lift from the story without
+    // restating the headline or leaning on the word list. Everything else
+    // falls through to the generic pool.
+    if (place) {
       return pickFor([
-        `${place} in the news today, and ${ir} is the word to take from it.`,
-        `Today's scéal comes from ${place}. Start with ${ir}, meaning ${en}.`,
-        `${place} today. One word worth keeping: ${ir} (${en}).`,
-        `Something from ${place} this morning, plus ${ir} for the notebook.`,
-      ], 1);
-    }
-    if (ir) {
-      // two of these open the sentence with the Irish word, so it needs a capital
-      const Ir = ir.charAt(0).toUpperCase() + ir.slice(1);
-      return pickFor([
-        `New word from today's news: ${ir}, meaning ${en}.`,
-        `${Ir} means ${en}. Here's the story it turned up in.`,
-        `One to take away from today's scéal: ${ir} (${en}).`,
-        `Today's story, and the word ${ir} to go with it.`,
-        `${Ir} (${en}) is doing the heavy lifting in today's story.`,
+        `${place} in the news today.`,
+        `Today's scéal comes out of ${place}.`,
+        `Something from ${place} this morning.`,
+        `${place} makes the headlines today.`,
       ], 1);
     }
     return defaultHook();
   }
 
   // Slide 2 tail. Mentions the site but leaves the actual CTA to slide 3.
+  // No full stop after the address: it reads as part of the URL and looks
+  // messy on the slide.
   const TRANS_TAILS = [
-    "Every other word is translated at dailysceal.com.",
-    "The rest of the translations are waiting at dailysceal.com.",
-    "More words in the full story at dailysceal.com.",
-    "The whole piece is translated, word by word, at dailysceal.com.",
-    "Every Irish word in the article is translated at dailysceal.com.",
+    "Every other word is translated at dailysceal.com",
+    "The rest of the translations are waiting at dailysceal.com",
+    "More words in the full story at dailysceal.com",
+    "The whole piece is translated, word by word, at dailysceal.com",
+    "Every Irish word in the article is translated at dailysceal.com",
   ];
 
   // Slide 3. The only slide carrying the link.
   const CLOSING_CTAS = [
     "That's one of today's stories. The rest are on the site, at whatever level of Irish you like. dailysceal.com 🔗",
-    "Every story and every translation is on the site. Slide from Béarla to as Gaeilge. dailysceal.com 🔗",
+    "Every story and every translation is on the site. Slide the balance towards Irish as you go. dailysceal.com 🔗",
     "A new scéal every day, translated word by word. Pick your level. dailysceal.com 🔗",
     "There's more where this came from. Real news, your level of Irish. dailysceal.com 🔗",
     "Today's other stories are all up on the site, translated as you read. dailysceal.com 🔗",
-    "Read the whole thing as Gaeilge, or half of it. Your call. dailysceal.com 🔗",
+    "Come back tomorrow for another scéal, or read the rest of today's now. dailysceal.com 🔗",
   ];
 
   // Hashtags: never more than 5. Two always-on, then anything topical for the
