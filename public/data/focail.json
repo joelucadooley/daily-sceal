@@ -1,0 +1,2399 @@
+{
+  "generated": "2026-09-17T21:39:32.014Z",
+  "words": [
+    {
+      "ga": "cumas",
+      "en": "ability"
+    },
+    {
+      "ga": "thar lear",
+      "en": "abroad"
+    },
+    {
+      "ga": "easpa",
+      "en": "absence"
+    },
+    {
+      "ga": "timpiste",
+      "en": "accident"
+    },
+    {
+      "ga": "grúpa comhairleach",
+      "en": "advisory group"
+    },
+    {
+      "ga": "gníomhaireacht",
+      "en": "agency"
+    },
+    {
+      "ga": "comhaontú",
+      "en": "agreement"
+    },
+    {
+      "ga": "talmhaíocht",
+      "en": "agriculture"
+    },
+    {
+      "ga": "aerárthach",
+      "en": "aircraft"
+    },
+    {
+      "ga": "alcól",
+      "en": "alcohol"
+    },
+    {
+      "ga": "beagnach",
+      "en": "almost"
+    },
+    {
+      "ga": "cheana féin",
+      "en": "already"
+    },
+    {
+      "ga": "i gcónaí",
+      "en": "always"
+    },
+    {
+      "ga": "ambasadóir",
+      "en": "ambassador"
+    },
+    {
+      "ga": "otharcharr",
+      "en": "ambulance"
+    },
+    {
+      "ga": "leasuithe",
+      "en": "amendments"
+    },
+    {
+      "ga": "i measc",
+      "en": "among"
+    },
+    {
+      "ga": "ainmhí",
+      "en": "animal"
+    },
+    {
+      "ga": "ainmhithe",
+      "en": "animals"
+    },
+    {
+      "ga": "fógair",
+      "en": "announce"
+    },
+    {
+      "ga": "d'fhógair",
+      "en": "announced"
+    },
+    {
+      "ga": "fógra",
+      "en": "announcement"
+    },
+    {
+      "ga": "bliantúil",
+      "en": "annual"
+    },
+    {
+      "ga": "a thuilleadh",
+      "en": "anymore"
+    },
+    {
+      "ga": "aip",
+      "en": "app"
+    },
+    {
+      "ga": "achomharc",
+      "en": "appeal"
+    },
+    {
+      "ga": "iarratas",
+      "en": "application"
+    },
+    {
+      "ga": "iarratais",
+      "en": "applications"
+    },
+    {
+      "ga": "gabháil",
+      "en": "arrest"
+    },
+    {
+      "ga": "ealaín",
+      "en": "art"
+    },
+    {
+      "ga": "cumann",
+      "en": "association"
+    },
+    {
+      "ga": "tearmann",
+      "en": "asylum"
+    },
+    {
+      "ga": "ionsaí",
+      "en": "attack"
+    },
+    {
+      "ga": "fómhar",
+      "en": "autumn"
+    },
+    {
+      "ga": "meán",
+      "en": "average"
+    },
+    {
+      "ga": "gradam",
+      "en": "award"
+    },
+    {
+      "ga": "leanbh",
+      "en": "baby"
+    },
+    {
+      "ga": "cothromaíocht",
+      "en": "balance"
+    },
+    {
+      "ga": "banc",
+      "en": "bank"
+    },
+    {
+      "ga": "mór",
+      "en": "big"
+    },
+    {
+      "ga": "billiún",
+      "en": "billion"
+    },
+    {
+      "ga": "éan",
+      "en": "bird"
+    },
+    {
+      "ga": "breithlá",
+      "en": "birthday"
+    },
+    {
+      "ga": "ceangal",
+      "en": "bond"
+    },
+    {
+      "ga": "leabhair",
+      "en": "books"
+    },
+    {
+      "ga": "teorainn",
+      "en": "border"
+    },
+    {
+      "ga": "pobalbhreith teorann",
+      "en": "border poll"
+    },
+    {
+      "ga": "miondealú",
+      "en": "breakdown"
+    },
+    {
+      "ga": "bhris",
+      "en": "broke"
+    },
+    {
+      "ga": "briste",
+      "en": "broken"
+    },
+    {
+      "ga": "deartháir",
+      "en": "brother"
+    },
+    {
+      "ga": "buiséad",
+      "en": "budget"
+    },
+    {
+      "ga": "bus",
+      "en": "bus"
+    },
+    {
+      "ga": "gnó",
+      "en": "business"
+    },
+    {
+      "ga": "úinéirí gnó",
+      "en": "business owners"
+    },
+    {
+      "ga": "pacáiste gnó",
+      "en": "business package"
+    },
+    {
+      "ga": "cánacha gnó",
+      "en": "business taxes"
+    },
+    {
+      "ga": "d'iarr",
+      "en": "called"
+    },
+    {
+      "ga": "feachtas",
+      "en": "campaign"
+    },
+    {
+      "ga": "ailse",
+      "en": "cancer"
+    },
+    {
+      "ga": "cumas",
+      "en": "capacity"
+    },
+    {
+      "ga": "captaen",
+      "en": "captain"
+    },
+    {
+      "ga": "carr",
+      "en": "car"
+    },
+    {
+      "ga": "siúinéir",
+      "en": "carpenter"
+    },
+    {
+      "ga": "carranna",
+      "en": "cars"
+    },
+    {
+      "ga": "sos cogaidh",
+      "en": "ceasefire"
+    },
+    {
+      "ga": "cathaoirleach",
+      "en": "chairperson"
+    },
+    {
+      "ga": "curadh",
+      "en": "champion"
+    },
+    {
+      "ga": "curaidh",
+      "en": "champions"
+    },
+    {
+      "ga": "craobh",
+      "en": "championship"
+    },
+    {
+      "ga": "carthanacht",
+      "en": "charity"
+    },
+    {
+      "ga": "páiste",
+      "en": "child"
+    },
+    {
+      "ga": "páistí",
+      "en": "children"
+    },
+    {
+      "ga": "eaglais",
+      "en": "church"
+    },
+    {
+      "ga": "saoránacht",
+      "en": "citizenship"
+    },
+    {
+      "ga": "rialacha saoránachta",
+      "en": "citizenship rules"
+    },
+    {
+      "ga": "cathair",
+      "en": "city"
+    },
+    {
+      "ga": "comhdhearcadh soiléir",
+      "en": "clear consensus"
+    },
+    {
+      "ga": "aeráid",
+      "en": "climate"
+    },
+    {
+      "ga": "dúnta",
+      "en": "closed"
+    },
+    {
+      "ga": "cósta",
+      "en": "coast"
+    },
+    {
+      "ga": "titim",
+      "en": "collapse"
+    },
+    {
+      "ga": "coláiste",
+      "en": "college"
+    },
+    {
+      "ga": "imbhualadh",
+      "en": "collision"
+    },
+    {
+      "ga": "tráchtála",
+      "en": "commercial"
+    },
+    {
+      "ga": "coiste",
+      "en": "committee"
+    },
+    {
+      "ga": "pobal",
+      "en": "community"
+    },
+    {
+      "ga": "comhlacht",
+      "en": "company"
+    },
+    {
+      "ga": "comórtas",
+      "en": "competition"
+    },
+    {
+      "ga": "ríomhaire",
+      "en": "computer"
+    },
+    {
+      "ga": "dheimhnigh",
+      "en": "confirmed"
+    },
+    {
+      "ga": "tógáil",
+      "en": "construction"
+    },
+    {
+      "ga": "sainchomhairleoirí",
+      "en": "consultants"
+    },
+    {
+      "ga": "cluiche",
+      "en": "contest"
+    },
+    {
+      "ga": "costas",
+      "en": "cost"
+    },
+    {
+      "ga": "costais",
+      "en": "costs"
+    },
+    {
+      "ga": "comhairle",
+      "en": "council"
+    },
+    {
+      "ga": "contaetha",
+      "en": "counties"
+    },
+    {
+      "ga": "tír",
+      "en": "country"
+    },
+    {
+      "ga": "contae",
+      "en": "county"
+    },
+    {
+      "ga": "cúirt",
+      "en": "court"
+    },
+    {
+      "ga": "coir",
+      "en": "crime"
+    },
+    {
+      "ga": "géarchéim",
+      "en": "crisis"
+    },
+    {
+      "ga": "ríthábhachtach",
+      "en": "critical"
+    },
+    {
+      "ga": "cáineadh",
+      "en": "criticism"
+    },
+    {
+      "ga": "trasnán",
+      "en": "crossbar"
+    },
+    {
+      "ga": "slua",
+      "en": "crowd"
+    },
+    {
+      "ga": "cultúr",
+      "en": "culture"
+    },
+    {
+      "ga": "custaiméir",
+      "en": "customer"
+    },
+    {
+      "ga": "custaiméirí",
+      "en": "customers"
+    },
+    {
+      "ga": "laethúil",
+      "en": "daily"
+    },
+    {
+      "ga": "contúirt",
+      "en": "danger"
+    },
+    {
+      "ga": "contúirteach",
+      "en": "dangerous"
+    },
+    {
+      "ga": "sonraí",
+      "en": "data"
+    },
+    {
+      "ga": "iníon",
+      "en": "daughter"
+    },
+    {
+      "ga": "marbh",
+      "en": "dead"
+    },
+    {
+      "ga": "bás",
+      "en": "death"
+    },
+    {
+      "ga": "díospóireacht",
+      "en": "debate"
+    },
+    {
+      "ga": "fiachas",
+      "en": "debt"
+    },
+    {
+      "ga": "cinneadh",
+      "en": "decision"
+    },
+    {
+      "ga": "foireann chosanta",
+      "en": "defending team"
+    },
+    {
+      "ga": "daonlathas",
+      "en": "democracy"
+    },
+    {
+      "ga": "roinn",
+      "en": "department"
+    },
+    {
+      "ga": "díbirt",
+      "en": "deportation"
+    },
+    {
+      "ga": "diongbháilte",
+      "en": "determined"
+    },
+    {
+      "ga": "fuair bás",
+      "en": "died"
+    },
+    {
+      "ga": "digiteach",
+      "en": "digital"
+    },
+    {
+      "ga": "stiúrthóir",
+      "en": "director"
+    },
+    {
+      "ga": "galar",
+      "en": "disease"
+    },
+    {
+      "ga": "taispeáint",
+      "en": "display"
+    },
+    {
+      "ga": "dochtúir",
+      "en": "doctor"
+    },
+    {
+      "ga": "dochtúirí",
+      "en": "doctors"
+    },
+    {
+      "ga": "madra",
+      "en": "dog"
+    },
+    {
+      "ga": "tiománaí",
+      "en": "driver"
+    },
+    {
+      "ga": "triomach",
+      "en": "drought"
+    },
+    {
+      "ga": "drugaí",
+      "en": "drugs"
+    },
+    {
+      "ga": "le linn",
+      "en": "during"
+    },
+    {
+      "ga": "oirthear",
+      "en": "east"
+    },
+    {
+      "ga": "geilleagar",
+      "en": "economy"
+    },
+    {
+      "ga": "oideachas",
+      "en": "education"
+    },
+    {
+      "ga": "toghchán",
+      "en": "election"
+    },
+    {
+      "ga": "ríomhphost",
+      "en": "email"
+    },
+    {
+      "ga": "ambasáid",
+      "en": "embassy"
+    },
+    {
+      "ga": "éigeandáil",
+      "en": "emergency"
+    },
+    {
+      "ga": "eisimirce",
+      "en": "emigration"
+    },
+    {
+      "ga": "fostaí",
+      "en": "employee"
+    },
+    {
+      "ga": "fostóir",
+      "en": "employer"
+    },
+    {
+      "ga": "fostaíocht",
+      "en": "employment"
+    },
+    {
+      "ga": "achtaithe",
+      "en": "enacted"
+    },
+    {
+      "ga": "fuinneamh",
+      "en": "energy"
+    },
+    {
+      "ga": "Béarla",
+      "en": "english language"
+    },
+    {
+      "ga": "comhshaol",
+      "en": "environment"
+    },
+    {
+      "ga": "aslonnú",
+      "en": "evacuation"
+    },
+    {
+      "ga": "imeacht",
+      "en": "event"
+    },
+    {
+      "ga": "gach maidin",
+      "en": "every morning"
+    },
+    {
+      "ga": "fianaise",
+      "en": "evidence"
+    },
+    {
+      "ga": "scrúdú",
+      "en": "exam"
+    },
+    {
+      "ga": "scrúduithe",
+      "en": "exams"
+    },
+    {
+      "ga": "sceitimíní",
+      "en": "excitement"
+    },
+    {
+      "ga": "taispeántas",
+      "en": "exhibition"
+    },
+    {
+      "ga": "teip",
+      "en": "failure"
+    },
+    {
+      "ga": "teaghlaigh",
+      "en": "families"
+    },
+    {
+      "ga": "teaghlach",
+      "en": "family"
+    },
+    {
+      "ga": "feirm",
+      "en": "farm"
+    },
+    {
+      "ga": "feirmeoir",
+      "en": "farmer"
+    },
+    {
+      "ga": "feirmeoirí",
+      "en": "farmers"
+    },
+    {
+      "ga": "feirmeoireacht",
+      "en": "farming"
+    },
+    {
+      "ga": "athair",
+      "en": "father"
+    },
+    {
+      "ga": "féile",
+      "en": "festival"
+    },
+    {
+      "ga": "figiúirí",
+      "en": "figures"
+    },
+    {
+      "ga": "scannán",
+      "en": "film"
+    },
+    {
+      "ga": "cluiche ceannais",
+      "en": "final"
+    },
+    {
+      "ga": "céim dheiridh",
+      "en": "final stage"
+    },
+    {
+      "ga": "dóiteán",
+      "en": "fire"
+    },
+    {
+      "ga": "iasc",
+      "en": "fish"
+    },
+    {
+      "ga": "iascaireacht",
+      "en": "fishing"
+    },
+    {
+      "ga": "d'eitil",
+      "en": "flew"
+    },
+    {
+      "ga": "eitilt",
+      "en": "flight"
+    },
+    {
+      "ga": "eitiltí",
+      "en": "flights"
+    },
+    {
+      "ga": "tuile",
+      "en": "flood"
+    },
+    {
+      "ga": "ceo",
+      "en": "fog"
+    },
+    {
+      "ga": "bia",
+      "en": "food"
+    },
+    {
+      "ga": "peil",
+      "en": "football"
+    },
+    {
+      "ga": "réamhaisnéis",
+      "en": "forecast"
+    },
+    {
+      "ga": "foraois",
+      "en": "forest"
+    },
+    {
+      "ga": "saor",
+      "en": "free"
+    },
+    {
+      "ga": "saorphoc",
+      "en": "free puck"
+    },
+    {
+      "ga": "sioc",
+      "en": "frost"
+    },
+    {
+      "ga": "ciste",
+      "en": "fund"
+    },
+    {
+      "ga": "maoiniú",
+      "en": "funding"
+    },
+    {
+      "ga": "cistí",
+      "en": "funds"
+    },
+    {
+      "ga": "sochraid",
+      "en": "funeral"
+    },
+    {
+      "ga": "todhchaí",
+      "en": "future"
+    },
+    {
+      "ga": "cluiche",
+      "en": "game"
+    },
+    {
+      "ga": "cluichí",
+      "en": "games"
+    },
+    {
+      "ga": "cúl",
+      "en": "goal"
+    },
+    {
+      "ga": "cúil",
+      "en": "goals"
+    },
+    {
+      "ga": "maith",
+      "en": "good"
+    },
+    {
+      "ga": "Comhaontú Aoine an Chéasta",
+      "en": "good friday agreement"
+    },
+    {
+      "ga": "rialtas",
+      "en": "government"
+    },
+    {
+      "ga": "deontas",
+      "en": "grant"
+    },
+    {
+      "ga": "buille talún",
+      "en": "ground stroke"
+    },
+    {
+      "ga": "grúpa",
+      "en": "group"
+    },
+    {
+      "ga": "ag fás",
+      "en": "growing"
+    },
+    {
+      "ga": "fás",
+      "en": "growth"
+    },
+    {
+      "ga": "ciontach",
+      "en": "guilty"
+    },
+    {
+      "ga": "sláinte",
+      "en": "health"
+    },
+    {
+      "ga": "tonn teasa",
+      "en": "heatwave"
+    },
+    {
+      "ga": "cabhair",
+      "en": "help"
+    },
+    {
+      "ga": "ard",
+      "en": "high"
+    },
+    {
+      "ga": "níos airde",
+      "en": "higher"
+    },
+    {
+      "ga": "stairiúil",
+      "en": "historic"
+    },
+    {
+      "ga": "stair",
+      "en": "history"
+    },
+    {
+      "ga": "saoire",
+      "en": "holiday"
+    },
+    {
+      "ga": "gan dídean",
+      "en": "homeless"
+    },
+    {
+      "ga": "capall",
+      "en": "horse"
+    },
+    {
+      "ga": "ospidéal",
+      "en": "hospital"
+    },
+    {
+      "ga": "curtha san ospidéal",
+      "en": "hospitalised"
+    },
+    {
+      "ga": "ospidéil",
+      "en": "hospitals"
+    },
+    {
+      "ga": "óstán",
+      "en": "hotel"
+    },
+    {
+      "ga": "teach",
+      "en": "house"
+    },
+    {
+      "ga": "tithe",
+      "en": "houses"
+    },
+    {
+      "ga": "tithíocht",
+      "en": "housing"
+    },
+    {
+      "ga": "ollmhór",
+      "en": "huge"
+    },
+    {
+      "ga": "iomáint",
+      "en": "hurling"
+    },
+    {
+      "ga": "gortaigh",
+      "en": "hurt"
+    },
+    {
+      "ga": "oighear",
+      "en": "ice"
+    },
+    {
+      "ga": "mídhleathach",
+      "en": "illegal"
+    },
+    {
+      "ga": "inimirce",
+      "en": "immigration"
+    },
+    {
+      "ga": "tábhachtach",
+      "en": "important"
+    },
+    {
+      "ga": "eachtra",
+      "en": "incident"
+    },
+    {
+      "ga": "ioncam",
+      "en": "income"
+    },
+    {
+      "ga": "cáin ioncaim",
+      "en": "income tax"
+    },
+    {
+      "ga": "méadú",
+      "en": "increase"
+    },
+    {
+      "ga": "boilsciú",
+      "en": "inflation"
+    },
+    {
+      "ga": "bonneagar",
+      "en": "infrastructure"
+    },
+    {
+      "ga": "gortaithe",
+      "en": "injured"
+    },
+    {
+      "ga": "gortú",
+      "en": "injury"
+    },
+    {
+      "ga": "neamhchiontach",
+      "en": "innocent"
+    },
+    {
+      "ga": "fiosrúchán",
+      "en": "inquiry"
+    },
+    {
+      "ga": "árachas",
+      "en": "insurance"
+    },
+    {
+      "ga": "idirnáisiúnta",
+      "en": "international"
+    },
+    {
+      "ga": "idirlíon",
+      "en": "internet"
+    },
+    {
+      "ga": "agallamh",
+      "en": "interview"
+    },
+    {
+      "ga": "imscrúdú",
+      "en": "investigation"
+    },
+    {
+      "ga": "infheistíocht",
+      "en": "investment"
+    },
+    {
+      "ga": "Gaeilge",
+      "en": "irish language"
+    },
+    {
+      "ga": "oileán",
+      "en": "island"
+    },
+    {
+      "ga": "post",
+      "en": "job"
+    },
+    {
+      "ga": "poist",
+      "en": "jobs"
+    },
+    {
+      "ga": "turas",
+      "en": "journey"
+    },
+    {
+      "ga": "breitheamh",
+      "en": "judge"
+    },
+    {
+      "ga": "giúiré",
+      "en": "jury"
+    },
+    {
+      "ga": "maraíodh",
+      "en": "killed"
+    },
+    {
+      "ga": "loch",
+      "en": "lake"
+    },
+    {
+      "ga": "teanga",
+      "en": "language"
+    },
+    {
+      "ga": "scrúdú teanga",
+      "en": "language test"
+    },
+    {
+      "ga": "sheol",
+      "en": "launched"
+    },
+    {
+      "ga": "dlí",
+      "en": "law"
+    },
+    {
+      "ga": "dlíthe",
+      "en": "laws"
+    },
+    {
+      "ga": "dlíodóir",
+      "en": "lawyer"
+    },
+    {
+      "ga": "ceannaire",
+      "en": "leader"
+    },
+    {
+      "ga": "ceannairí",
+      "en": "leaders"
+    },
+    {
+      "ga": "sraith",
+      "en": "league"
+    },
+    {
+      "ga": "foghlaimeoir",
+      "en": "learner"
+    },
+    {
+      "ga": "dlíthiúil",
+      "en": "legal"
+    },
+    {
+      "ga": "reachtaíocht",
+      "en": "legislation"
+    },
+    {
+      "ga": "leabharlann",
+      "en": "library"
+    },
+    {
+      "ga": "ceadúnas",
+      "en": "licence"
+    },
+    {
+      "ga": "nasctha",
+      "en": "linked"
+    },
+    {
+      "ga": "iasacht",
+      "en": "loan"
+    },
+    {
+      "ga": "áitiúil",
+      "en": "local"
+    },
+    {
+      "ga": "fadfhanachta",
+      "en": "long-stay"
+    },
+    {
+      "ga": "fadliosta",
+      "en": "longlist"
+    },
+    {
+      "ga": "chaill",
+      "en": "lost"
+    },
+    {
+      "ga": "íseal",
+      "en": "low"
+    },
+    {
+      "ga": "cothabháil",
+      "en": "maintenance"
+    },
+    {
+      "ga": "tromlach",
+      "en": "majority"
+    },
+    {
+      "ga": "fear",
+      "en": "man"
+    },
+    {
+      "ga": "bainisteoir",
+      "en": "manager"
+    },
+    {
+      "ga": "margadh",
+      "en": "market"
+    },
+    {
+      "ga": "cluiche",
+      "en": "match"
+    },
+    {
+      "ga": "meicníocht",
+      "en": "mechanism"
+    },
+    {
+      "ga": "meáin",
+      "en": "media"
+    },
+    {
+      "ga": "leigheas",
+      "en": "medicine"
+    },
+    {
+      "ga": "cruinniú",
+      "en": "meeting"
+    },
+    {
+      "ga": "ball",
+      "en": "member"
+    },
+    {
+      "ga": "ballstáit",
+      "en": "member states"
+    },
+    {
+      "ga": "baill",
+      "en": "members"
+    },
+    {
+      "ga": "fir",
+      "en": "men"
+    },
+    {
+      "ga": "milliún",
+      "en": "million"
+    },
+    {
+      "ga": "aire",
+      "en": "minister"
+    },
+    {
+      "ga": "mionlach",
+      "en": "minority"
+    },
+    {
+      "ga": "chaill",
+      "en": "missed"
+    },
+    {
+      "ga": "nóiméad",
+      "en": "moment"
+    },
+    {
+      "ga": "airgead",
+      "en": "money"
+    },
+    {
+      "ga": "mí",
+      "en": "month"
+    },
+    {
+      "ga": "maidin",
+      "en": "morning"
+    },
+    {
+      "ga": "morgáiste",
+      "en": "mortgage"
+    },
+    {
+      "ga": "máthair",
+      "en": "mother"
+    },
+    {
+      "ga": "sliabh",
+      "en": "mountain"
+    },
+    {
+      "ga": "dúnmharú",
+      "en": "murder"
+    },
+    {
+      "ga": "ceol",
+      "en": "music"
+    },
+    {
+      "ga": "náisiúnta",
+      "en": "national"
+    },
+    {
+      "ga": "córas eadóirseachta",
+      "en": "naturalisation system"
+    },
+    {
+      "ga": "nua",
+      "en": "new"
+    },
+    {
+      "ga": "nuacht",
+      "en": "news"
+    },
+    {
+      "ga": "oíche",
+      "en": "night"
+    },
+    {
+      "ga": "tuaisceart",
+      "en": "north"
+    },
+    {
+      "ga": "úrscéal",
+      "en": "novel"
+    },
+    {
+      "ga": "uimhir",
+      "en": "number"
+    },
+    {
+      "ga": "uimhreacha",
+      "en": "numbers"
+    },
+    {
+      "ga": "altra",
+      "en": "nurse"
+    },
+    {
+      "ga": "altraí",
+      "en": "nurses"
+    },
+    {
+      "ga": "oifigiúil",
+      "en": "official"
+    },
+    {
+      "ga": "cuairt oifigiúil",
+      "en": "official visit"
+    },
+    {
+      "ga": "sean",
+      "en": "old"
+    },
+    {
+      "ga": "oscailte",
+      "en": "open"
+    },
+    {
+      "ga": "d'oscail",
+      "en": "opened"
+    },
+    {
+      "ga": "d'oibrigh",
+      "en": "operated"
+    },
+    {
+      "ga": "fithis",
+      "en": "orbit"
+    },
+    {
+      "ga": "eagraíocht",
+      "en": "organisation"
+    },
+    {
+      "ga": "paindéim",
+      "en": "pandemic"
+    },
+    {
+      "ga": "tuismitheoirí",
+      "en": "parents"
+    },
+    {
+      "ga": "parlaimint",
+      "en": "parliament"
+    },
+    {
+      "ga": "paisinéir",
+      "en": "passenger"
+    },
+    {
+      "ga": "paisinéirí",
+      "en": "passengers"
+    },
+    {
+      "ga": "othar",
+      "en": "patient"
+    },
+    {
+      "ga": "othair",
+      "en": "patients"
+    },
+    {
+      "ga": "pá",
+      "en": "pay"
+    },
+    {
+      "ga": "síocháin",
+      "en": "peace"
+    },
+    {
+      "ga": "coisí",
+      "en": "pedestrian"
+    },
+    {
+      "ga": "pinsean",
+      "en": "pension"
+    },
+    {
+      "ga": "daoine",
+      "en": "people"
+    },
+    {
+      "ga": "in aghaidh",
+      "en": "per"
+    },
+    {
+      "ga": "céatadán",
+      "en": "percentage"
+    },
+    {
+      "ga": "guthán",
+      "en": "phone"
+    },
+    {
+      "ga": "píosa",
+      "en": "piece"
+    },
+    {
+      "ga": "píolóta",
+      "en": "pilot"
+    },
+    {
+      "ga": "píolótaí",
+      "en": "pilots"
+    },
+    {
+      "ga": "plean",
+      "en": "plan"
+    },
+    {
+      "ga": "eitleán",
+      "en": "plane"
+    },
+    {
+      "ga": "pleananna",
+      "en": "plans"
+    },
+    {
+      "ga": "imreoir",
+      "en": "player"
+    },
+    {
+      "ga": "imreoirí",
+      "en": "players"
+    },
+    {
+      "ga": "póilíní",
+      "en": "police"
+    },
+    {
+      "ga": "polasaí",
+      "en": "policy"
+    },
+    {
+      "ga": "polaitiúil",
+      "en": "political"
+    },
+    {
+      "ga": "daonra",
+      "en": "population"
+    },
+    {
+      "ga": "seilbh",
+      "en": "possession"
+    },
+    {
+      "ga": "bochtaineacht",
+      "en": "poverty"
+    },
+    {
+      "ga": "áitreabh",
+      "en": "premises"
+    },
+    {
+      "ga": "uachtarán",
+      "en": "president"
+    },
+    {
+      "ga": "brú",
+      "en": "pressure"
+    },
+    {
+      "ga": "praghas",
+      "en": "price"
+    },
+    {
+      "ga": "praghsanna",
+      "en": "prices"
+    },
+    {
+      "ga": "sagart",
+      "en": "priest"
+    },
+    {
+      "ga": "príomhoide",
+      "en": "principal"
+    },
+    {
+      "ga": "tosaíochtaí",
+      "en": "priorities"
+    },
+    {
+      "ga": "príosún",
+      "en": "prison"
+    },
+    {
+      "ga": "príosúnach",
+      "en": "prisoner"
+    },
+    {
+      "ga": "príobháideach",
+      "en": "private"
+    },
+    {
+      "ga": "duais",
+      "en": "prize"
+    },
+    {
+      "ga": "fadhb",
+      "en": "problem"
+    },
+    {
+      "ga": "fadhbanna",
+      "en": "problems"
+    },
+    {
+      "ga": "brabús",
+      "en": "profit"
+    },
+    {
+      "ga": "tionscadal",
+      "en": "project"
+    },
+    {
+      "ga": "tionscadail",
+      "en": "projects"
+    },
+    {
+      "ga": "duine feiceálach",
+      "en": "prominent figure"
+    },
+    {
+      "ga": "tograí",
+      "en": "proposals"
+    },
+    {
+      "ga": "molta",
+      "en": "proposed"
+    },
+    {
+      "ga": "agóid",
+      "en": "protest"
+    },
+    {
+      "ga": "poiblí",
+      "en": "public"
+    },
+    {
+      "ga": "tuairim phoiblí",
+      "en": "public opinion"
+    },
+    {
+      "ga": "tacaíocht phoiblí",
+      "en": "public support"
+    },
+    {
+      "ga": "foilsigh",
+      "en": "publish"
+    },
+    {
+      "ga": "d'fhoilsigh",
+      "en": "published"
+    },
+    {
+      "ga": "dalta",
+      "en": "pupil"
+    },
+    {
+      "ga": "brú",
+      "en": "push"
+    },
+    {
+      "ga": "ceist",
+      "en": "question"
+    },
+    {
+      "ga": "ceisteanna",
+      "en": "questions"
+    },
+    {
+      "ga": "iarnród",
+      "en": "railway"
+    },
+    {
+      "ga": "báisteach",
+      "en": "rain"
+    },
+    {
+      "ga": "ráta",
+      "en": "rate"
+    },
+    {
+      "ga": "réasúnaíocht",
+      "en": "rationale"
+    },
+    {
+      "ga": "oibríocht aisghabhála",
+      "en": "recovery operation"
+    },
+    {
+      "ga": "réiteoir",
+      "en": "referee"
+    },
+    {
+      "ga": "reifreann",
+      "en": "referendum"
+    },
+    {
+      "ga": "dídeanaí",
+      "en": "refugee"
+    },
+    {
+      "ga": "dídeanaithe",
+      "en": "refugees"
+    },
+    {
+      "ga": "réigiún",
+      "en": "region"
+    },
+    {
+      "ga": "ráitis",
+      "en": "remarks"
+    },
+    {
+      "ga": "cíos",
+      "en": "rent"
+    },
+    {
+      "ga": "cíosanna",
+      "en": "rents"
+    },
+    {
+      "ga": "tuarascáil",
+      "en": "report"
+    },
+    {
+      "ga": "taighde",
+      "en": "research"
+    },
+    {
+      "ga": "freagairt",
+      "en": "response"
+    },
+    {
+      "ga": "bialann",
+      "en": "restaurant"
+    },
+    {
+      "ga": "torthaí",
+      "en": "results"
+    },
+    {
+      "ga": "athaontú",
+      "en": "reunification"
+    },
+    {
+      "ga": "ardú",
+      "en": "rise"
+    },
+    {
+      "ga": "riosca",
+      "en": "risk"
+    },
+    {
+      "ga": "abhainn",
+      "en": "river"
+    },
+    {
+      "ga": "bóthar",
+      "en": "road"
+    },
+    {
+      "ga": "bóithre",
+      "en": "roads"
+    },
+    {
+      "ga": "robáil",
+      "en": "robbery"
+    },
+    {
+      "ga": "leasuithe rialacha",
+      "en": "rule amendments"
+    },
+    {
+      "ga": "reáchtálann",
+      "en": "runs"
+    },
+    {
+      "ga": "sábháilte",
+      "en": "safe"
+    },
+    {
+      "ga": "dúirt",
+      "en": "said"
+    },
+    {
+      "ga": "tuarastal",
+      "en": "salary"
+    },
+    {
+      "ga": "satailít",
+      "en": "satellite"
+    },
+    {
+      "ga": "coigilteas",
+      "en": "savings"
+    },
+    {
+      "ga": "deir",
+      "en": "say"
+    },
+    {
+      "ga": "scéim",
+      "en": "scheme"
+    },
+    {
+      "ga": "scoil",
+      "en": "school"
+    },
+    {
+      "ga": "scoileanna",
+      "en": "schools"
+    },
+    {
+      "ga": "scór",
+      "en": "score"
+    },
+    {
+      "ga": "ag scóráil",
+      "en": "scoring"
+    },
+    {
+      "ga": "scrapáil",
+      "en": "scrappage"
+    },
+    {
+      "ga": "farraige",
+      "en": "sea"
+    },
+    {
+      "ga": "rúnaí",
+      "en": "secretary"
+    },
+    {
+      "ga": "pianbhreith",
+      "en": "sentence"
+    },
+    {
+      "ga": "sraith",
+      "en": "series"
+    },
+    {
+      "ga": "tromchúiseach",
+      "en": "serious"
+    },
+    {
+      "ga": "seirbhís",
+      "en": "service"
+    },
+    {
+      "ga": "seirbhísí",
+      "en": "services"
+    },
+    {
+      "ga": "siopa",
+      "en": "shop"
+    },
+    {
+      "ga": "siopaí",
+      "en": "shops"
+    },
+    {
+      "ga": "go gairid",
+      "en": "shortly"
+    },
+    {
+      "ga": "léiríonn",
+      "en": "show"
+    },
+    {
+      "ga": "suntasach",
+      "en": "significant"
+    },
+    {
+      "ga": "deirfiúr",
+      "en": "sister"
+    },
+    {
+      "ga": "beag",
+      "en": "small"
+    },
+    {
+      "ga": "smiot",
+      "en": "smashed"
+    },
+    {
+      "ga": "sneachta",
+      "en": "snow"
+    },
+    {
+      "ga": "mac",
+      "en": "son"
+    },
+    {
+      "ga": "fuaim",
+      "en": "sound"
+    },
+    {
+      "ga": "deisceart",
+      "en": "south"
+    },
+    {
+      "ga": "óráid",
+      "en": "speech"
+    },
+    {
+      "ga": "caiteachas",
+      "en": "spending"
+    },
+    {
+      "ga": "urlabhraí",
+      "en": "spokesperson"
+    },
+    {
+      "ga": "spórt",
+      "en": "sport"
+    },
+    {
+      "ga": "earrach",
+      "en": "spring"
+    },
+    {
+      "ga": "staid",
+      "en": "stadium"
+    },
+    {
+      "ga": "suntasach",
+      "en": "standout"
+    },
+    {
+      "ga": "ráiteas",
+      "en": "statement"
+    },
+    {
+      "ga": "stáisiún",
+      "en": "station"
+    },
+    {
+      "ga": "coinníoll",
+      "en": "stipulation"
+    },
+    {
+      "ga": "scéalta",
+      "en": "stories"
+    },
+    {
+      "ga": "stoirm",
+      "en": "storm"
+    },
+    {
+      "ga": "scéal",
+      "en": "story"
+    },
+    {
+      "ga": "stailc",
+      "en": "strike"
+    },
+    {
+      "ga": "gníomh buailte",
+      "en": "striking action"
+    },
+    {
+      "ga": "pobail láidre",
+      "en": "strong communities"
+    },
+    {
+      "ga": "bailte láidre",
+      "en": "strong towns"
+    },
+    {
+      "ga": "mac léinn",
+      "en": "student"
+    },
+    {
+      "ga": "mic léinn",
+      "en": "students"
+    },
+    {
+      "ga": "staidéar",
+      "en": "study"
+    },
+    {
+      "ga": "samhradh",
+      "en": "summer"
+    },
+    {
+      "ga": "ollmhargadh",
+      "en": "supermarket"
+    },
+    {
+      "ga": "tacaíocht",
+      "en": "support"
+    },
+    {
+      "ga": "suirbhé",
+      "en": "survey"
+    },
+    {
+      "ga": "córas",
+      "en": "system"
+    },
+    {
+      "ga": "ag glacadh",
+      "en": "taking"
+    },
+    {
+      "ga": "cainteanna",
+      "en": "talks"
+    },
+    {
+      "ga": "ag cnagadh",
+      "en": "tapping"
+    },
+    {
+      "ga": "cáin",
+      "en": "tax"
+    },
+    {
+      "ga": "creidmheasanna cánach",
+      "en": "tax credits"
+    },
+    {
+      "ga": "cánachas",
+      "en": "taxation"
+    },
+    {
+      "ga": "cánacha",
+      "en": "taxes"
+    },
+    {
+      "ga": "múinteoir",
+      "en": "teacher"
+    },
+    {
+      "ga": "múinteoirí",
+      "en": "teachers"
+    },
+    {
+      "ga": "foireann",
+      "en": "team"
+    },
+    {
+      "ga": "teicneolaíocht",
+      "en": "technology"
+    },
+    {
+      "ga": "teocht",
+      "en": "temperature"
+    },
+    {
+      "ga": "ionsaí sceimhlitheoireachta",
+      "en": "terrorist attack"
+    },
+    {
+      "ga": "an bealach is cothroime",
+      "en": "the fairest way"
+    },
+    {
+      "ga": "amharclann",
+      "en": "theatre"
+    },
+    {
+      "ga": "goid",
+      "en": "theft"
+    },
+    {
+      "ga": "teideal",
+      "en": "title"
+    },
+    {
+      "ga": "inniu",
+      "en": "today"
+    },
+    {
+      "ga": "le chéile",
+      "en": "together"
+    },
+    {
+      "ga": "amárach",
+      "en": "tomorrow"
+    },
+    {
+      "ga": "anocht",
+      "en": "tonight"
+    },
+    {
+      "ga": "baile",
+      "en": "town"
+    },
+    {
+      "ga": "trádáil",
+      "en": "trade"
+    },
+    {
+      "ga": "trácht",
+      "en": "traffic"
+    },
+    {
+      "ga": "traein",
+      "en": "train"
+    },
+    {
+      "ga": "traenáil",
+      "en": "training"
+    },
+    {
+      "ga": "cóireáil",
+      "en": "treatment"
+    },
+    {
+      "ga": "conradh",
+      "en": "treaty"
+    },
+    {
+      "ga": "crann",
+      "en": "tree"
+    },
+    {
+      "ga": "crainn",
+      "en": "trees"
+    },
+    {
+      "ga": "triail",
+      "en": "trial"
+    },
+    {
+      "ga": "trialacha",
+      "en": "trials"
+    },
+    {
+      "ga": "dífhostaíocht",
+      "en": "unemployment"
+    },
+    {
+      "ga": "ceardchumann",
+      "en": "union"
+    },
+    {
+      "ga": "ceardchumainn",
+      "en": "unions"
+    },
+    {
+      "ga": "ollscoil",
+      "en": "university"
+    },
+    {
+      "ga": "tinn",
+      "en": "unwell"
+    },
+    {
+      "ga": "práinneach",
+      "en": "urgent"
+    },
+    {
+      "ga": "galtoitín",
+      "en": "vape"
+    },
+    {
+      "ga": "galtoitíní",
+      "en": "vapes"
+    },
+    {
+      "ga": "íospartach",
+      "en": "victim"
+    },
+    {
+      "ga": "bua",
+      "en": "victory"
+    },
+    {
+      "ga": "físeán",
+      "en": "video"
+    },
+    {
+      "ga": "sráidbhaile",
+      "en": "village"
+    },
+    {
+      "ga": "foréigean",
+      "en": "violence"
+    },
+    {
+      "ga": "víreas",
+      "en": "virus"
+    },
+    {
+      "ga": "vóta",
+      "en": "vote"
+    },
+    {
+      "ga": "teastaíonn",
+      "en": "wants"
+    },
+    {
+      "ga": "cogadh",
+      "en": "war"
+    },
+    {
+      "ga": "rabhadh",
+      "en": "warning"
+    },
+    {
+      "ga": "uisce",
+      "en": "water"
+    },
+    {
+      "ga": "saibhreas",
+      "en": "wealth"
+    },
+    {
+      "ga": "aimsir",
+      "en": "weather"
+    },
+    {
+      "ga": "bainis",
+      "en": "wedding"
+    },
+    {
+      "ga": "seachtain",
+      "en": "week"
+    },
+    {
+      "ga": "deireadh seachtaine",
+      "en": "weekend"
+    },
+    {
+      "ga": "seachtainiúil",
+      "en": "weekly"
+    },
+    {
+      "ga": "iarthar",
+      "en": "west"
+    },
+    {
+      "ga": "gaoth",
+      "en": "wind"
+    },
+    {
+      "ga": "buaiteoir",
+      "en": "winner"
+    },
+    {
+      "ga": "geimhreadh",
+      "en": "winter"
+    },
+    {
+      "ga": "laistigh de",
+      "en": "within"
+    },
+    {
+      "ga": "finné",
+      "en": "witness"
+    },
+    {
+      "ga": "bean",
+      "en": "woman"
+    },
+    {
+      "ga": "mná",
+      "en": "women"
+    },
+    {
+      "ga": "bhuaigh",
+      "en": "won"
+    },
+    {
+      "ga": "obair",
+      "en": "work"
+    },
+    {
+      "ga": "oibrithe",
+      "en": "workers"
+    },
+    {
+      "ga": "domhan",
+      "en": "world"
+    },
+    {
+      "ga": "bliain",
+      "en": "year"
+    },
+    {
+      "ga": "blianta",
+      "en": "years"
+    },
+    {
+      "ga": "inné",
+      "en": "yesterday"
+    },
+    {
+      "ga": "óg",
+      "en": "young"
+    }
+  ],
+  "places": [
+    {
+      "ga": "Aontroim",
+      "en": "antrim"
+    },
+    {
+      "ga": "Ard Mhacha",
+      "en": "armagh"
+    },
+    {
+      "ga": "Ceatharlach",
+      "en": "carlow"
+    },
+    {
+      "ga": "An Cabhán",
+      "en": "cavan"
+    },
+    {
+      "ga": "An Clár",
+      "en": "clare"
+    },
+    {
+      "ga": "Corcaigh",
+      "en": "cork"
+    },
+    {
+      "ga": "Doire",
+      "en": "derry"
+    },
+    {
+      "ga": "Doire",
+      "en": "londonderry"
+    },
+    {
+      "ga": "Dún na nGall",
+      "en": "donegal"
+    },
+    {
+      "ga": "An Dún",
+      "en": "down"
+    },
+    {
+      "ga": "Baile Átha Cliath",
+      "en": "dublin"
+    },
+    {
+      "ga": "Fear Manach",
+      "en": "fermanagh"
+    },
+    {
+      "ga": "Gaillimh",
+      "en": "galway"
+    },
+    {
+      "ga": "Ciarraí",
+      "en": "kerry"
+    },
+    {
+      "ga": "Cill Dara",
+      "en": "kildare"
+    },
+    {
+      "ga": "Cill Chainnigh",
+      "en": "kilkenny"
+    },
+    {
+      "ga": "Laois",
+      "en": "laois"
+    },
+    {
+      "ga": "Liatroim",
+      "en": "leitrim"
+    },
+    {
+      "ga": "Luimneach",
+      "en": "limerick"
+    },
+    {
+      "ga": "An Longfort",
+      "en": "longford"
+    },
+    {
+      "ga": "Lú",
+      "en": "louth"
+    },
+    {
+      "ga": "Maigh Eo",
+      "en": "mayo"
+    },
+    {
+      "ga": "An Mhí",
+      "en": "meath"
+    },
+    {
+      "ga": "Muineachán",
+      "en": "monaghan"
+    },
+    {
+      "ga": "Uíbh Fhailí",
+      "en": "offaly"
+    },
+    {
+      "ga": "Ros Comáin",
+      "en": "roscommon"
+    },
+    {
+      "ga": "Sligeach",
+      "en": "sligo"
+    },
+    {
+      "ga": "Tiobraid Árann",
+      "en": "tipperary"
+    },
+    {
+      "ga": "Tír Eoghain",
+      "en": "tyrone"
+    },
+    {
+      "ga": "Port Láirge",
+      "en": "waterford"
+    },
+    {
+      "ga": "An Iarmhí",
+      "en": "westmeath"
+    },
+    {
+      "ga": "Loch Garman",
+      "en": "wexford"
+    },
+    {
+      "ga": "Cill Mhantáin",
+      "en": "wicklow"
+    },
+    {
+      "ga": "Éire",
+      "en": "ireland"
+    },
+    {
+      "ga": "Dún Dealgan",
+      "en": "dundalk"
+    },
+    {
+      "ga": "Droichead Átha",
+      "en": "drogheda"
+    },
+    {
+      "ga": "Sord",
+      "en": "swords"
+    },
+    {
+      "ga": "Bré",
+      "en": "bray"
+    },
+    {
+      "ga": "An Uaimh",
+      "en": "navan"
+    },
+    {
+      "ga": "Inis",
+      "en": "ennis"
+    },
+    {
+      "ga": "Trá Lí",
+      "en": "tralee"
+    },
+    {
+      "ga": "An Nás",
+      "en": "naas"
+    },
+    {
+      "ga": "Baile Átha Luain",
+      "en": "athlone"
+    },
+    {
+      "ga": "Cill Chainnigh",
+      "en": "kilkenny city"
+    },
+    {
+      "ga": "Ceatharlach",
+      "en": "carlow town"
+    },
+    {
+      "ga": "Loch Garman",
+      "en": "wexford town"
+    },
+    {
+      "ga": "Leitir Ceanainn",
+      "en": "letterkenny"
+    },
+    {
+      "ga": "Béal Feirste",
+      "en": "belfast"
+    },
+    {
+      "ga": "Lios na gCearrbhach",
+      "en": "lisburn"
+    },
+    {
+      "ga": "An tIúr",
+      "en": "newry"
+    },
+    {
+      "ga": "Beannchar",
+      "en": "bangor"
+    },
+    {
+      "ga": "Corcaigh",
+      "en": "cork city"
+    },
+    {
+      "ga": "Gaillimh",
+      "en": "galway city"
+    },
+    {
+      "ga": "Port Láirge",
+      "en": "waterford city"
+    },
+    {
+      "ga": "Luimneach",
+      "en": "limerick city"
+    },
+    {
+      "ga": "Baile Átha Cliath",
+      "en": "dublin city"
+    },
+    {
+      "ga": "Laighin",
+      "en": "leinster"
+    },
+    {
+      "ga": "An Mhumhain",
+      "en": "munster"
+    },
+    {
+      "ga": "Connachta",
+      "en": "connacht"
+    },
+    {
+      "ga": "Cúige Uladh",
+      "en": "ulster"
+    },
+    {
+      "ga": "Gaeltacht",
+      "en": "gaeltacht"
+    }
+  ]
+}

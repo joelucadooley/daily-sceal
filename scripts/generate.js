@@ -5,6 +5,7 @@ import {
   isUsable, dedupe, balance,
 } from "./feeds.js";
 import { catInfo } from "./categories.js";
+import { firstSentences, stripMarkers } from "./summary.js";
 // Levels actually generated. 75 (Advanced) and 100 (As Gaeilge) are locked
 // funding goals in the app — the sentence-alignment approach isn't reliable
 // enough to ship, so we don't generate them at all.
@@ -489,6 +490,11 @@ async function fetchFeed(feed) {
         id: `${feed.id}-${i}`,
         title: g("title").trim(),
         summary: g("description").replace(/<[^>]+>/g, "").trim().slice(0, 300),
+        // The RSS description on its own, cut at a sentence boundary. The iOS
+        // app shows only this (plus a link to RTÉ), never the scraped article,
+        // so it is kept even though `summary` is overwritten with the full
+        // text further down.
+        rssSummary: firstSentences(g("description").replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim()),
         link: g("link").trim(),
         category: rssCat || feed.label,
         categoryIr,
@@ -558,7 +564,25 @@ async function processStory(story, index) {
     await sleep(300);
   }
 
-  return { ...story, summary: baseText, levels };
+  // Summary-only levels for the iOS app. Run after the full levels so the
+  // translation cache is already warm: nearly every word in the summary has
+  // just been looked up, so this costs almost no extra MyMemory calls.
+  const summaryLevels = {};
+  const rssSummary = story.rssSummary || firstSentences(stripMarkers(baseText));
+  for (const pct of LEVELS) {
+    try {
+      summaryLevels[pct] = await buildLevel(rssSummary, pct);
+    } catch (err) {
+      console.warn(`  Failed summary level ${pct}: ${err.message}`);
+      summaryLevels[pct] = rssSummary;
+    }
+  }
+
+  // Headline with up to three verified words marked (overrides and places
+  // only, never MyMemory), so the app can make headline words tappable.
+  const titleIr = markHeadline(story.title);
+
+  return { ...story, summary: baseText, rssSummary, levels, summaryLevels, titleIr };
 }
 
 async function main() {
@@ -591,6 +615,26 @@ async function main() {
       writeFileSync("public/data/verified.json", JSON.stringify(Object.keys(OVERRIDES), null, 2));
     } catch (e) {
       console.warn("Could not write verified.json:", e.message);
+    }
+
+    // Publish the verified dictionary itself (Irish and English pairs) for the
+    // iOS app: it decides which words count as verified for flashcards and
+    // gap fill, and the focal of the day widget only ever picks from `words`.
+    // Place names are listed separately so they count as verified in the
+    // reader but never become the focal of the day.
+    try {
+      const placeKeys = new Set(Object.keys(PLACES));
+      const focail = {
+        generated: new Date().toISOString(),
+        words: Object.entries(OVERRIDES)
+          .filter(([en]) => !placeKeys.has(en))
+          .map(([en, ga]) => ({ ga, en })),
+        places: Object.entries(PLACES).map(([en, ga]) => ({ ga, en })),
+      };
+      writeFileSync("public/data/focail.json", JSON.stringify(focail, null, 2));
+      console.log(`✓ Written public/data/focail.json (${focail.words.length} words, ${focail.places.length} places)`);
+    } catch (e) {
+      console.warn("Could not write focail.json:", e.message);
     }
 
     // Publish place names so the cover-headline tool can translate them correctly.
