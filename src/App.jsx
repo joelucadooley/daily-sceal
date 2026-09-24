@@ -1606,7 +1606,12 @@ function AboutView() {
       </div>
 
       <div style={{ fontFamily: "system-ui, sans-serif", fontSize: "0.7rem", color: C.faint, lineHeight: 1.9, paddingBottom: 8 }}>
-        News sourced from RTÉ · New stories daily
+        <div>News sourced from RTÉ · New stories daily</div>
+        <div>
+          <a href="/support.html" style={{ color: C.navy, textDecoration: "none", borderBottom: `1px solid ${C.border}` }}>Support</a>
+          {" · "}
+          <a href="/privacy.html" style={{ color: C.navy, textDecoration: "none", borderBottom: `1px solid ${C.border}` }}>Privacy policy</a>
+        </div>
       </div>
     </div>
   );
@@ -2333,7 +2338,9 @@ function ExportView({ stories }) {
 }
 
 export default function DailySceal() {
-  const [view, setView] = useState("feed");
+  // The standalone support and privacy pages link back to /#faoi.
+  const [view, setView] = useState(() =>
+    typeof window !== "undefined" && window.location.hash === "#faoi" ? "about" : "feed");
   const [stories, setStories] = useState(FALLBACK_STORIES);
   // Today's pull on its own. The public feed may also contain older stories
   // pulled in to pad thin sections, but the export tool must only ever offer
@@ -2343,6 +2350,13 @@ export default function DailySceal() {
   const [activeStory, setActiveStory] = useState(null);
   const [section, setSection] = useState("inniu");
   const isExport = typeof window !== "undefined" && (window.location.hash === "#export" || window.location.search.includes("export=1"));
+
+  // Drop the #faoi hint once used, so a reload lands on the stories again.
+  useEffect(() => {
+    if (window.location.hash === "#faoi") {
+      history.replaceState(null, "", window.location.pathname + window.location.search);
+    }
+  }, []);
 
   useEffect(() => {
     let cancelled = false;

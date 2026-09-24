@@ -1,0 +1,123 @@
+/* Shared look for the standalone pages (support, privacy). Every value is
+   copied from src/App.jsx so these pages sit inside the same masthead, white
+   sheet and bottom bar as the rest of dailysceal.com. If the site's palette
+   changes, change it here too. */
+
+:root {
+  --navy: #0d2137;
+  --amber: #e8951e;
+  --bg: #f4f1ec;
+  --card: #ffffff;
+  --border: #e8e2d9;
+  --text: #111111;
+  --muted: #6b6460;
+  --faint: #a8a29a;
+  --serif: Georgia, serif;
+  --sans: system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body { background: var(--bg); min-height: 100vh; -webkit-text-size-adjust: 100%; }
+a:hover { opacity: 0.75; }
+
+/* Masthead */
+.ds-head { background: var(--navy); border-bottom: 3px solid var(--amber); }
+.ds-head-inner {
+  max-width: 640px; margin: 0 auto; padding: 16px 20px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.ds-mark { text-decoration: none; }
+.ds-word {
+  font-size: clamp(1.2rem, 3.5vw, 1.5rem); font-weight: 700; color: #fff;
+  font-family: var(--serif); letter-spacing: -0.01em; line-height: 1;
+}
+.ds-word span { color: var(--amber); }
+.ds-date {
+  font-size: 0.62rem; color: rgba(255,255,255,0.4); font-family: var(--sans);
+  margin-top: 3px; letter-spacing: 0.03em; min-height: 0.75rem;
+}
+.ds-tag { font-family: var(--sans); font-size: 0.7rem; color: rgba(255,255,255,0.35); letter-spacing: 0.03em; }
+
+/* White sheet */
+.ds-main { max-width: 640px; margin: 0 auto; padding: 0 20px 120px; }
+.ds-sheet {
+  background: var(--card); border: 1px solid var(--border); border-top: none;
+  border-radius: 0 0 12px 12px; padding: 20px 20px 0; min-height: 400px;
+}
+
+/* Back link row, as on a story page */
+.ds-back {
+  display: flex; padding-bottom: 20px; border-bottom: 1px solid var(--border); margin-bottom: 20px;
+}
+.ds-back a { color: var(--muted); font-family: var(--sans); font-size: 0.8rem; text-decoration: none; }
+
+/* Page heading, as on a story page */
+.ds-title { margin-bottom: 24px; }
+.ds-eyebrow {
+  font-size: 0.65rem; font-family: var(--sans); font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--amber); margin-bottom: 10px;
+}
+.ds-title h1 {
+  margin: 0 0 8px; color: var(--navy); font-size: clamp(1.3rem, 4vw, 1.75rem);
+  line-height: 1.2; font-family: var(--serif); font-weight: 700;
+}
+.ds-meta { font-size: 0.72rem; color: var(--faint); font-family: var(--sans); }
+
+/* Standfirst and body, as on the Faoi page */
+.ds-lede {
+  margin: 0 0 28px; padding-bottom: 28px; border-bottom: 1px solid var(--border);
+  font-family: var(--serif); font-size: 1rem; color: var(--muted); line-height: 1.7; font-style: italic;
+}
+.ds-block { border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 24px; }
+.ds-block:last-of-type { border-bottom: none; }
+.ds-block h2 {
+  margin: 0 0 8px; font-family: var(--serif); font-weight: 700; font-size: 0.95rem; color: var(--navy);
+}
+.ds-block h3 {
+  margin: 18px 0 4px; font-family: var(--serif); font-weight: 700; font-size: 0.92rem; color: var(--text);
+}
+.ds-block h2 + h3 { margin-top: 12px; }
+.ds-block p {
+  margin: 0 0 16px; font-family: var(--serif); font-size: 0.9rem; color: var(--muted); line-height: 1.7;
+}
+.ds-block h3 + p { margin-bottom: 8px; }
+.ds-block p a, .ds-foot a {
+  color: var(--navy); text-decoration: none; border-bottom: 1px solid var(--border);
+}
+
+/* Buttons, as on the Faoi page */
+.ds-buttons { display: flex; gap: 10px; flex-wrap: wrap; margin: 4px 0 16px; }
+.ds-btn {
+  display: inline-block; background: var(--navy); color: #fff; border-radius: 8px;
+  padding: 10px 18px; font-family: var(--sans); font-size: 0.8rem; font-weight: 600; text-decoration: none;
+}
+
+/* Footer, as under the story list */
+.ds-foot {
+  padding: 32px 0 16px; text-align: center; font-family: var(--sans);
+  font-size: 0.7rem; color: var(--faint); line-height: 1.9;
+}
+
+/* Bottom bar, as on the site. These pages belong under Faoi. */
+.ds-nav {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(255,255,255,0.96); border-top: 1px solid var(--border);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.ds-nav-inner { max-width: 640px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; }
+.ds-nav a {
+  padding: 11px 0 9px; display: flex; flex-direction: column; align-items: center; gap: 3px;
+  position: relative; text-decoration: none;
+}
+.ds-nav .icon { font-size: 1.1rem; }
+.ds-nav .label {
+  font-family: var(--sans); font-size: 0.6rem; font-weight: 700; letter-spacing: 0.07em;
+  text-transform: uppercase; color: var(--faint);
+}
+.ds-nav a.on .label { color: var(--navy); }
+.ds-nav a.on::before {
+  content: ""; position: absolute; top: 0; left: 20%; right: 20%; height: 2px;
+  background: var(--navy); border-radius: 0 0 2px 2px;
+}

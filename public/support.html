@@ -1,48 +1,95 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="en-IE">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Support · Daily Scéal</title>
-<style>
-  body { font-family: Georgia, serif; background: #f4f1ec; color: #111; margin: 0; padding: 2rem 1.25rem; line-height: 1.6; }
-  main { max-width: 640px; margin: 0 auto; }
-  h1 { color: #0d2137; font-size: 2rem; margin-bottom: .25rem; }
-  h2 { color: #0d2137; font-size: 1.2rem; margin-top: 2rem; }
-  .eyebrow { font-family: system-ui, sans-serif; font-size: .7rem; letter-spacing: .1em; text-transform: uppercase; color: #e8951e; font-weight: 600; }
-  a { color: #2563eb; }
-  .muted { color: #6b6460; font-family: system-ui, sans-serif; font-size: .85rem; }
-</style>
+<meta name="description" content="Help with Daily Scéal, the free app and website for learning Irish through the news.">
+<link rel="icon" href="/favicon.ico?v=2" sizes="32x32">
+<link rel="icon" href="/favicon.svg?v=2" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2">
+<meta name="theme-color" content="#0d2137">
+<link rel="stylesheet" href="/pages.css">
 </head>
 <body>
-<main>
-  <div class="eyebrow">Daily Scéal</div>
-  <h1>Support</h1>
 
-  <p>Something not working, a translation that looks wrong, or an idea for the app? Get in touch and I'll reply as soon as I can.</p>
+<header class="ds-head">
+  <div class="ds-head-inner">
+    <a class="ds-mark" href="/">
+      <div class="ds-word">Daily <span>Scéal</span></div>
+      <div class="ds-date" id="ds-date"></div>
+    </a>
+    <div class="ds-tag">Cad é an scéal?</div>
+  </div>
+</header>
 
-  <h2>Contact</h2>
-  <p>Email: <a href="mailto:hello@dailysceal.com">hello@dailysceal.com</a><br>
-  Instagram: <a href="https://instagram.com/dailysceal">@dailysceal</a><br>
-  GitHub: <a href="https://github.com/joelucadooley/daily-sceal/issues">open an issue</a></p>
+<main class="ds-main">
+  <div class="ds-sheet">
+    <div class="ds-back"><a href="/">← Nuacht</a></div>
 
-  <h2>Common questions</h2>
-  <p><strong>Why does a word say "not yet verified"?</strong><br>
-  Words marked verified come from a hand-checked dictionary. The rest are machine translated so that stories can go out every day, and they're labelled so you know to treat them with care. Flashcards and gap fill only ever use verified words. If you spot a wrong one, tell me and it gets fixed permanently.</p>
+    <div class="ds-title">
+      <div class="ds-eyebrow">Tacaíocht</div>
+      <h1>Support</h1>
+    </div>
 
-  <p><strong>Where do the stories come from?</strong><br>
-  Headlines and short summaries are from RTÉ News. Daily Scéal adds the Irish and links to the full story on rte.ie.</p>
+    <p class="ds-lede">Something not working, a translation that looks wrong, or an idea for the app? Get in touch and I'll reply as soon as I can.</p>
 
-  <p><strong>Do I need an account?</strong><br>
-  No. Everything is saved on your phone. See the <a href="/privacy.html">privacy policy</a>.</p>
+    <section class="ds-block">
+      <h2>Get in touch</h2>
+      <p>Email is quickest. You can also send a message on Instagram, or open an issue on <a href="https://github.com/joelucadooley/daily-sceal/issues">GitHub</a>.</p>
+      <div class="ds-buttons">
+        <a class="ds-btn" href="mailto:hello@dailysceal.com">hello@dailysceal.com</a>
+        <a class="ds-btn" href="https://instagram.com/dailysceal">@dailysceal →</a>
+      </div>
+    </section>
 
-  <p><strong>The stories didn't update today.</strong><br>
-  New stories usually land late morning. Pull down on the Stories screen to refresh. If a day is missing, the daily generator may have hit a snag; it usually sorts itself by the next morning.</p>
+    <section class="ds-block">
+      <h2>Common questions</h2>
 
-  <p><strong>Can I hear the words spoken?</strong><br>
-  Not yet in the app. It's on the list.</p>
+      <h3>A translation looks wrong.</h3>
+      <p>Tell me and it gets fixed for good. Most words come from a hand-checked dictionary, and the rest are machine translated so the stories can go out every morning. Flashcards and gap fill only ever use the hand-checked words.</p>
 
-  <p class="muted">Made with 💚 for the Irish language</p>
+      <h3>How does a word become learned?</h3>
+      <p>Every word you save to Mo Chúpla Focal has four dots. Get it right in Flashcards and a dot fills in, one a day at most. Fill all four and the word is learned, and it stays learned. Miss it and it comes back the next day.</p>
+
+      <h3>Where do the stories come from?</h3>
+      <p>Headlines and short summaries are from RTÉ News. Daily Scéal adds the Irish and links to the full story on rte.ie.</p>
+
+      <h3>Do I need an account?</h3>
+      <p>No. Everything is saved on your phone. See the <a href="/privacy.html">privacy policy</a>.</p>
+
+      <h3>The stories didn't update today.</h3>
+      <p>New stories usually land late morning. Pull down on the list of stories to refresh. If a day is missing, the daily generator may have hit a snag; it usually sorts itself out by the next morning.</p>
+
+      <h3>Can I hear the words spoken?</h3>
+      <p>Not yet in the app. It's on the list.</p>
+    </section>
+
+    <section class="ds-block">
+      <h2>Privacy</h2>
+      <p>The app collects nothing and has no accounts. The full <a href="/privacy.html">privacy policy</a> covers both the app and the website.</p>
+    </section>
+
+    <div class="ds-foot">
+      <div>News from RTÉ · Updated daily</div>
+      <div>Created by <a href="https://github.com/joelucadooley/daily-sceal">Joe Luca Dooley</a></div>
+      <div>Made with 💚 for the Irish language</div>
+    </div>
+  </div>
 </main>
+
+<nav class="ds-nav">
+  <div class="ds-nav-inner">
+    <a href="/"><span class="icon">📰</span><span class="label">Nuacht</span></a>
+    <a class="on" href="/#faoi"><span class="icon">🍀</span><span class="label">Faoi</span></a>
+  </div>
+</nav>
+
+<script>
+  try {
+    document.getElementById("ds-date").textContent =
+      new Date().toLocaleDateString("en-IE", { weekday: "long", day: "numeric", month: "long" });
+  } catch (e) {}
+</script>
 </body>
 </html>
