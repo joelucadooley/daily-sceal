@@ -2,7 +2,7 @@ name: Generate Daily Stories
 
 on:
   schedule:
-    - cron: "30 5 * * *"
+    - cron: "13 5 * * *"
   workflow_dispatch:
     inputs:
       feeds:
