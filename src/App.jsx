@@ -1558,50 +1558,76 @@ function WordPanel({ words }) {
   );
 }
 
+/** A solid link button, as used across the site. */
+function OutButton({ href, children, color = C.navy }) {
+  return (
+    <a href={href} target="_blank" rel="noopener noreferrer"
+      style={{ display: "inline-block", background: color, color: "#fff", borderRadius: 8, padding: "10px 18px", fontFamily: "system-ui, sans-serif", fontSize: "0.8rem", fontWeight: 600, textDecoration: "none" }}>
+      {children}
+    </a>
+  );
+}
+
+// Faoi is laid out like the news: an amber Irish label, a Georgia heading and
+// a grey line under it. The blocks stack on a phone and sit three across on
+// desktop, so the page fills the sheet the way the other pages do.
+const ABOUT_ITEMS = [
+  { label: "Nuacht", title: "Real news from RTÉ", text: "The day's stories, with Irish words woven into the English." },
+  { label: "Leibhéal", title: "Read at your level", text: "A slider moves the balance from mostly English towards fully Irish." },
+  { label: "Focail", title: "Tap any blue word", text: "See what it means and hear it spoken." },
+  {
+    label: "An aip", title: "Daily Scéal for iPhone",
+    text: "Save words, test yourself with Bearnaí and flashcards, and get Focal an lae on your home screen.",
+    links: [{ href: "https://apps.apple.com/app/id6813254896", text: "App Store →" }],
+  },
+  {
+    label: "Lean ar Instagram", title: "A story a day, as Gaeilge",
+    text: "Follow along on Instagram.",
+    links: [{ href: "https://instagram.com/dailysceal", text: "@dailysceal →" }],
+  },
+  {
+    label: "Le grá", title: "Made with 💚 for the Irish language",
+    text: "Free to use, and built by Joe Luca Dooley.",
+    links: [
+      { href: "https://github.com/joelucadooley/daily-sceal", text: "GitHub →" },
+      { href: "https://ko-fi.com/joelucadooley", text: "Support Joe Luca 🍻", color: C.amber },
+    ],
+  },
+];
+
 function AboutView() {
   return (
     <div style={{ animation: "fadeIn 0.2s ease" }}>
-      <div style={{ paddingBottom: 28, borderBottom: `1px solid ${C.border}`, marginBottom: 28 }}>
+      <div className="ds-about-head" style={{ paddingBottom: 24, borderBottom: `1px solid ${C.border}` }}>
         <h2 style={{ margin: "0 0 10px", fontFamily: "Georgia, serif", fontSize: "1.5rem", color: C.navy, fontWeight: 700, letterSpacing: "-0.01em" }}>Faoi Daily Scéal</h2>
         <p style={{ margin: 0, fontFamily: "Georgia, serif", fontSize: "1rem", color: C.muted, lineHeight: 1.7, fontStyle: "italic" }}>
           Irish as it appears in the real world, every morning.
         </p>
       </div>
 
-      <div style={{ fontFamily: "Georgia, serif", fontSize: "0.95rem", color: "#333", lineHeight: 1.85, marginBottom: 28 }}>
-        <p style={{ margin: 0 }}>
-          Daily Scéal takes real news from RTÉ and lets you read it at whatever level of Irish you like. A slider moves the balance from mostly English at one end towards fully Irish at the other. Tap any blue word to see what it means and hear it spoken.
-        </p>
+      <div className="ds-about-grid">
+        {ABOUT_ITEMS.map(it => (
+          <div key={it.label} className="ds-about-item" style={{ padding: "20px 0", borderBottom: `1px solid ${C.border}` }}>
+            <div style={{ fontSize: "0.65rem", fontFamily: "system-ui, sans-serif", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", color: C.amber, marginBottom: 8 }}>{it.label}</div>
+            <h3 style={{ margin: "0 0 8px", fontSize: "clamp(1rem,2.8vw,1.15rem)", lineHeight: 1.3, fontWeight: 700, color: C.text, fontFamily: "Georgia, serif" }}>{it.title}</h3>
+            <p style={{ margin: 0, fontSize: "0.82rem", color: C.muted, lineHeight: 1.6, fontFamily: "system-ui, sans-serif" }}>{it.text}</p>
+            {it.links && (
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 14 }}>
+                {it.links.map(l => <OutButton key={l.href} href={l.href} color={l.color}>{l.text}</OutButton>)}
+              </div>
+            )}
+          </div>
+        ))}
       </div>
 
-      {/* Every link in one place: Instagram, the code, and the Ko-fi. */}
-      <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 24, marginBottom: 24 }}>
-        <p style={{ margin: "0 0 16px", fontFamily: "Georgia, serif", fontSize: "0.9rem", color: C.muted, lineHeight: 1.7 }}>
-          A story from the day, as Gaeilge, posted daily on Instagram. Daily Scéal is free to use and built by Joe Luca Dooley.
-        </p>
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-          <a href="https://instagram.com/dailysceal" target="_blank" rel="noopener noreferrer"
-            style={{ display: "inline-block", background: C.navy, color: "#fff", borderRadius: 8, padding: "10px 18px", fontFamily: "system-ui, sans-serif", fontSize: "0.8rem", fontWeight: 600, textDecoration: "none" }}>
-            @dailysceal →
-          </a>
-          <a href="https://github.com/joelucadooley/daily-sceal" target="_blank" rel="noopener noreferrer"
-            style={{ display: "inline-block", background: C.navy, color: "#fff", borderRadius: 8, padding: "10px 18px", fontFamily: "system-ui, sans-serif", fontSize: "0.8rem", fontWeight: 600, textDecoration: "none" }}>
-            GitHub →
-          </a>
-          <a href="https://ko-fi.com/joelucadooley" target="_blank" rel="noopener noreferrer"
-            style={{ display: "inline-block", background: C.amber, color: "#fff", borderRadius: 8, padding: "10px 18px", fontFamily: "system-ui, sans-serif", fontSize: "0.8rem", fontWeight: 600, textDecoration: "none" }}>
-            Support Joe Luca 🍻
-          </a>
-        </div>
-      </div>
-
-      <div style={{ fontFamily: "system-ui, sans-serif", fontSize: "0.7rem", color: C.faint, lineHeight: 1.9, paddingBottom: 8 }}>
-        <div>News sourced from RTÉ · New stories daily</div>
+      <div style={{ paddingTop: 32, textAlign: "center", fontFamily: "system-ui, sans-serif", fontSize: "0.7rem", color: C.faint, lineHeight: 1.9 }}>
+        <div>News from RTÉ · Updated daily</div>
         <div>
           <a href="/support.html" style={{ color: C.navy, textDecoration: "none", borderBottom: `1px solid ${C.border}` }}>Support</a>
           {" · "}
           <a href="/privacy.html" style={{ color: C.navy, textDecoration: "none", borderBottom: `1px solid ${C.border}` }}>Privacy policy</a>
         </div>
+        <div style={{ height: "1rem" }} />
       </div>
     </div>
   );
@@ -2513,6 +2539,15 @@ export default function DailySceal() {
           /* A story page is prose, so the sheet narrows to fit it rather than
              leaving a wide white field with a column of text in one corner. */
           .ds-shell-read { max-width: min(1260px, 94vw); }
+
+          /* Faoi: headings sized like the support and privacy pages, and the
+             blocks three across with the same gap as the Inniu grid. */
+          .ds-about-head h2 { font-size: 2.25rem !important; letter-spacing: -0.015em !important; }
+          .ds-about-head p { font-size: 1.15rem !important; }
+          .ds-about-grid { display: grid; grid-template-columns: repeat(3, 1fr); column-gap: 50px; }
+          .ds-about-item { padding: 28px 0 !important; }
+          .ds-about-item h3 { font-size: 1.5rem !important; line-height: 1.22 !important; letter-spacing: -0.012em; }
+          .ds-about-item p { font-size: 0.95rem !important; line-height: 1.7 !important; }
         }
 
         /* Wide monitors: a fourth column rather than three very wide ones. */
@@ -2536,7 +2571,7 @@ export default function DailySceal() {
 
       {/* Content */}
       <main className={`ds-shell${view === "reading" ? " ds-shell-read" : ""}`} style={{ padding: "0 20px 120px" }}>
-        <div style={{ background: view === "about" || isExport ? "transparent" : C.card, borderLeft: isExport ? "none" : `1px solid ${C.border}`, borderRight: isExport ? "none" : `1px solid ${C.border}`, borderBottom: isExport ? "none" : `1px solid ${C.border}`, borderRadius: "0 0 12px 12px", padding: "0 20px", minHeight: 400 }}>
+        <div style={{ background: isExport ? "transparent" : C.card, borderLeft: isExport ? "none" : `1px solid ${C.border}`, borderRight: isExport ? "none" : `1px solid ${C.border}`, borderBottom: isExport ? "none" : `1px solid ${C.border}`, borderRadius: "0 0 12px 12px", padding: "0 20px", minHeight: 400 }}>
           {isExport && <ExportView stories={todayOnly} />}
           {!isExport && view === "feed" && (
             <>
