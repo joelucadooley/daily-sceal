@@ -1569,34 +1569,24 @@ function AboutView() {
       </div>
 
       <div style={{ fontFamily: "Georgia, serif", fontSize: "0.95rem", color: "#333", lineHeight: 1.85, marginBottom: 28 }}>
-        <p style={{ margin: "0 0 16px" }}>
+        <p style={{ margin: 0 }}>
           Daily Scéal takes real news from RTÉ and lets you read it at whatever level of Irish you like. A slider moves the balance from mostly English at one end towards fully Irish at the other. Tap any blue word to see what it means and hear it spoken.
         </p>
-        <p style={{ margin: 0 }}>
-          The idea behind the slider comes from research into how people pick up languages. You learn best when you can follow most of what you are reading but still meet enough new words to stretch you. Each level is built around that.
-        </p>
       </div>
 
+      {/* Every link in one place: Instagram, the code, and the Ko-fi. */}
       <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 24, marginBottom: 24 }}>
-        <div style={{ fontFamily: "Georgia, serif", fontWeight: 700, fontSize: "0.95rem", color: C.navy, marginBottom: 8 }}>Lean ar Instagram</div>
         <p style={{ margin: "0 0 16px", fontFamily: "Georgia, serif", fontSize: "0.9rem", color: C.muted, lineHeight: 1.7 }}>
-          A story from the day, as Gaeilge, posted daily. Follow along for a little Irish in your feed.
-        </p>
-        <a href="https://instagram.com/dailysceal" target="_blank" rel="noopener noreferrer"
-          style={{ display: "inline-block", background: C.navy, color: "#fff", borderRadius: 8, padding: "10px 18px", fontFamily: "system-ui, sans-serif", fontSize: "0.8rem", fontWeight: 600, textDecoration: "none" }}>
-          @dailysceal →
-        </a>
-      </div>
-
-      <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 24, marginBottom: 24 }}>
-        <div style={{ fontFamily: "Georgia, serif", fontWeight: 700, fontSize: "0.95rem", color: C.navy, marginBottom: 8 }}>Free and open</div>
-        <p style={{ margin: "0 0 16px", fontFamily: "Georgia, serif", fontSize: "0.9rem", color: C.muted, lineHeight: 1.7 }}>
-          Daily Scéal is free to use and built by Joe Luca Dooley. The code is open for anyone to see on GitHub. If you would like to help it grow, you can support the project below.
+          A story from the day, as Gaeilge, posted daily on Instagram. Daily Scéal is free to use and built by Joe Luca Dooley.
         </p>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <a href="https://instagram.com/dailysceal" target="_blank" rel="noopener noreferrer"
+            style={{ display: "inline-block", background: C.navy, color: "#fff", borderRadius: 8, padding: "10px 18px", fontFamily: "system-ui, sans-serif", fontSize: "0.8rem", fontWeight: 600, textDecoration: "none" }}>
+            @dailysceal →
+          </a>
           <a href="https://github.com/joelucadooley/daily-sceal" target="_blank" rel="noopener noreferrer"
             style={{ display: "inline-block", background: C.navy, color: "#fff", borderRadius: 8, padding: "10px 18px", fontFamily: "system-ui, sans-serif", fontSize: "0.8rem", fontWeight: 600, textDecoration: "none" }}>
-            View on GitHub →
+            GitHub →
           </a>
           <a href="https://ko-fi.com/joelucadooley" target="_blank" rel="noopener noreferrer"
             style={{ display: "inline-block", background: C.amber, color: "#fff", borderRadius: 8, padding: "10px 18px", fontFamily: "system-ui, sans-serif", fontSize: "0.8rem", fontWeight: 600, textDecoration: "none" }}>
