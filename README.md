@@ -7,7 +7,7 @@
 [![Sponsor on GitHub](https://img.shields.io/badge/Sponsor%20on-GitHub-black?logo=github&style=for-the-badge)](https://github.com/joelucadooley)
 [![Support me on Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/joelucadooley)
 
-Daily Scéal takes real news from RTÉ and lets you read it at whatever level of Irish you like. A slider moves the balance from mostly English at one end towards fully Irish at the other. Tap any blue word to see what it means and hear it spoken.
+Daily Scéal takes real news from RTÉ and lets you read it at whatever level of Irish you like. A slider moves the balance from mostly English at one end towards fully Irish at the other. Tap any blue word to see what it means.
 
 ---
 

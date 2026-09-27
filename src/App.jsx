@@ -415,14 +415,6 @@ function measureUnit(ctx, unit) {
   return unit.segs.reduce((acc, s) => acc + ctx.measureText(s.text).width, 0);
 }
 
-function speakWord(word) {
-  if (!window.speechSynthesis) return;
-  window.speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(word);
-  u.lang = "ga-IE"; u.rate = 0.8;
-  window.speechSynthesis.speak(u);
-}
-
 // Focal an lae: the same word the app, its widget and the noon reminder show
 // that day. Same pool, same order and the same FNV-1a hash of the local date
 // as Focail.focal(for:) in the iOS app, so every place agrees.
@@ -441,7 +433,7 @@ function focalFor(focail, date = new Date()) {
   return pool[Number(h % BigInt(pool.length))];
 }
 
-/** The day's word under the lead story on Inniu, with a button to hear it. */
+/** The day's word under the lead story on Inniu. */
 function FocalCard() {
   const [word, setWord] = useState(null);
   useEffect(() => {
@@ -462,10 +454,6 @@ function FocalCard() {
           <span style={{ fontFamily: "system-ui, sans-serif", fontSize: "0.9rem", color: C.muted }}>{word.en}</span>
         </div>
       </div>
-      <button onClick={() => speakWord(word.ga)} title={`Éist le ${word.ga}`} aria-label={`Hear ${word.ga}`}
-        style={{ flexShrink: 0, width: 40, height: 40, borderRadius: 999, background: C.card, border: `1px solid ${C.border}`, cursor: "pointer", fontSize: "1rem" }}>
-        🔊
-      </button>
     </div>
   );
 }
@@ -669,7 +657,7 @@ function WordChip({ part, active, onToggle }) {
   const show = active || hover;
   return (
     <span style={{ position: "relative", display: "inline" }}>
-      <span onClick={onToggle}
+      <span onClick={e => { e.stopPropagation(); onToggle(); }}
         onPointerEnter={e => { if (e.pointerType === "mouse") setHover(true); }}
         onPointerLeave={() => setHover(false)}
         style={{
@@ -696,10 +684,6 @@ function WordChip({ part, active, onToggle }) {
           display: "flex", alignItems: "center", gap: 8,
         }}>
           <span style={{ fontWeight: 600 }}>{part.english}</span>
-          <button onClick={e => { e.stopPropagation(); speakWord(part.irish); }}
-            style={{ background: "rgba(255,255,255,0.1)", border: "none", borderRadius: 5, padding: "3px 8px", cursor: "pointer", color: "#fff", fontSize: "0.8rem" }}>
-            🔊
-          </button>
           <span style={{ position: "absolute", top: "100%", left: "50%", transform: "translateX(-50%)", width: 0, height: 0, borderLeft: "5px solid transparent", borderRight: "5px solid transparent", borderTop: `5px solid ${C.navy}` }} />
         </span>
       )}
@@ -1351,6 +1335,20 @@ function makeShareCanvas(story, parts, levelLabel) {
 function ReadingView({ story, onBack }) {
   const [pct, setPct] = useState(10);
   const [activeWord, setActiveWord] = useState(null);
+
+  // An open word closes when you click or tap anywhere else, or press Escape.
+  // The word itself stops its own click, so opening one doesn't close it again.
+  useEffect(() => {
+    if (activeWord === null) return;
+    const close = () => setActiveWord(null);
+    const onKey = e => { if (e.key === "Escape") close(); };
+    document.addEventListener("click", close);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("click", close);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [activeWord]);
   const [shareLoading, setShareLoading] = useState(false);
   const level = getLevel(pct);
   const locked = pct >= 75;
@@ -1441,7 +1439,10 @@ function ReadingView({ story, onBack }) {
         <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "system-ui, sans-serif", fontSize: "0.63rem", color: C.faint, marginBottom: 12 }}>
           <span>More English</span><span>More Irish</span>
         </div>
-        <div style={{ display: "flex", gap: 4 }}>
+        {/* Wraps on very narrow screens, so the locked levels drop to a second
+            row inside the card rather than running past its edge. */}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+          <div style={{ display: "flex", gap: 4, flex: "3 1 auto" }}>
           {LEVELS_CONFIG.map(l => (
             <button key={l.pct}
               onClick={() => { setPct(l.pct); setActiveWord(null); }}
@@ -1450,13 +1451,15 @@ function ReadingView({ story, onBack }) {
                 background: pct === l.pct ? l.bg : "transparent",
                 color: pct === l.pct ? l.color : C.faint,
                 border: `1px solid ${pct === l.pct ? l.color + "60" : C.border}`,
-                borderRadius: 6, padding: "6px 2px", cursor: "pointer",
+                borderRadius: 6, padding: "6px 4px", cursor: "pointer", whiteSpace: "nowrap",
                 fontFamily: "system-ui, sans-serif", fontSize: "0.62rem", fontWeight: 600,
                 transition: "all 0.12s",
               }}>
               {l.label}
             </button>
           ))}
+          </div>
+          <div style={{ display: "flex", gap: 4, flex: "2 1 auto" }}>
           {LOCKED_LEVELS.map(l => (
             <button key={l.pct}
               onClick={() => { setPct(l.pct); setActiveWord(null); }}
@@ -1465,13 +1468,14 @@ function ReadingView({ story, onBack }) {
                 background: pct === l.pct ? "#f3f4f6" : "transparent",
                 color: pct === l.pct ? "#6b7280" : "#d1d5db",
                 border: `1px dashed ${pct === l.pct ? "#9ca3af" : "#e5e7eb"}`,
-                borderRadius: 6, padding: "6px 2px", cursor: "pointer",
+                borderRadius: 6, padding: "6px 4px", cursor: "pointer", whiteSpace: "nowrap",
                 fontFamily: "system-ui, sans-serif", fontSize: "0.62rem", fontWeight: 600,
                 transition: "all 0.12s",
               }}>
               🔒 {l.label}
             </button>
           ))}
+          </div>
         </div>
       </div>
 
@@ -1525,7 +1529,7 @@ function ReadingView({ story, onBack }) {
               )}
             </div>
             <div style={{ paddingTop: 14, borderTop: `1px solid ${C.border}`, fontFamily: "system-ui, sans-serif", fontSize: "0.73rem", color: C.faint }}>
-              Tap any <span style={{ color: C.blue, fontWeight: 600 }}>blue word</span> to see the English and hear it spoken
+              Tap any <span style={{ color: C.blue, fontWeight: 600 }}>blue word</span> to see the English
             </div>
           </div>
           <button className="ds-share" onClick={handleShare} disabled={shareLoading}
@@ -1558,14 +1562,16 @@ function ReadingView({ story, onBack }) {
  */
 function WordPanel({ words }) {
   const [shown, setShown] = useState({});
-  const [allOpen, setAllOpen] = useState(false);
 
   // A new level means a new word list, so forget what was revealed.
-  useEffect(() => { setShown({}); setAllOpen(false); }, [words.map(w => w.irish).join("|")]);
+  useEffect(() => { setShown({}); }, [words.map(w => w.irish).join("|")]);
 
   if (!words.length) return null;
 
-  const isOpen = i => allOpen || !!shown[i];
+  // Reveal all opens every word rather than overriding them, so each one can
+  // still be tapped shut on its own afterwards.
+  const isOpen = i => !!shown[i];
+  const allShown = words.length > 0 && words.every((_, i) => shown[i]);
 
   return (
     <aside className="ds-panel">
@@ -1587,13 +1593,8 @@ function WordPanel({ words }) {
                 background: isOpen(i) ? C.blueLight : "transparent",
                 transition: "background 0.12s",
               }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+              <div>
                 <span style={{ color: C.blue, fontWeight: 600, fontSize: "0.88rem", fontFamily: "Georgia, serif" }}>{w.irish}</span>
-                <button onClick={e => { e.stopPropagation(); speakWord(w.irish); }}
-                  title={`Éist le ${w.irish}`}
-                  style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.78rem", padding: 0, opacity: 0.55 }}>
-                  🔊
-                </button>
               </div>
               <div style={{ fontFamily: "system-ui, sans-serif", fontSize: isOpen(i) ? "0.78rem" : "0.72rem", color: isOpen(i) ? C.muted : C.faint, fontStyle: isOpen(i) ? "normal" : "italic", marginTop: 2 }}>
                 {isOpen(i) ? w.english : "click to reveal"}
@@ -1602,9 +1603,9 @@ function WordPanel({ words }) {
           ))}
         </div>
 
-        <button onClick={() => { setAllOpen(o => !o); setShown({}); }}
+        <button onClick={() => setShown(allShown ? {} : Object.fromEntries(words.map((_, i) => [i, true])))}
           style={{ width: "100%", background: "#fdfcfa", border: "none", borderTop: `1px solid ${C.border}`, padding: "11px 16px", fontFamily: "system-ui, sans-serif", fontSize: "0.73rem", color: C.muted, cursor: "pointer", textAlign: "left" }}>
-          {allOpen ? "Hide all" : "Reveal all"}
+          {allShown ? "Hide all" : "Reveal all"}
         </button>
       </div>
     </aside>
@@ -1627,7 +1628,7 @@ function OutButton({ href, children, color = C.navy }) {
 const ABOUT_ITEMS = [
   { label: "Nuacht", title: "Real news from RTÉ", text: "The day's stories, with Irish words woven into the English." },
   { label: "Leibhéal", title: "Read at your level", text: "A slider moves the balance from mostly English towards fully Irish." },
-  { label: "Focail", title: "Tap any blue word", text: "See what it means and hear it spoken." },
+  { label: "Focail", title: "Tap any blue word", text: "See what it means in English." },
   {
     label: "An aip", title: "Daily Scéal for iPhone",
     text: "Save words, test yourself with Bearnaí and flashcards, and get Focal an lae on your home screen.",
