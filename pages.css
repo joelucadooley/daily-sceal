@@ -121,3 +121,34 @@ a:hover { opacity: 0.75; }
   content: ""; position: absolute; top: 0; left: 20%; right: 20%; height: 2px;
   background: var(--navy); border-radius: 0 0 2px 2px;
 }
+
+/* Questions as a grid of short entries, like the stories under a lead. */
+.ds-faq .ds-q { padding: 14px 0; border-bottom: 1px solid var(--border); break-inside: avoid; }
+.ds-faq .ds-q:first-child { padding-top: 4px; }
+.ds-faq .ds-q:last-child { border-bottom: none; }
+.ds-faq .ds-q h3 { margin: 0 0 6px; }
+.ds-faq .ds-q p { margin: 0; }
+
+/* A quieter button, for GitHub beside the main contact routes. */
+.ds-btn-quiet { background: transparent; color: var(--navy); border: 1px solid var(--border); padding: 9px 17px; }
+
+/* Desktop: the same frame as the news pages. The masthead and the sheet fill
+   the screen up to a cap, with 40px of inner margin, exactly as src/App.jsx
+   does above 1000px. The text runs in two columns so lines stay readable. */
+@media (min-width: 1000px) {
+  .ds-head-inner { max-width: min(1600px, 94vw); padding: 18px 40px; }
+  .ds-main { max-width: min(1600px, 94vw); }
+  .ds-sheet { padding-top: 26px; }
+  .ds-title h1 { font-size: 2.25rem; letter-spacing: -0.015em; }
+  .ds-lede { font-size: 1.15rem; }
+  .ds-lede span { display: block; max-width: 46em; }
+  .ds-block p { font-size: 0.98rem; }
+  .ds-block h3 { font-size: 1rem; }
+  .ds-faq { column-count: 2; column-gap: 56px; }
+  .ds-faq .ds-q:first-child { padding-top: 14px; }
+  .ds-faq .ds-q:last-child { border-bottom: 1px solid var(--border); }
+  .ds-cols { column-count: 2; column-gap: 56px; }
+  /* Padding rather than margin, so no gap is carried to the top of column two. */
+  .ds-cols .ds-block { break-inside: avoid; border-bottom: none; margin: 0; padding-bottom: 24px; }
+  .ds-cols .ds-block:first-child h2 { margin-top: 0; }
+}
