@@ -1582,7 +1582,7 @@ const ABOUT_ITEMS = [
   },
   {
     label: "Lean ar Instagram", title: "A story a day, as Gaeilge",
-    text: "Follow along on Instagram.",
+    text: "Each day, one story from the news with a few key words translated. On Sundays, Focail na seachtaine: the week's words to guess before the reveal.",
     links: [{ href: "https://instagram.com/dailysceal", text: "@dailysceal →" }],
   },
   {
@@ -1612,7 +1612,7 @@ function AboutView() {
             <h3 style={{ margin: "0 0 8px", fontSize: "clamp(1rem,2.8vw,1.15rem)", lineHeight: 1.3, fontWeight: 700, color: C.text, fontFamily: "Georgia, serif" }}>{it.title}</h3>
             <p style={{ margin: 0, fontSize: "0.82rem", color: C.muted, lineHeight: 1.6, fontFamily: "system-ui, sans-serif" }}>{it.text}</p>
             {it.links && (
-              <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 14 }}>
+              <div className="ds-about-links" style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 14 }}>
                 {it.links.map(l => <OutButton key={l.href} href={l.href} color={l.color}>{l.text}</OutButton>)}
               </div>
             )}
@@ -2545,7 +2545,10 @@ export default function DailySceal() {
           .ds-about-head h2 { font-size: 2.25rem !important; letter-spacing: -0.015em !important; }
           .ds-about-head p { font-size: 1.15rem !important; }
           .ds-about-grid { display: grid; grid-template-columns: repeat(3, 1fr); column-gap: 50px; }
-          .ds-about-item { padding: 28px 0 !important; }
+          .ds-about-item { padding: 28px 0 !important; display: flex; flex-direction: column; }
+          /* Buttons sit at the foot of each block, so they line up across a
+             row however long the heading and text above them run. */
+          .ds-about-links { margin-top: auto !important; padding-top: 18px; }
           .ds-about-item h3 { font-size: 1.5rem !important; line-height: 1.22 !important; letter-spacing: -0.012em; }
           .ds-about-item p { font-size: 0.95rem !important; line-height: 1.7 !important; }
         }
