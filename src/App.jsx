@@ -40,8 +40,8 @@ const SECTIONS = [
   { id: "eile",   label: "Eile"   },
 ];
 
-// How many stories the Inniu tab shows.
-const HOMEPAGE_COUNT = 6;
+// How many stories the Inniu tab shows: the lead, then three rows of two.
+const HOMEPAGE_COUNT = 7;
 
 // A section tab wants at least this many stories. If today's pull is short, we
 // top it up from the archive rather than showing a nearly empty tab.
@@ -421,6 +421,53 @@ function speakWord(word) {
   const u = new SpeechSynthesisUtterance(word);
   u.lang = "ga-IE"; u.rate = 0.8;
   window.speechSynthesis.speak(u);
+}
+
+// Focal an lae: the same word the app, its widget and the noon reminder show
+// that day. Same pool, same order and the same FNV-1a hash of the local date
+// as Focail.focal(for:) in the iOS app, so every place agrees.
+function focalFor(focail, date = new Date()) {
+  const pool = (focail?.words || [])
+    .filter(w => !w.en.includes(" ") && [...w.ga].length <= 18 && w.en.length >= 3)
+    .sort((a, b) => (a.en < b.en ? -1 : a.en > b.en ? 1 : 0));
+  if (!pool.length) return null;
+  const pad = n => String(n).padStart(2, "0");
+  const key = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+  let h = 14695981039346656037n;
+  for (const b of new TextEncoder().encode(key)) {
+    h ^= BigInt(b);
+    h = (h * 1099511628211n) & 0xFFFFFFFFFFFFFFFFn;
+  }
+  return pool[Number(h % BigInt(pool.length))];
+}
+
+/** The day's word under the lead story on Inniu, with a button to hear it. */
+function FocalCard() {
+  const [word, setWord] = useState(null);
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await fetch(`${import.meta.env.BASE_URL}data/focail.json`, { cache: "no-cache", signal: AbortSignal.timeout(5000) });
+        if (r.ok) setWord(focalFor(await r.json()));
+      } catch {}
+    })();
+  }, []);
+  if (!word) return null;
+  return (
+    <div className="ds-focal" style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 20, padding: "14px 16px 14px 18px", background: "#faf8f5", border: `1px solid ${C.border}`, borderRadius: 10, animation: "fadeIn 0.2s ease" }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: "0.65rem", fontFamily: "system-ui, sans-serif", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", color: C.amber, marginBottom: 5 }}>Focal an lae</div>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
+          <span style={{ fontFamily: "Georgia, serif", fontWeight: 700, fontSize: "1.35rem", color: C.navy }}>{word.ga}</span>
+          <span style={{ fontFamily: "system-ui, sans-serif", fontSize: "0.9rem", color: C.muted }}>{word.en}</span>
+        </div>
+      </div>
+      <button onClick={() => speakWord(word.ga)} title={`Éist le ${word.ga}`} aria-label={`Hear ${word.ga}`}
+        style={{ flexShrink: 0, width: 40, height: 40, borderRadius: 999, background: C.card, border: `1px solid ${C.border}`, cursor: "pointer", fontSize: "1rem" }}>
+        🔊
+      </button>
+    </div>
+  );
 }
 
 async function fetchTodayContent() {
@@ -817,6 +864,8 @@ function FeedView({ stories, loading, onStoryClick, sectionLabel, highlights = f
             <StoryRow story={lead} index={0} onClick={onStoryClick} fullSummary lead />
           </div>
 
+          {highlights && <FocalCard />}
+
           {!highlights && isDesktop ? (
             groupByCategory(rest, cols).map((group, gi) => {
               const items = wholeRows(group.items, cols);
@@ -843,6 +892,10 @@ function FeedView({ stories, loading, onStoryClick, sectionLabel, highlights = f
       )}
 
       <div style={{ paddingTop: 32, textAlign: "center", fontFamily: "system-ui, sans-serif", fontSize: "0.7rem", color: C.faint, lineHeight: 1.9 }}>
+        <div style={{ marginBottom: 10, fontSize: "0.78rem" }}>
+          Daily Scéal for iPhone ·{" "}
+          <a href="https://apps.apple.com/app/id6813254896" target="_blank" rel="noopener noreferrer" style={{ color: C.navy, fontWeight: 600, textDecoration: "none", borderBottom: `1px solid ${C.border}` }}>App Store →</a>
+        </div>
         <div>News from RTÉ · Updated daily</div>
         <div>Created by <a href="https://github.com/joelucadooley/daily-sceal" target="_blank" rel="noopener noreferrer" style={{ color: C.navy, textDecoration: "none", borderBottom: `1px solid ${C.border}` }}>Joe Luca Dooley</a></div>
         <div style={{ height: "1rem" }} />
