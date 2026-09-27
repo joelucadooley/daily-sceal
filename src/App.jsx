@@ -1599,7 +1599,7 @@ function AboutView() {
   return (
     <div style={{ animation: "fadeIn 0.2s ease" }}>
       <div className="ds-about-head" style={{ paddingBottom: 24, borderBottom: `1px solid ${C.border}` }}>
-        <h2 style={{ margin: "0 0 10px", fontFamily: "Georgia, serif", fontSize: "1.5rem", color: C.navy, fontWeight: 700, letterSpacing: "-0.01em" }}>Faoi Daily Scéal</h2>
+        <h2 style={{ margin: "0 0 10px", fontFamily: "Georgia, serif", fontSize: "1.5rem", color: C.navy, fontWeight: 700, letterSpacing: "-0.01em" }}>About Daily Scéal</h2>
         <p style={{ margin: 0, fontFamily: "Georgia, serif", fontSize: "1rem", color: C.muted, lineHeight: 1.7, fontStyle: "italic" }}>
           Irish as it appears in the real world, every morning.
         </p>
