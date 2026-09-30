@@ -1,14 +1,14 @@
 [
   {
     "date": "2026-09-30",
-    "generated": "2026-09-30T10:40:31.410Z",
+    "generated": "2026-09-30T11:17:30.636Z",
     "stories": [
       {
         "title": "Garvaghy residents urge PSNI's Boutcher to stop 'hiding'",
         "category": "Ulaidh"
       },
       {
-        "title": "Boiler scrappage scheme among new expanded energy grants",
+        "title": "Garvaghy residents want meeting with PSNI's Boutcher",
         "category": "Polaitíocht"
       },
       {
@@ -24,15 +24,15 @@
         "category": "Domhan"
       },
       {
-        "title": "Ireland to make Aviva return for Women's 6N clash",
-        "category": "Rugbaí"
-      },
-      {
-        "title": "Cork lead the way in Camogie All-Star nominations",
-        "category": "Camógaíocht"
-      },
-      {
         "title": "Heimir hits out at 'lies' as squad welcomes Bazunu back",
+        "category": "Sacar"
+      },
+      {
+        "title": "Retiring Grugan happy to complete Armagh circle",
+        "category": "Peil"
+      },
+      {
+        "title": "Ward gives surprise call-up to Palace midfielder Hopcroft",
         "category": "Sacar"
       },
       {
@@ -52,12 +52,12 @@
         "category": "Saol"
       },
       {
-        "title": "Over 100,000 public sector workers begin work-to-rule",
-        "category": "Éire"
+        "title": "IMO doctors to strike next month",
+        "category": "Sláinte"
       },
       {
-        "title": "Man, woman charged with perjury over McGregor appeal",
-        "category": "Cúirt"
+        "title": "Boiler scrappage scheme among new expanded energy grants",
+        "category": "Polaitíocht"
       },
       {
         "title": "EU ministers to discuss energy-saving measures in Dublin",
@@ -72,15 +72,15 @@
         "category": "An Meánoirthear"
       },
       {
-        "title": "Frying pan to the fire: FAI set for Oireachtas appearance",
-        "category": "Sacar"
+        "title": "Ireland to make Aviva return for Women's 6N clash",
+        "category": "Rugbaí"
       },
       {
-        "title": "Grugan and Morgan retire from Armagh duty",
-        "category": "Peil"
+        "title": "Cork lead the way in Camogie All-Star nominations",
+        "category": "Camógaíocht"
       },
       {
-        "title": "Ward gives surprise call-up to Palace midfielder Hopcroft",
+        "title": "Hallgrimsson: We haven't decided what we will do",
         "category": "Sacar"
       },
       {
@@ -100,19 +100,19 @@
         "category": "Saol"
       },
       {
-        "title": "Israel flight diverts to Saudi Arabia after pilots fight",
-        "category": "An Meánoirthear"
+        "title": "Minister used 'roadblock' law to send Garda disclosures back",
+        "category": "Nuacht"
       },
       {
-        "title": "New Irish language tool to help non-verbal children",
+        "title": "Man, woman charged with perjury over McGregor appeal",
+        "category": "Cúirt"
+      },
+      {
+        "title": "Cabinet to approve plan to overhaul vacant housing scheme",
         "category": "Éire"
       },
       {
-        "title": "Drumcree standoff: 'Nobody wants to go back 28 years'",
-        "category": "Polaitíocht"
-      },
-      {
-        "title": "UK economy grew faster than thought in second quarter",
+        "title": "Inflation jumps across euro zone, raising pressure on ECB",
         "category": "Gnó"
       },
       {
@@ -120,7 +120,7 @@
         "category": "Gnó"
       },
       {
-        "title": "Ward coy on contract talks as reign enters crucial period",
+        "title": "Frying pan to the fire: FAI set for Oireachtas appearance",
         "category": "Sacar"
       }
     ]
