@@ -1,8 +1,9 @@
 name: Generate Daily Stories
 
+# Scheduled from cron-job.org, which POSTs to this workflow's dispatches
+# endpoint at 08:30 Europe/Dublin.
+
 on:
-  schedule:
-    - cron: "13 5 * * *"
   workflow_dispatch:
     inputs:
       feeds:
