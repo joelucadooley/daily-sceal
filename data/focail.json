@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-01T09:11:39.277Z",
+  "generated": "2026-10-01T11:44:41.013Z",
   "words": [
     {
       "ga": "cumas",
@@ -230,10 +230,6 @@
       "en": "business taxes"
     },
     {
-      "ga": "d'iarr",
-      "en": "called"
-    },
-    {
       "ga": "feachtas",
       "en": "campaign"
     },
@@ -244,6 +240,14 @@
     {
       "ga": "cumas",
       "en": "capacity"
+    },
+    {
+      "ga": "príomhchathair",
+      "en": "capital"
+    },
+    {
+      "ga": "príomhchathair",
+      "en": "capital city"
     },
     {
       "ga": "captaen",
@@ -310,6 +314,10 @@
       "en": "city"
     },
     {
+      "ga": "lár na cathrach",
+      "en": "city centre"
+    },
+    {
       "ga": "comhdhearcadh soiléir",
       "en": "clear consensus"
     },
@@ -322,12 +330,24 @@
       "en": "closed"
     },
     {
+      "ga": "cumann",
+      "en": "club"
+    },
+    {
+      "ga": "cumainn",
+      "en": "clubs"
+    },
+    {
       "ga": "cósta",
       "en": "coast"
     },
     {
       "ga": "titim",
       "en": "collapse"
+    },
+    {
+      "ga": "bailiúchán",
+      "en": "collection"
     },
     {
       "ga": "coláiste",
@@ -358,8 +378,16 @@
       "en": "competition"
     },
     {
+      "ga": "críochnú",
+      "en": "completion"
+    },
+    {
       "ga": "ríomhaire",
       "en": "computer"
+    },
+    {
+      "ga": "deimhniú",
+      "en": "confirmation"
     },
     {
       "ga": "dheimhnigh",
@@ -374,12 +402,16 @@
       "en": "consultants"
     },
     {
-      "ga": "cluiche",
+      "ga": "comórtas",
       "en": "contest"
     },
     {
       "ga": "costas",
       "en": "cost"
+    },
+    {
+      "ga": "costas maireachtála",
+      "en": "cost of living"
     },
     {
       "ga": "costais",
@@ -474,8 +506,12 @@
       "en": "debate"
     },
     {
-      "ga": "fiachas",
+      "ga": "fiach",
       "en": "debt"
+    },
+    {
+      "ga": "Mí na Nollag",
+      "en": "december"
     },
     {
       "ga": "cinneadh",
@@ -496,6 +532,10 @@
     {
       "ga": "díbirt",
       "en": "deportation"
+    },
+    {
+      "ga": "dúil",
+      "en": "desire"
     },
     {
       "ga": "diongbháilte",
@@ -610,6 +650,10 @@
       "en": "environment"
     },
     {
+      "ga": "comórtas Eorpach",
+      "en": "european competition"
+    },
+    {
       "ga": "aslonnú",
       "en": "evacuation"
     },
@@ -640,6 +684,18 @@
     {
       "ga": "taispeántas",
       "en": "exhibition"
+    },
+    {
+      "ga": "eispéireas",
+      "en": "experience"
+    },
+    {
+      "ga": "eispéiris",
+      "en": "experiences"
+    },
+    {
+      "ga": "síneadh",
+      "en": "extension"
     },
     {
       "ga": "teip",
@@ -674,6 +730,10 @@
       "en": "father"
     },
     {
+      "ga": "Mí Feabhra",
+      "en": "february"
+    },
+    {
       "ga": "féile",
       "en": "festival"
     },
@@ -698,6 +758,10 @@
       "en": "fire"
     },
     {
+      "ga": "fiord",
+      "en": "fjord"
+    },
+    {
       "ga": "iasc",
       "en": "fish"
     },
@@ -720,6 +784,10 @@
     {
       "ga": "tuile",
       "en": "flood"
+    },
+    {
+      "ga": "croílár",
+      "en": "focal point"
     },
     {
       "ga": "ceo",
@@ -782,6 +850,14 @@
       "en": "games"
     },
     {
+      "ga": "fiordanna oighreacha",
+      "en": "glacial fjords"
+    },
+    {
+      "ga": "lucht leanúna domhanda",
+      "en": "global following"
+    },
+    {
       "ga": "cúl",
       "en": "goal"
     },
@@ -814,12 +890,12 @@
       "en": "group"
     },
     {
-      "ga": "ag fás",
-      "en": "growing"
-    },
-    {
       "ga": "fás",
       "en": "growth"
+    },
+    {
+      "ga": "aoi onóra",
+      "en": "guest of honour"
     },
     {
       "ga": "ciontach",
@@ -892,6 +968,10 @@
     {
       "ga": "tithíocht",
       "en": "housing"
+    },
+    {
+      "ga": "géarchéim tithíochta",
+      "en": "housing crisis"
     },
     {
       "ga": "ollmhór",
@@ -994,6 +1074,10 @@
       "en": "island"
     },
     {
+      "ga": "Mí Eanáir",
+      "en": "january"
+    },
+    {
       "ga": "post",
       "en": "job"
     },
@@ -1078,8 +1162,16 @@
       "en": "licence"
     },
     {
+      "ga": "soilse",
+      "en": "lights"
+    },
+    {
       "ga": "nasctha",
       "en": "linked"
+    },
+    {
+      "ga": "liosta",
+      "en": "list"
     },
     {
       "ga": "iasacht",
@@ -1162,6 +1254,14 @@
       "en": "men"
     },
     {
+      "ga": "meabhairshláinte",
+      "en": "mental health"
+    },
+    {
+      "ga": "méadair",
+      "en": "metres"
+    },
+    {
       "ga": "milliún",
       "en": "million"
     },
@@ -1218,12 +1318,32 @@
       "en": "national"
     },
     {
+      "ga": "meán náisiúnta",
+      "en": "national average"
+    },
+    {
+      "ga": "tírdhreach náisiúnta",
+      "en": "national landscape"
+    },
+    {
+      "ga": "teorainn nádúrtha",
+      "en": "natural border"
+    },
+    {
+      "ga": "radharcanna nádúrtha",
+      "en": "natural scenery"
+    },
+    {
       "ga": "córas eadóirseachta",
       "en": "naturalisation system"
     },
     {
       "ga": "nua",
       "en": "new"
+    },
+    {
+      "ga": "taighde nua",
+      "en": "new research"
     },
     {
       "ga": "nuacht",
@@ -1242,7 +1362,7 @@
       "en": "novel"
     },
     {
-      "ga": "uimhir",
+      "ga": "líon",
       "en": "number"
     },
     {
@@ -1402,6 +1522,10 @@
       "en": "possession"
     },
     {
+      "ga": "poitéinseal",
+      "en": "potential"
+    },
+    {
       "ga": "bochtaineacht",
       "en": "poverty"
     },
@@ -1518,6 +1642,10 @@
       "en": "push"
     },
     {
+      "ga": "caighdeán na beatha",
+      "en": "quality of life"
+    },
+    {
       "ga": "ceist",
       "en": "question"
     },
@@ -1554,6 +1682,10 @@
       "en": "referendum"
     },
     {
+      "ga": "léirigh",
+      "en": "reflects"
+    },
+    {
       "ga": "dídeanaí",
       "en": "refugee"
     },
@@ -1568,6 +1700,14 @@
     {
       "ga": "ráitis",
       "en": "remarks"
+    },
+    {
+      "ga": "oibrithe cianoibre",
+      "en": "remote workers"
+    },
+    {
+      "ga": "cianobair",
+      "en": "remote working"
     },
     {
       "ga": "cíos",
@@ -1598,12 +1738,20 @@
       "en": "results"
     },
     {
+      "ga": "fill",
+      "en": "return"
+    },
+    {
       "ga": "athaontú",
       "en": "reunification"
     },
     {
       "ga": "ardú",
       "en": "rise"
+    },
+    {
+      "ga": "éirigh",
+      "en": "rises"
     },
     {
       "ga": "riosca",
@@ -1674,10 +1822,6 @@
       "en": "score"
     },
     {
-      "ga": "ag scóráil",
-      "en": "scoring"
-    },
-    {
       "ga": "scrapáil",
       "en": "scrappage"
     },
@@ -1688,6 +1832,10 @@
     {
       "ga": "rúnaí",
       "en": "secretary"
+    },
+    {
+      "ga": "cuardaigh",
+      "en": "seek out"
     },
     {
       "ga": "pianbhreith",
@@ -1756,6 +1904,14 @@
     {
       "ga": "deisceart",
       "en": "south"
+    },
+    {
+      "ga": "spás",
+      "en": "space"
+    },
+    {
+      "ga": "sín",
+      "en": "spans"
     },
     {
       "ga": "óráid",
@@ -1858,16 +2014,8 @@
       "en": "system"
     },
     {
-      "ga": "ag glacadh",
-      "en": "taking"
-    },
-    {
       "ga": "cainteanna",
       "en": "talks"
-    },
-    {
-      "ga": "ag cnagadh",
-      "en": "tapping"
     },
     {
       "ga": "cáin",
@@ -1922,6 +2070,10 @@
       "en": "theft"
     },
     {
+      "ga": "téamaí",
+      "en": "themes"
+    },
+    {
       "ga": "teideal",
       "en": "title"
     },
@@ -1960,6 +2112,22 @@
     {
       "ga": "traenáil",
       "en": "training"
+    },
+    {
+      "ga": "costais iompair",
+      "en": "transport costs"
+    },
+    {
+      "ga": "saineolaithe taistil",
+      "en": "travel experts"
+    },
+    {
+      "ga": "leideanna taistil",
+      "en": "travel tips"
+    },
+    {
+      "ga": "taistealaithe",
+      "en": "travellers"
     },
     {
       "ga": "cóireáil",
@@ -2102,6 +2270,10 @@
       "en": "winter"
     },
     {
+      "ga": "Soilse an Gheimhridh",
+      "en": "winter lights"
+    },
+    {
       "ga": "laistigh de",
       "en": "within"
     },
@@ -2138,6 +2310,10 @@
       "en": "year"
     },
     {
+      "ga": "bliain i ndiaidh bliana",
+      "en": "year on year"
+    },
+    {
       "ga": "blianta",
       "en": "years"
     },
@@ -2148,6 +2324,14 @@
     {
       "ga": "óg",
       "en": "young"
+    },
+    {
+      "ga": "daoine fásta óga",
+      "en": "young adults"
+    },
+    {
+      "ga": "daoine óga",
+      "en": "young people"
     }
   ],
   "places": [
