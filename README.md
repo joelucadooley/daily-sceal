@@ -13,13 +13,17 @@ Daily Scéal takes real news from RTÉ and lets you read it at whatever level of
 
 ## How it works
 
-Each morning, a GitHub Action automatically:
+Each morning at 08:30 Irish time, a GitHub Action automatically:
 
 1. Fetches the top stories from RTÉ News
 2. Scrapes the full article text from each story page
 3. Translates words into Irish at the preset levels, checking a curated dictionary of verified translations first and falling back to the free [MyMemory](https://mymemory.translated.net/) translation API
 4. Saves everything as a static `today.json` file
 5. Deploys the updated site to GitHub Pages
+
+The run is started by a scheduled job at [cron-job.org](https://cron-job.org) that POSTs to
+`daily.yml`'s dispatches endpoint. GitHub's own scheduler queued the job for several hours,
+so there is deliberately no `cron:` in the workflow.
 
 Every user gets the same pre-generated content. No AI calls per user, no ongoing cost.
 
@@ -69,7 +73,7 @@ daily-sceal/
 │       └── archive/     # Dated copy of every day's stories
 ├── .github/
 │   └── workflows/
-│       ├── daily.yml    # Runs generate.js each morning
+│       ├── daily.yml    # Runs generate.js; triggered 08:30 from cron-job.org
 │       └── deploy.yml   # Deploys to GitHub Pages on every push
 ├── index.html
 ├── vite.config.js
