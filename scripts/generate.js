@@ -447,8 +447,11 @@ function markHeadline(title) {
     const clean = tok.replace(/[^A-Za-zÀ-ÿ'’]/g, "");
     if (!clean) return;
     const lower = clean.toLowerCase();
-    if (PLACES[lower] !== undefined) {
-      candidates.push({ i, clean, irish: PLACES[lower], place: true });
+    // placeFor applies the same capital-letter check as the summaries, so
+    // "steps down" stays English while "Down win Ulster title" is the county.
+    const place = placeFor(clean);
+    if (place !== undefined) {
+      candidates.push({ i, clean, irish: place, place: true });
     } else if (OVERRIDES[lower] !== undefined && clean.length >= 4) {
       let irish = OVERRIDES[lower];
       if (/^[A-Z]/.test(clean)) irish = irish.charAt(0).toUpperCase() + irish.slice(1);
