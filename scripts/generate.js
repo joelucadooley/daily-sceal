@@ -210,17 +210,39 @@ const RISKY_PLACE_KEYS = new Set([
   "meath", "mayo", "trim", "cork", "clones", "athlone", "cobh",
 ]);
 
-function placeFor(word) {
+// Words that can follow a county name and still mean the county:
+// "Clare County Council", "Clare GAA", "Clare FM".
+const COUNTY_FOLLOWERS = new Set([
+  "county", "co", "gaa", "fm", "council", "senior", "minor", "hurling", "football", "camogie", "ladies",
+]);
+
+// A couple of place names are something else when a capital follows them:
+// "Clare O'Mahony" is a person and "Down Under" is Australia.
+function notAPlaceHere(key, next) {
+  if (key === "down" && /^under$/i.test(next)) return true;
+  if (key === "clare" && /^[A-Z]/.test(next) && !COUNTY_FOLLOWERS.has(next.toLowerCase().replace(/[^a-z]/g, ""))) return true;
+  return false;
+}
+
+// The next word after token i, skipping spaces; "" if punctuation comes first.
+function nextWord(tokens, i) {
+  let j = i + 1;
+  while (j < tokens.length && /^\s+$/.test(tokens[j])) j++;
+  return j < tokens.length && /^\w/.test(tokens[j]) ? tokens[j] : "";
+}
+
+function placeFor(word, next = "") {
   const key = word.toLowerCase();
   if (PLACES[key] === undefined) return undefined;
   if (RISKY_PLACE_KEYS.has(key) && word[0] !== word[0].toUpperCase()) return undefined;
+  if (notAPlaceHere(key, next)) return undefined;
   return PLACES[key];
 }
 
-async function translateCached(word) {
+async function translateCached(word, next = "") {
   const key = word.toLowerCase();
   // Verified place names win first, with their proper capitalisation
-  const place = placeFor(word);
+  const place = placeFor(word, next);
   if (place !== undefined) return place;
   // Curated overrides win over MyMemory
   if (OVERRIDES[key] !== undefined) return OVERRIDES[key];
@@ -231,11 +253,12 @@ async function translateCached(word) {
   return result;
 }
 
-function shouldTranslate(tok, pct) {
+function shouldTranslate(tok, pct, next = "") {
   const lower = tok.toLowerCase();
   if (NEVER_TRANSLATE.has(lower)) return false;
-  // Place names are proper nouns but we DO want to translate them (from PLACES)
-  if (PLACES[lower] !== undefined) return true;
+  // Place names are proper nouns but we DO want to translate them (from PLACES),
+  // unless this one is a person or a phrase ("Clare O'Mahony", "Down Under")
+  if (PLACES[lower] !== undefined) return !notAPlaceHere(lower, next);
   if (/^[A-Z]/.test(tok)) return false;
   if (/^\d+$/.test(tok)) return false;
   if (tok.length <= 1) return false;
@@ -314,7 +337,7 @@ async function buildLevel(sentence, pct) {
 
   const candidates = tokens
     .map((tok, i) => ({ tok, i, isWord: /^\w/.test(tok) }))
-    .filter(({ tok, isWord }) => isWord && shouldTranslate(tok, pct));
+    .filter(({ tok, i, isWord }) => isWord && shouldTranslate(tok, pct, nextWord(tokens, i)));
 
   const targetCount = Math.ceil(candidates.length * (pct / 100));
   const toTranslateIndices = selectMarkerIndices(tokens, candidates, targetCount);
@@ -323,9 +346,10 @@ async function buildLevel(sentence, pct) {
   for (const { tok, i, isWord } of tokens.map((tok, i) => ({ tok, i, isWord: /^\w/.test(tok) }))) {
     if (isWord && toTranslateIndices.has(i)) {
       try {
-        const irish = await translateCached(tok);
+        const next = nextWord(tokens, i);
+        const irish = await translateCached(tok, next);
         const lower = tok.toLowerCase();
-        const isPlace = placeFor(tok) !== undefined;
+        const isPlace = placeFor(tok, next) !== undefined;
         const isOverride = OVERRIDES[lower] !== undefined;
         if (isPlace) {
           // Keep proper capitalisation, don't run matchCase
@@ -416,16 +440,17 @@ async function buildLevelWordByWord(sentence, pct) {
   const tokens = sentence.match(/(\w[\w']*|[^\w\s]|\s+)/g) || [];
   const candidates = tokens
     .map((tok, i) => ({ tok, i, isWord: /^\w/.test(tok) }))
-    .filter(({ tok, isWord }) => isWord && shouldTranslate(tok, pct));
+    .filter(({ tok, i, isWord }) => isWord && shouldTranslate(tok, pct, nextWord(tokens, i)));
   const targetCount = Math.ceil(candidates.length * (pct / 100));
   const toTranslateIndices = selectMarkerIndices(tokens, candidates, targetCount);
   const result = [];
   for (const { tok, i, isWord } of tokens.map((tok, i) => ({ tok, i, isWord: /^\w/.test(tok) }))) {
     if (isWord && toTranslateIndices.has(i)) {
       try {
-        const irish = await translateCached(tok);
+        const next = nextWord(tokens, i);
+        const irish = await translateCached(tok, next);
         const lower = tok.toLowerCase();
-        const isPlace = placeFor(tok) !== undefined;
+        const isPlace = placeFor(tok, next) !== undefined;
         const isOverride = OVERRIDES[lower] !== undefined;
         if (isPlace) {
           result.push(`[[${irish}|${tok}]]`);
@@ -449,7 +474,7 @@ function markHeadline(title) {
     const lower = clean.toLowerCase();
     // placeFor applies the same capital-letter check as the summaries, so
     // "steps down" stays English while "Down win Ulster title" is the county.
-    const place = placeFor(clean);
+    const place = placeFor(clean, (tokens[i + 2] || "").replace(/[^A-Za-zÀ-ÿ'’]/g, ""));
     if (place !== undefined) {
       candidates.push({ i, clean, irish: place, place: true });
     } else if (OVERRIDES[lower] !== undefined && clean.length >= 4) {
