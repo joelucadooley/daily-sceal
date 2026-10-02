@@ -370,11 +370,24 @@ const storyTimeAgo = s => {
   return s.timeAgo || "";
 };
 
+// Makes an "a" or "an" sitting directly before a marker agree with the Irish
+// word that will be shown there: "an" before a vowel, "a" before a consonant.
+// The source text is written for the English word ("an e-scooter"), which
+// reads wrongly once the marker shows Irish ("an scútar").
+function fixArticle(before, irish) {
+  const m = before.match(/(^|[\s("“‘'-])(an?)(\s+)$/i);
+  if (!m) return before;
+  const vowel = /^[aeiouáéíóú]/i.test(irish.trim());
+  let art = vowel ? "an" : "a";
+  if (m[2][0] !== m[2][0].toLowerCase()) art = art[0].toUpperCase() + art.slice(1);
+  return before.slice(0, before.length - m[2].length - m[3].length) + art + m[3];
+}
+
 function parseText(text) {
   const parts = [], re = /\[\[([^\|]+)\|([^\]]+)\]\]/g;
   let last = 0, m;
   while ((m = re.exec(text)) !== null) {
-    if (m.index > last) parts.push({ t: "en", v: text.slice(last, m.index) });
+    if (m.index > last) parts.push({ t: "en", v: fixArticle(text.slice(last, m.index), m[1]) });
     parts.push({ t: "ir", irish: m[1], english: m[2] });
     last = m.index + m[0].length;
   }
