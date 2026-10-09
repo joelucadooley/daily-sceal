@@ -1,42 +1,90 @@
 [
   {
     "date": "2026-10-09",
-    "generated": "2026-10-09T07:39:12.856Z",
+    "generated": "2026-10-09T12:18:57.734Z",
     "stories": [
       {
-        "title": "US to livestream execution of Fort Hood mass shooter",
-        "category": "Meiriceá"
+        "title": "Nobel Peace Prize winner Pillay surprised by honour",
+        "category": "Nuacht"
       },
       {
-        "title": "O'Loan resisted pressure over Omagh bomb report - inquiry",
+        "title": "Missed cancer diagnosis apology 'too little, too late'",
+        "category": "Cúirt"
+      },
+      {
+        "title": "SF, People Before Profit representatives get PSNI letters",
         "category": "Ulaidh"
-      },
-      {
-        "title": "Polls close in London by-election to replace Starmer",
-        "category": "Domhan"
       },
       {
         "title": "DCC Energy to sell tech unit Nexora for $725m",
         "category": "Gnó"
       },
       {
-        "title": "Thousands march in Madrid to honour pensioner Abascal",
-        "category": "An Eoraip"
+        "title": "Russian bomb kills 33 in street in east Ukraine city",
+        "category": "An Úcráin"
       },
       {
-        "title": "Normality returns ahead of unpredictable weekend",
+        "title": "Wafer misses out as Bemand names squad for South Africa",
+        "category": "Rugbaí"
+      },
+      {
+        "title": "Underdogs could get home advantage in new Leinster format",
+        "category": "Iomáint"
+      },
+      {
+        "title": "Kazakhstan v Republic of Ireland: All you need to know",
         "category": "Sacar"
+      },
+      {
+        "title": "URC teams: Provinces welcome back internationals for R3",
+        "category": "Rugbaí"
+      },
+      {
+        "title": "Dream big - inside The Ark's new anthology of plays for kids",
+        "category": "Leabhair"
+      },
+      {
+        "title": "Ed Sheeran's Loop Tour gets new opening acts",
+        "category": "Ceol"
+      },
+      {
+        "title": "Irish designer Sasha Donnellan on finding her calling in Paris",
+        "category": "Saol"
+      },
+      {
+        "title": "World Cup play-off: Kazakhstan v Republic of Ireland",
+        "category": "Sacar"
+      },
+      {
+        "title": "RTÉ meeting with O'Donovan 'constructive', says Bakhurst",
+        "category": "Éire"
+      },
+      {
+        "title": "Polls close in London by-election to replace Starmer",
+        "category": "Domhan"
+      },
+      {
+        "title": "28% of new private cars licensed so far this year EVs",
+        "category": "Gnó"
+      },
+      {
+        "title": "Search warrants for ex-prince Andrew's homes 'unlawful'",
+        "category": "Domhan"
+      },
+      {
+        "title": "Cullen excited by return to Leinster's 'quirky' home",
+        "category": "Rugbaí"
       },
       {
         "title": "Mayo great Cillian O'Connor announces retirement",
         "category": "Peil"
       },
       {
-        "title": "Ireland U21s poised to learn Euro 2027 play-off opponents",
+        "title": "Rovers look to take control of the title race once more",
         "category": "Sacar"
       },
       {
-        "title": "Lenihan hopeful Lee can turn Munster's fortunes around",
+        "title": "New Munster CEO keen for O'Mahony input",
         "category": "Rugbaí"
       },
       {
@@ -44,71 +92,23 @@
         "category": "Cultúr"
       },
       {
-        "title": "Andrew Scott on 'very special' role in new film Elsinore",
-        "category": "Scannáin"
+        "title": "E Grant: Players avoided eye contact before Traitors vote",
+        "category": "Siamsaíocht"
       },
       {
         "title": "Why Irish designers are so drawn to the Gothic in fashion",
         "category": "Saol"
       },
       {
-        "title": "Man shot by ICE agents with child present, Mamdani says",
+        "title": "US to livestream execution of Fort Hood mass shooter",
         "category": "Meiriceá"
       },
       {
-        "title": "Garda protective disclosure unit under review, cttee told",
-        "category": "Polaitíocht"
-      },
-      {
-        "title": "Govt 'tried to get balance' in budget spending - McEntee",
-        "category": "Polaitíocht"
-      },
-      {
-        "title": "20 Chinese car brands to attend Paris Motor Show",
+        "title": "Annual inflation at highest level since January 2024",
         "category": "Gnó"
       },
       {
-        "title": "Pike may face execution after recovery, says US doctor",
-        "category": "Meiriceá"
-      },
-      {
-        "title": "Cullen excited by return to Leinster's 'quirky' home",
-        "category": "Rugbaí"
-      },
-      {
-        "title": "New-look Leinster hurling championship set for Congress",
-        "category": "Iomáint"
-      },
-      {
-        "title": "Ziu ruled out of Kazakhstan clash with shin injury",
-        "category": "Sacar"
-      },
-      {
-        "title": "Munster appoint New Zealander Lee as interim CEO",
-        "category": "Rugbaí"
-      },
-      {
-        "title": "Shared skies - artist Fergal McCarthy draws Offaly's birdlife",
-        "category": "Ealaíon"
-      },
-      {
-        "title": "Lyra releases her cover of The Pogues' Streets Of Sorrow",
-        "category": "Ceol"
-      },
-      {
-        "title": "Things to do in Dublin this weekend (October 9-11)",
-        "category": "Saol"
-      },
-      {
-        "title": "Polanski vows to stay Greens leader despite election loss",
-        "category": "Domhan"
-      },
-      {
-        "title": "Musk's X fails in court action against Comisiún na Meán",
-        "category": "Cúirt"
-      },
-      {
-        "title": "Budget funding not enough for public pay deal, say unions",
+        "title": "Govt 'tried to get balance' in budget spending - McEntee",
         "category": "Polaitíocht"
       },
       {
@@ -116,12 +116,12 @@
         "category": "Gnó"
       },
       {
-        "title": "Canadian writer Carson wins Nobel Prize in Literature",
-        "category": "Leabhair"
+        "title": "Thousands march in Madrid to honour pensioner Abascal",
+        "category": "An Eoraip"
       },
       {
-        "title": "United Rugby Championship Round 3: All You Need to Know",
-        "category": "Rugbaí"
+        "title": "Maresca: Manchester City achievements not tainted",
+        "category": "Sacar"
       }
     ]
   },
