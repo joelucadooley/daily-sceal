@@ -38,7 +38,8 @@ const all = async (text, ctx = NEWS) => Promise.all([10, 25, 50].map(p => level(
 // ---- Places ----
 
 await test("'Minister steps down' gives no marker on down", async () => {
-  for (const text of ["The Minister steps down after the report into the hospital was published today."]) {
+  for (const text of ["The Minister steps down after the report into the hospital was published today.",
+    "He said he would step down soon."]) {
     for (const out of await all(text)) assert(!markers(out).some(m => /^down$/i.test(m.en)), out);
   }
   assert(!/\|down\]\]/i.test(words.markHeadline("Minister steps down after report", dict, NEWS)), "headline");
@@ -77,6 +78,26 @@ await test("gardaí, tánaiste and dáil match the never-translate list", async 
 await test("apostrophes inside words stay, a trailing one is punctuation", async () => {
   assert(words.tokenize("O'Mahony's workers' café").join("|") === "O'Mahony's| |workers|'| |café",
     words.tokenize("O'Mahony's workers' café").join("|"));
+});
+
+// ---- Words never marked ----
+
+await test("'year's' is not marked", async () => {
+  for (const out of await all("Last year's festival drew a big crowd and this year's event will be bigger again.")) {
+    assert(!/\|[^\]]*['’]s\]\]/.test(out), out);
+  }
+});
+
+await test("number words and particles are never marked", async () => {
+  const text = "Two men and the first woman set off up the hill, then came back down and went away for three days.";
+  for (const out of await all(text)) {
+    assert(!markers(out).some(m => /^(two|first|three|off|up|back|down|away)$/i.test(m.en)), out);
+  }
+});
+
+await test("grammar words wait for Foundation", async () => {
+  assert(!words.shouldTranslate("during", 10, "", dict), "during at 10");
+  assert(words.shouldTranslate("during", 25, "", dict), "during at 25");
 });
 
 // ---- MyMemory outage ----

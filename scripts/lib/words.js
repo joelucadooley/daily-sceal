@@ -156,9 +156,34 @@ export async function translateWord(word, next, { dict, lookup }) {
 
 // ---- Candidates ----
 
+// Never marked at any level (rules W6).
+// The small words of phrasal verbs: "steps down", "set up", "called off".
+export const PARTICLES = new Set(["down", "up", "off", "back", "away"]);
+// Numbers and ordinals: the Irish changes with the noun that follows (dhá,
+// an chéad), so on their own they come out wrong.
+export const NUMBER_WORDS = new Set([
+  "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten",
+  "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen",
+  "eighteen", "nineteen", "twenty",
+  "first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth",
+]);
+// Grammar words: taught from Foundation up, not at Beginner (question 8).
+export const GRAMMAR_WORDS = new Set([
+  "against", "around", "between", "through", "during", "among", "within", "without",
+  "while", "whether", "across", "since", "until", "despite", "toward", "towards",
+  "almost", "already", "always", "anymore", "together", "per", "shortly",
+]);
+export const GRAMMAR_WORDS_FROM = 25;
+// Possessives: "year's", "country's". Marking them loses the 's.
+const POSSESSIVE = /['’]s$/i;
+
 export function shouldTranslate(tok, pct, next = "", dict) {
   const lower = tok.toLowerCase();
   if (NEVER_TRANSLATE.has(lower)) return false;
+  if (POSSESSIVE.test(tok)) return false;
+  if (PARTICLES.has(tok)) return false;            // lowercase only: "Down" can be the county
+  if (NUMBER_WORDS.has(lower)) return false;
+  if (pct < GRAMMAR_WORDS_FROM && GRAMMAR_WORDS.has(lower)) return false;
   // Place names are proper nouns but we DO want to translate them (from PLACES),
   // unless this one is a person or a phrase ("Clare O'Mahony", "Down Under")
   if (dict.places[lower] !== undefined) return !notAPlaceHere(lower, next);
