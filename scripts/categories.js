@@ -10,8 +10,9 @@
 // 184 of ~400 archived stories to the wrong tab, including every Middle East,
 // Europe, UK, Ukraine and US story.
 //
-// Keys are lowercase. Lookup is exact first, then longest-substring, so
-// "World Cup 2026" resolves to soccer rather than matching "world".
+// Keys are lowercase. Lookup is exact first, then the longest key found as
+// whole words, so "World Cup 2026" resolves to soccer rather than matching
+// "world", and "Darts" does not match "arts".
 // ---------------------------------------------------------------------------
 export const RTE_CAT = {
   // --- Ireland ------------------------------------------------------
@@ -46,6 +47,7 @@ export const RTE_CAT = {
   "asia":               ["An Áise", "domhan"],
   "africa":             ["An Afraic", "domhan"],
   "us":                 ["Meiriceá", "domhan"],
+  "usa":                ["Meiriceá", "domhan"],
   "americas":           ["Meiriceá", "domhan"],
   "uk":                 ["Domhan", "domhan"],
   "britain":            ["Domhan", "domhan"],
@@ -96,6 +98,7 @@ export const RTE_CAT = {
   "books":              ["Leabhair", "eile"],
   "arts":               ["Ealaíon", "eile"],
   "travel":             ["Taisteal", "eile"],
+  "travelogue":         ["Taisteal", "eile"],
   "lifestyle":          ["Saol", "eile"],
   "food":               ["Bia", "eile"],
 };
@@ -121,6 +124,11 @@ export const PROGRAMME_TAGS = new Set([
 // "northern ireland" over "ireland".
 const CAT_KEYS = Object.keys(RTE_CAT).sort((a, b) => b.length - a.length);
 
+// Keys match whole words only, so "Darts" no longer contains "arts" and
+// "Stardust" no longer contains "us". Letters here include accents.
+const escapeRe = s => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const CAT_RES = new Map(CAT_KEYS.map(k => [k, new RegExp(`(^|[^\\p{L}\\p{N}])${escapeRe(k)}($|[^\\p{L}\\p{N}])`, "u")]));
+
 /**
  * Resolve an RTÉ category string to [irishLabel, sectionId].
  * Returns null when the category is missing, a programme tag, or unknown,
@@ -132,6 +140,6 @@ export function catInfo(raw) {
   if (!k) return null;
   if (PROGRAMME_TAGS.has(k)) return null;
   if (RTE_CAT[k]) return RTE_CAT[k];
-  for (const key of CAT_KEYS) if (k.includes(key)) return RTE_CAT[key];
+  for (const key of CAT_KEYS) if (CAT_RES.get(key).test(k)) return RTE_CAT[key];
   return null;
 }

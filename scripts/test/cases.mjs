@@ -11,6 +11,7 @@ import { pathToFileURL } from "url";
 import * as words from "../lib/words.js";
 import { parse as parseMarked } from "./metrics.mjs";
 import { createMyMemory } from "../lib/mymemory.js";
+import { catInfo } from "../categories.js";
 
 const dict = loadDict();
 const MACHINE = {
@@ -377,6 +378,17 @@ await test("isGoodTranslation turns down fragments, quotes and articles", async 
   for (const [en, ga] of [["deal", "margadh"], ["visit", "cuairt"], ["result", "toradh"], ["family", "teaghlach"]]) {
     assert(words.isGoodTranslation(en, ga), `${en} ${ga}`);
   }
+});
+
+// ---- Categories ----
+
+await test("categories match whole words: Darts is not arts, Stardust is not us", async () => {
+  assert(catInfo("Darts") === null, JSON.stringify(catInfo("Darts")));
+  assert(catInfo("Stardust") === null, JSON.stringify(catInfo("Stardust")));
+  assert(catInfo("Agriculture") === null, JSON.stringify(catInfo("Agriculture")));
+  assert(catInfo("World Cup 2026")?.[1] === "sport", JSON.stringify(catInfo("World Cup 2026")));
+  assert(catInfo("USA")?.[1] === "domhan", JSON.stringify(catInfo("USA")));
+  assert(catInfo("Northern Ireland")?.[0] === "Tuaisceart Éireann", JSON.stringify(catInfo("Northern Ireland")));
 });
 
 // ---- MyMemory outage ----

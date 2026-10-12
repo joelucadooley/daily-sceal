@@ -9,7 +9,8 @@
     "generate": "node scripts/generate.js",
     "test": "node scripts/test/cases.mjs && node scripts/test/replay.mjs",
     "cases": "node scripts/test/cases.mjs",
-    "replay": "node scripts/test/replay.mjs"
+    "replay": "node scripts/test/replay.mjs",
+    "categories": "node scripts/test/categories.mjs"
   },
   "dependencies": {
     "react": "^18.2.0",
