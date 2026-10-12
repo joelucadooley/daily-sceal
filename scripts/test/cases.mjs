@@ -112,6 +112,16 @@ await test("grammar words wait for Foundation", async () => {
   assert(words.shouldTranslate("during", 25, "", dict), "during at 25");
 });
 
+// ---- Irish form ----
+
+await test("matchCase keeps the dictionary's capitals and fixes machine ones", async () => {
+  assert(words.matchCase("january", "Mí Eanáir", { trusted: true }) === "Mí Eanáir", "Mí Eanáir");
+  assert(words.matchCase("language", "Gaeilge", { trusted: true }) === "Gaeilge", "Gaeilge");
+  assert(words.matchCase("city", "Cathair") === "cathair", "machine capital");
+  assert(words.matchCase("Prices", "pRAGHSANNA") === "Praghsanna", "sentence start");
+  assert(words.matchCase("prices", "praghsanna", { trusted: true }) === "praghsanna", "plain dictionary word");
+});
+
 // ---- MyMemory outage ----
 
 await test("outage: run finishes, dictionary markers stay, breaker opens after 15, nothing waits", async () => {

@@ -64,8 +64,12 @@ export function isGoodTranslation(original, raw) {
 
 // Match the casing of the original word so MyMemory can't randomly capitalise.
 // Handles both "Tuar" (wrong leading cap) and "tRIALACHA" (weird internal caps).
-export function matchCase(original, translated) {
+// Irish from the dictionary or an approved sense that has a capital in it is
+// a name or written that way on purpose (Mí Eanáir, Gaeilge, Béarla), so it
+// is kept exactly as written (rule G4).
+export function matchCase(original, translated, { trusted = false } = {}) {
   if (!translated) return translated;
+  if (trusted && /\p{Lu}/u.test(translated)) return translated;
   // Original is a normal lowercase word: force the whole translation lowercase,
   // since Irish mid-sentence words are lowercase and any caps here are junk.
   if (/^\p{Ll}/u.test(original)) {
@@ -282,7 +286,7 @@ export async function buildLevel(text, pct, deps) {
         // Keep proper capitalisation, don't run matchCase
         result.push(`[[${irish}|${tok}]]`);
       } else if (isOverride || isGoodTranslation(tok, irish)) {
-        result.push(`[[${matchCase(tok, cleanTranslation(irish))}|${tok}]]`);
+        result.push(`[[${matchCase(tok, cleanTranslation(irish), { trusted: isOverride })}|${tok}]]`);
       } else {
         if (onRejected) onRejected(tok, irish);
         result.push(tok);
