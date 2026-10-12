@@ -52,13 +52,20 @@ export function isGoodTranslation(original, raw) {
   // is almost always junk (e.g. "south" -> "D")
   if (original.length >= 4 && t.replace(/[.,;:!?]/g, "").length <= 2) return false;
   // Reject words with letters/combinations that don't occur in standard Irish.
-  // Irish doesn't use j, k, q, v, w, x, y, z (except in loanwords), so a result
-  // full of them is likely junk or an untranslated foreign string.
+  // Irish doesn't use j, k, q, w, x, y, z (except in loanwords), so a result
+  // with them is likely junk or an untranslated foreign string. (v is left
+  // out on purpose: it turns up in loanwords such as veidhlín.)
   if (/[jkqwxyz]/i.test(t)) return false;
   // Irish words must contain at least one vowel (incl. fada vowels)
   if (!/[aeiouáéíóú]/i.test(t)) return false;
-  // Reject 4+ consonants in a row (not a valid Irish cluster): catches mangled output
+  // Reject 5+ consonants in a row (not a valid Irish cluster): catches mangled output
   if (/[bcdfghlmnprst]{5,}/i.test(t)) return false;
+  // Rule S4: a prefix or fragment, not a word (barr-, ard-, "réamh -").
+  if (/^-|-$|\s-|-\s/.test(t)) return false;
+  // Rule S4: a stray quote mark (made -> críochnaitheach”).
+  if (/["“”‘’«»]/.test(t)) return false;
+  // Rule S4 and G1: an article in front (an chéad, an bhainistíocht, na ...).
+  if (/^(an|na)\s/i.test(t)) return false;
   return true;
 }
 

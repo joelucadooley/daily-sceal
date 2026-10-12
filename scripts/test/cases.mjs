@@ -122,6 +122,16 @@ await test("matchCase keeps the dictionary's capitals and fixes machine ones", a
   assert(words.matchCase("prices", "praghsanna", { trusted: true }) === "praghsanna", "plain dictionary word");
 });
 
+await test("isGoodTranslation turns down fragments, quotes and articles", async () => {
+  for (const [en, ga] of [["record", "barr-"], ["senior", "ard-"], ["pre", "réamh -"], ["ready", "ré-"],
+    ["made", "críochnaitheach”"], ["first", "an chéad"], ["management", "an bhainistíocht"], ["those", "na daoine"]]) {
+    assert(!words.isGoodTranslation(en, ga), `${en} ${ga}`);
+  }
+  for (const [en, ga] of [["deal", "margadh"], ["visit", "cuairt"], ["result", "toradh"], ["family", "teaghlach"]]) {
+    assert(words.isGoodTranslation(en, ga), `${en} ${ga}`);
+  }
+});
+
 // ---- MyMemory outage ----
 
 await test("outage: run finishes, dictionary markers stay, breaker opens after 15, nothing waits", async () => {
