@@ -288,3 +288,48 @@ export function markHeadline(title, dict) {
   }
   return tokens.join("");
 }
+
+// ---- Story ----
+
+// Levels actually generated. 75 (Advanced) and 100 (As Gaeilge) are locked
+// funding goals in the app: the sentence-alignment approach isn't reliable
+// enough to ship, so we don't generate them at all.
+export const LEVELS = [10, 25, 50];
+
+// Everything processStory marks for one story: the article levels, the
+// summary levels for the iOS app and the headline. Shared with the archive
+// replay so the tests run exactly this path.
+//   story: { title, text, rss, ctx }
+//   deps:  { dict, lookup, onRejected? }
+//   opts:  { pause?() between article levels, log?(msg), warn?(msg) }
+export async function markStory({ title, text, rss, ctx }, deps, { pause, log, warn } = {}) {
+  const levels = {};
+  for (const pct of LEVELS) {
+    if (log) log(`  Generating ${pct}% level...`);
+    try {
+      levels[pct] = await buildLevel(text, pct, deps, { ctx });
+    } catch (err) {
+      if (warn) warn(`  Failed level ${pct}: ${err.message}`);
+      levels[pct] = text;
+    }
+    if (pause) await pause();
+  }
+
+  // Summary-only levels for the iOS app. Run after the full levels so the
+  // translation cache is already warm: nearly every word in the summary has
+  // just been looked up, so this costs almost no extra MyMemory calls.
+  const summaryLevels = {};
+  for (const pct of LEVELS) {
+    try {
+      summaryLevels[pct] = await buildLevel(rss, pct, deps, { ctx });
+    } catch (err) {
+      if (warn) warn(`  Failed summary level ${pct}: ${err.message}`);
+      summaryLevels[pct] = rss;
+    }
+  }
+
+  // Headline with up to three verified words marked (overrides and places
+  // only, never MyMemory), so the app can make headline words tappable.
+  const titleIr = markHeadline(title, deps.dict, ctx);
+  return { levels, summaryLevels, titleIr };
+}

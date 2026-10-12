@@ -1,6 +1,5 @@
 import { writeFileSync, readFileSync, mkdirSync, realpathSync } from "fs";
 import { fileURLToPath } from "url";
-import { DOMParser } from "@xmldom/xmldom";
 import {
   activeFeeds, feedUrl, FETCH_PER_FEED,
   isUsable, dedupe, balance,
@@ -8,12 +7,8 @@ import {
 import { catInfo } from "./categories.js";
 import { firstSentences, stripMarkers } from "./summary.js";
 import { loadDict } from "./lib/dict.js";
-import { buildLevel, markHeadline } from "./lib/words.js";
+import { markStory } from "./lib/words.js";
 import { createMyMemory } from "./lib/mymemory.js";
-// Levels actually generated. 75 (Advanced) and 100 (As Gaeilge) are locked
-// funding goals in the app — the sentence-alignment approach isn't reliable
-// enough to ship, so we don't generate them at all.
-const LEVELS = [10, 25, 50];
 // Stories actually processed. Every one of these costs a page scrape plus
 // three levels of MyMemory calls, so this is the expensive number. Feeds are
 // read far more widely than this and then filtered down to it.
@@ -97,6 +92,9 @@ async function scrapeArticle(url) {
 // than taking the whole run down with it.
 async function fetchFeed(feed) {
   try {
+    // Loaded here rather than at the top so the file can be imported (tests,
+    // dry runs) on a machine without @xmldom/xmldom installed.
+    const { DOMParser } = await import("@xmldom/xmldom");
     const res = await fetch(feedUrl(feed), { signal: AbortSignal.timeout(10000) });
     if (!res.ok) {
       console.warn(`  ${feed.id}: HTTP ${res.status}, skipped`);
@@ -182,35 +180,12 @@ async function processStory(story, index) {
   const baseText = fullText || story.summary;
   console.log(`  Using ${fullText ? "full article" : "summary"} (${baseText.length} chars)`);
 
-  const levels = {};
-  for (const pct of LEVELS) {
-    console.log(`  Generating ${pct}% level...`);
-    try {
-      levels[pct] = await buildLevel(baseText, pct, wordDeps);
-    } catch (err) {
-      console.warn(`  Failed level ${pct}: ${err.message}`);
-      levels[pct] = baseText;
-    }
-    await sleep(300);
-  }
-
-  // Summary-only levels for the iOS app. Run after the full levels so the
-  // translation cache is already warm: nearly every word in the summary has
-  // just been looked up, so this costs almost no extra MyMemory calls.
-  const summaryLevels = {};
   const rssSummary = story.rssSummary || firstSentences(stripMarkers(baseText));
-  for (const pct of LEVELS) {
-    try {
-      summaryLevels[pct] = await buildLevel(rssSummary, pct, wordDeps);
-    } catch (err) {
-      console.warn(`  Failed summary level ${pct}: ${err.message}`);
-      summaryLevels[pct] = rssSummary;
-    }
-  }
-
-  // Headline with up to three verified words marked (overrides and places
-  // only, never MyMemory), so the app can make headline words tappable.
-  const titleIr = markHeadline(story.title, DICT);
+  const { levels, summaryLevels, titleIr } = await markStory(
+    { title: story.title, text: baseText, rss: rssSummary },
+    wordDeps,
+    { pause: () => sleep(300), log: msg => console.log(msg), warn: msg => console.warn(msg) },
+  );
 
   return { ...story, summary: baseText, rssSummary, levels, summaryLevels, titleIr };
 }
