@@ -1,5 +1,5 @@
 // Word selection and marking. No network and no file access: the dictionary
-// comes in as `dict` ({ overrides, places }) and MyMemory comes in as
+// comes in as `dict` ({ overrides, places, senses }) and MyMemory comes in as
 // `lookup(word)`, so the same code runs in the daily job and in the tests.
 
 export const NEVER_TRANSLATE = new Set([
@@ -153,16 +153,56 @@ export function placeFor(word, next = "", dict) {
   return dict.places[key];
 }
 
+// ---- Senses (rules S1 to S3) ----
+
+export const SPORT_FEEDS = new Set(["sport", "gaa", "soccer", "rugby"]);
+
+// The context processStory passes for a story. topic is "sport" for anything
+// from a sport feed or in the sport section, whatever its RSS category said
+// (so "Darts", which categories.js once mapped to arts, still reads as sport).
+export function storyContext(story = {}) {
+  const topic = story.section === "sport" || SPORT_FEEDS.has(story.feed) ? "sport" : story.section;
+  return { feed: story.feed, section: story.section, topic };
+}
+
+// The approved sense of `key` here: a string (trusted Irish), null ("leave in
+// English here") or undefined (no entry applies, fall through). Checked in
+// order: the story's feed, its topic, "noun" after a determiner, "default".
+export function senseFor(key, ctx = {}, prev = "", dict) {
+  const entry = dict.senses?.[key.toLowerCase()];
+  if (!entry) return undefined;
+  for (const k of [ctx.feed, ctx.topic]) {
+    if (k && Object.hasOwn(entry, k)) return entry[k];
+  }
+  if (Object.hasOwn(entry, "noun") && DETERMINERS.has(prev.toLowerCase())) return entry.noun;
+  if (Object.hasOwn(entry, "default")) return entry.default;
+  return undefined;
+}
+
 // ---- Lookup ----
 
-// Place first, with its proper capitals, then the curated overrides, then
-// MyMemory through the injected lookup (which owns the cache and the waits).
-export async function translateWord(word, next, { dict, lookup }) {
-  const key = word.toLowerCase();
+// Trusted Irish for a word, without MyMemory (rule S2): the place, then the
+// approved sense for this story, then overrides. Returns { irish, source }
+// with source "place", "sense" or "dict"; { irish: null, source: "sense" }
+// when a sense says to leave it in English; undefined when the dictionary
+// has nothing.
+export function dictionaryFor(word, { next = "", prev = "", ctx = {} } = {}, dict) {
   const place = placeFor(word, next, dict);
-  if (place !== undefined) return place;
-  if (dict.overrides[key] !== undefined) return dict.overrides[key];
-  return lookup(word);
+  if (place !== undefined) return { irish: place, source: "place" };
+  const sense = senseFor(word, ctx, prev, dict);
+  if (sense !== undefined) return { irish: sense, source: "sense" };
+  const key = word.toLowerCase();
+  if (dict.overrides[key] !== undefined) return { irish: dict.overrides[key], source: "dict" };
+  return undefined;
+}
+
+// Place, sense, overrides, then MyMemory through the injected lookup (which
+// owns the cache and the waits). Returns { irish, source }; source "machine"
+// for MyMemory. Throws if MyMemory fails.
+export async function translateWord(word, next, { dict, lookup }, { prev = "", ctx = {} } = {}) {
+  const hit = dictionaryFor(word, { next, prev, ctx }, dict);
+  if (hit !== undefined) return hit;
+  return { irish: await lookup(word), source: "machine" };
 }
 
 // ---- Candidates ----
@@ -188,9 +228,11 @@ export const GRAMMAR_WORDS_FROM = 25;
 // Possessives: "year's", "country's". Marking them loses the 's.
 const POSSESSIVE = /['’]s$/i;
 
-export function shouldTranslate(tok, pct, next = "", dict) {
+export function shouldTranslate(tok, pct, next = "", dict, { prev = "", ctx = {} } = {}) {
   const lower = tok.toLowerCase();
   if (NEVER_TRANSLATE.has(lower)) return false;
+  // A senses null: "leave this word in English here" (rule S3).
+  if (senseFor(lower, ctx, prev, dict) === null && placeFor(tok, next, dict) === undefined) return false;
   if (POSSESSIVE.test(tok)) return false;
   if (PARTICLES.has(tok)) return false;            // lowercase only: "Down" can be the county
   if (NUMBER_WORDS.has(lower)) return false;
@@ -332,6 +374,8 @@ function phraseIrish(key, { ctx, prev, next, body, dict }) {
     const clubOrName = ctx.topic === "sport" || CLUB_NEXT.test(next) || /^\p{Lu}/u.test(next);
     if (!clubOrName && !(body && NEVER_TRANSLATE.has(first))) return { irish: dict.places[lower], source: "place" };
   }
+  const sense = senseFor(lower, ctx, prev, dict);
+  if (sense !== undefined) return { irish: sense, source: "sense" };
   if (dict.overrides[lower] !== undefined) return { irish: dict.overrides[lower], source: "dict" };
   return undefined;
 }
@@ -359,7 +403,7 @@ export function candidateUnits(tokens, pct, dict, ctx = {}) {
   }
   tokens.forEach((tok, i) => {
     if (!isWordToken(tok) || covered.has(i)) return;
-    if (!shouldTranslate(tok, pct, nextWord(tokens, i), dict)) return;
+    if (!shouldTranslate(tok, pct, nextWord(tokens, i), dict, { prev: prevWord(tokens, i), ctx })) return;
     units.push({ i, j: i, text: tok, key: tok.toLowerCase(), phrase: false, start: wordPos.get(i), end: wordPos.get(i) });
   });
   return units.sort((a, b) => a.i - b.i);
@@ -414,15 +458,12 @@ export async function buildLevel(text, pct, deps, { ctx = {} } = {}) {
       continue;
     }
     try {
-      const next = nextWord(tokens, i);
-      const irish = await translateWord(tok, next, deps);
-      const isPlace = placeFor(tok, next, dict) !== undefined;
-      const isOverride = dict.overrides[tok.toLowerCase()] !== undefined;
-      if (isPlace) {
+      const { irish, source } = await translateWord(tok, nextWord(tokens, i), deps, { prev: prevWord(tokens, i), ctx });
+      if (source === "place") {
         // Keep proper capitalisation, don't run matchCase
         result.push(`[[${irish}|${tok}]]`);
-      } else if (isOverride || isGoodTranslation(tok, irish)) {
-        result.push(`[[${matchCase(tok, cleanTranslation(irish), { trusted: isOverride })}|${tok}]]`);
+      } else if (source !== "machine" || isGoodTranslation(tok, irish)) {
+        result.push(`[[${matchCase(tok, cleanTranslation(irish), { trusted: source !== "machine" })}|${tok}]]`);
       } else {
         if (onRejected) onRejected(tok, irish);
         result.push(tok);

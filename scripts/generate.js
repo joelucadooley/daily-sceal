@@ -7,7 +7,7 @@ import {
 import { catInfo } from "./categories.js";
 import { firstSentences, stripMarkers } from "./summary.js";
 import { loadDict } from "./lib/dict.js";
-import { markStory } from "./lib/words.js";
+import { markStory, storyContext } from "./lib/words.js";
 import { createMyMemory } from "./lib/mymemory.js";
 // Stories actually processed. Every one of these costs a page scrape plus
 // three levels of MyMemory calls, so this is the expensive number. Feeds are
@@ -32,12 +32,14 @@ const MIN_STORIES = 8;
 // is never touched.
 const OUT_DIR = process.env.OUT_DIR || "public/data";
 
-// Curated dictionary (overrides.json + places.json) and the MyMemory client.
+// Curated dictionary (overrides.json, places.json, senses.json) and the
+// MyMemory client.
 const DICT = loadDict();
 const OVERRIDES = DICT.overrides;
 const PLACES = DICT.places;
 console.log(`Loaded ${Object.keys(OVERRIDES).length} translation overrides`);
 console.log(`Loaded ${Object.keys(PLACES).length} place names`);
+console.log(`Loaded ${Object.keys(DICT.senses).length} approved senses`);
 
 const myMemory = createMyMemory();
 const wordDeps = {
@@ -181,8 +183,11 @@ async function processStory(story, index) {
   console.log(`  Using ${fullText ? "full article" : "summary"} (${baseText.length} chars)`);
 
   const rssSummary = story.rssSummary || firstSentences(stripMarkers(baseText));
+  // Feed, section and topic, so a word can take the Irish its part of the
+  // paper needs (senses.json): pitch on a sport page is not airde.
+  const ctx = storyContext(story);
   const { levels, summaryLevels, titleIr } = await markStory(
-    { title: story.title, text: baseText, rss: rssSummary },
+    { title: story.title, text: baseText, rss: rssSummary, ctx },
     wordDeps,
     { pause: () => sleep(300), log: msg => console.log(msg), warn: msg => console.warn(msg) },
   );

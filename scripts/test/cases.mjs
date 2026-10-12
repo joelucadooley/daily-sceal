@@ -3,7 +3,11 @@
 //
 //   node scripts/test/cases.mjs
 import { net } from "./archive.mjs";
-import { loadDict } from "../lib/dict.js";
+import { loadDict, loadSenses } from "../lib/dict.js";
+import { writeFileSync, mkdtempSync } from "fs";
+import { tmpdir } from "os";
+import { join } from "path";
+import { pathToFileURL } from "url";
 import * as words from "../lib/words.js";
 import { createMyMemory } from "../lib/mymemory.js";
 
@@ -91,6 +95,60 @@ await test("a phrase that is a name keeps its capitals; a capitalised ordinary p
   assert(out.includes("[[Comhaontú Aoine an Chéasta|Good Friday Agreement]]"), out);
   const name = await level("The charity Mental Health Ireland said the report showed a sharp rise in demand.", 50);
   assert(!/\|Mental Health\]\]/.test(name), name);
+});
+
+// ---- Senses ----
+
+// The dictionary with some senses approved, as Joe would tick them.
+const withSenses = senses => ({ ...deps, dict: { ...dict, senses } });
+
+await test("senses.json ships empty and loads as {}", async () => {
+  assert(JSON.stringify(dict.senses) === "{}", JSON.stringify(dict.senses));
+});
+
+await test("loadSenses: a missing file is {}, a bad entry is skipped", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "senses-"));
+  assert(JSON.stringify(loadSenses(pathToFileURL(join(dir, "none.json")))) === "{}", "missing");
+  const f = join(dir, "senses.json");
+  writeFileSync(f, JSON.stringify({ Pitch: { sport: "páirc" }, bad: { weather: "x" }, empty: { sport: "" }, former: { default: null } }));
+  const warned = [];
+  const got = loadSenses(pathToFileURL(f), m => warned.push(m));
+  assert(JSON.stringify(got) === JSON.stringify({ pitch: { sport: "páirc" }, former: { default: null } }), JSON.stringify(got));
+  assert(warned.length === 2, warned.join("; "));
+});
+
+await test("'a show' gives seó with an approved sense, English without one", async () => {
+  const text = "She starred in a show at the theatre last night and the crowd loved every minute of it.";
+  const d = withSenses({ show: { noun: "seó" } });
+  const out = await words.buildLevel(text, 50, d, { ctx: EILE });
+  assert(out.includes("[[seó|show]]"), out);
+  assert(!/léiríonn\|show/.test(out), out);
+  // Without the sense there is no noun Irish for "show": it stays English
+  // (the W9 check lands with the tiered ranking).
+});
+
+await test("'match' in an eile story is not marked once the null sense is approved", async () => {
+  const d = withSenses({ match: { sport: "cluiche", default: null } });
+  const text = "Officials will match the funding raised by the community group for the new playground.";
+  for (const p of [10, 25, 50]) {
+    const out = await words.buildLevel(text, p, d, { ctx: EILE });
+    assert(!/\|match\]\]/.test(out), out);
+  }
+  const sport = await words.buildLevel("The match was played in heavy rain before a big crowd in the stadium.", 50, d, { ctx: SPORT });
+  assert(sport.includes("[[cluiche|match]]"), sport);
+});
+
+await test("a sense wins over the dictionary in its section, and the feed wins over the topic", async () => {
+  const d = withSenses({ title: { sport: "craobh", gaa: "corn" } }).dict;
+  assert(words.dictionaryFor("title", { ctx: SPORT }, d).irish === "corn", "gaa feed");
+  assert(words.dictionaryFor("title", { ctx: { feed: "rugby", topic: "sport" } }, d).irish === "craobh", "sport topic");
+  assert(words.dictionaryFor("title", { ctx: NEWS }, d).irish === dict.overrides.title, "news falls to overrides");
+});
+
+await test("storyContext: a sport feed is sport whatever the category", async () => {
+  const c = words.storyContext({ feed: "sport", section: "eile" });
+  assert(c.topic === "sport", JSON.stringify(c));
+  assert(words.storyContext({ feed: "news", section: "domhan" }).topic === "domhan", "domhan");
 });
 
 // ---- Tokens ----
