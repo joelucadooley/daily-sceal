@@ -197,15 +197,6 @@ export function dictionaryFor(word, { next = "", prev = "", ctx = {} } = {}, dic
   return undefined;
 }
 
-// Place, sense, overrides, then MyMemory through the injected lookup (which
-// owns the cache and the waits). Returns { irish, source }; source "machine"
-// for MyMemory. Throws if MyMemory fails.
-export async function translateWord(word, next, { dict, lookup }, { prev = "", ctx = {} } = {}) {
-  const hit = dictionaryFor(word, { next, prev, ctx }, dict);
-  if (hit !== undefined) return hit;
-  return { irish: await lookup(word), source: "machine" };
-}
-
 // ---- Candidates ----
 
 // Never marked at any level (rules W6).
