@@ -14,6 +14,9 @@ on:
 jobs:
   generate:
     runs-on: ubuntu-latest
+    # A normal run takes a few minutes. If MyMemory hangs, the breaker stops
+    # calling it after 15 failures in a row; this is the last resort.
+    timeout-minutes: 40
     permissions:
       contents: write
       actions: write
@@ -48,7 +51,15 @@ jobs:
             if (t.date !== today) { console.error('today.json is dated ' + t.date + ', expected ' + today); process.exit(1); }
             const withLevels = t.stories.filter(s => s.levels && Object.keys(s.levels).length).length;
             if (withLevels < n * 0.8) { console.error('Only ' + withLevels + '/' + n + ' stories have levels'); process.exit(1); }
-            console.log('OK: ' + n + ' stories, ' + withLevels + ' with levels, dated ' + t.date);
+            // Irish actually present: a day with the dictionary missing or the
+            // marking broken would otherwise pass. Beginner uses the dictionary
+            // only, so this does not fail on a MyMemory outage alone.
+            const counts = t.stories.map(s => ((s.levels && s.levels['10']) || '').split('[[').length - 1);
+            const avg = counts.reduce((a, b) => a + b, 0) / n;
+            const withIrish = counts.filter(c => c >= 1).length;
+            if (avg < 3) { console.error('Beginner has ' + avg.toFixed(1) + ' Irish words per story (minimum 3)'); process.exit(1); }
+            if (withIrish < n * 0.9) { console.error('Only ' + withIrish + '/' + n + ' stories have Irish at Beginner'); process.exit(1); }
+            console.log('OK: ' + n + ' stories, ' + withLevels + ' with levels, ' + avg.toFixed(1) + ' Irish words per story at Beginner, dated ' + t.date);
           "
 
       - name: Commit and push today.json
