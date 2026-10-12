@@ -60,6 +60,25 @@ await test("'Down Under' stays English", async () => {
   for (const out of await all(text)) assert(!/\|Down\]\]/.test(out), out);
 });
 
+// ---- Tokens ----
+
+await test("'Séamus' stays whole and is not marked", async () => {
+  assert(words.tokenize("Séamus Ó Sé").join("|") === "Séamus| |Ó| |Sé", words.tokenize("Séamus Ó Sé").join("|"));
+  for (const out of await all("Séamus Coleman said the club had a great season and the squad was ready.")) {
+    assert(out.startsWith("Séamus "), out);
+    assert(!/amas|\|amus/.test(out), out);
+  }
+});
+
+await test("gardaí, tánaiste and dáil match the never-translate list", async () => {
+  for (const w of ["gardaí", "tánaiste", "dáil"]) assert(!words.shouldTranslate(w, 50, "", dict), w);
+});
+
+await test("apostrophes inside words stay, a trailing one is punctuation", async () => {
+  assert(words.tokenize("O'Mahony's workers' café").join("|") === "O'Mahony's| |workers|'| |café",
+    words.tokenize("O'Mahony's workers' café").join("|"));
+});
+
 // ---- MyMemory outage ----
 
 await test("outage: run finishes, dictionary markers stay, breaker opens after 15, nothing waits", async () => {

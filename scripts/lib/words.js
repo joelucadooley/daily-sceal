@@ -68,7 +68,7 @@ export function matchCase(original, translated) {
   if (!translated) return translated;
   // Original is a normal lowercase word: force the whole translation lowercase,
   // since Irish mid-sentence words are lowercase and any caps here are junk.
-  if (/^[a-z]/.test(original)) {
+  if (/^\p{Ll}/u.test(original)) {
     return translated.toLowerCase();
   }
   // Original starts uppercase (sentence start): lowercase everything after the
@@ -82,24 +82,31 @@ export function cleanTranslation(raw) {
 
 // ---- Tokens ----
 
+// A word is letters, combining marks and digits in any script, with
+// apostrophes allowed inside it (O'Mahony, year's, don't). JavaScript's \w is
+// ASCII only, which split Séamus into S, é, amus and marked "amus".
+// A trailing apostrophe (workers') or a closing quote stays punctuation.
+const TOKEN = /([\p{L}\p{M}\p{N}]+(?:['’][\p{L}\p{M}\p{N}]+)*|[^\p{L}\p{M}\p{N}\s]|\s+)/gu;
+const WORD_START = /^[\p{L}\p{M}\p{N}]/u;
+
 export function tokenize(text) {
-  return text.match(/(\w[\w']*|[^\w\s]|\s+)/g) || [];
+  return text.match(TOKEN) || [];
 }
 
 export function isWordToken(tok) {
-  return /^\w/.test(tok);
+  return WORD_START.test(tok);
 }
 
 // The next word after token i, skipping spaces; "" if punctuation comes first.
 export function nextWord(tokens, i) {
   let j = i + 1;
   while (j < tokens.length && /^\s+$/.test(tokens[j])) j++;
-  return j < tokens.length && /^\w/.test(tokens[j]) ? tokens[j] : "";
+  return j < tokens.length && isWordToken(tokens[j]) ? tokens[j] : "";
 }
 
 // The nearest word before token i, across any punctuation; "" at the start.
 export function prevWord(tokens, i) {
-  for (let j = i - 1; j >= 0; j--) if (/^\w/.test(tokens[j])) return tokens[j];
+  for (let j = i - 1; j >= 0; j--) if (isWordToken(tokens[j])) return tokens[j];
   return "";
 }
 
@@ -123,7 +130,7 @@ export const COUNTY_FOLLOWERS = new Set([
 // "Clare O'Mahony" is a person and "Down Under" is Australia.
 export function notAPlaceHere(key, next) {
   if (key === "down" && /^under$/i.test(next)) return true;
-  if (key === "clare" && /^[A-Z]/.test(next) && !COUNTY_FOLLOWERS.has(next.toLowerCase().replace(/[^a-z]/g, ""))) return true;
+  if (key === "clare" && /^\p{Lu}/u.test(next) && !COUNTY_FOLLOWERS.has(next.toLowerCase().replace(/[^a-z]/g, ""))) return true;
   return false;
 }
 
@@ -155,8 +162,8 @@ export function shouldTranslate(tok, pct, next = "", dict) {
   // Place names are proper nouns but we DO want to translate them (from PLACES),
   // unless this one is a person or a phrase ("Clare O'Mahony", "Down Under")
   if (dict.places[lower] !== undefined) return !notAPlaceHere(lower, next);
-  if (/^[A-Z]/.test(tok)) return false;
-  if (/^\d+$/.test(tok)) return false;
+  if (/^\p{Lu}/u.test(tok)) return false;
+  if (/^\p{N}+$/u.test(tok)) return false;
   if (tok.length <= 1) return false;
 
   if (pct <= 25) {
