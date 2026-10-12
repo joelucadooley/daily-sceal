@@ -6,7 +6,9 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "generate": "node scripts/generate.js"
+    "generate": "node scripts/generate.js",
+    "test": "node scripts/test/replay.mjs",
+    "replay": "node scripts/test/replay.mjs"
   },
   "dependencies": {
     "react": "^18.2.0",
