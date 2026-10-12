@@ -61,6 +61,18 @@ await test("'Down Under' stays English", async () => {
   for (const out of await all(text)) assert(!/\|Down\]\]/.test(out), out);
 });
 
+await test("a lowercase place word is an ordinary word, never the place", async () => {
+  // "trim" is on the risky list (Trim, Co Meath); try it with a place entry.
+  const d = { ...deps, dict: { ...dict, places: { ...dict.places, trim: "Baile Átha Troim" } } };
+  const lv = (t, p) => words.buildLevel(t, p, d, { ctx: NEWS });
+  for (const p of [10, 25, 50]) {
+    const out = await lv("They plan to trim the budget and cut the waiting lists at the hospital this year.", p);
+    assert(!out.includes("Baile Átha Troim"), out);
+  }
+  assert(words.shouldTranslate("Trim", 10, "", d.dict), "capital Trim is a place candidate");
+  assert(!words.shouldTranslate("down", 50, "", dict), "lowercase down");
+});
+
 // ---- Tokens ----
 
 await test("'Séamus' stays whole and is not marked", async () => {

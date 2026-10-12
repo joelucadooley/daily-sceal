@@ -184,9 +184,12 @@ export function shouldTranslate(tok, pct, next = "", dict) {
   if (PARTICLES.has(tok)) return false;            // lowercase only: "Down" can be the county
   if (NUMBER_WORDS.has(lower)) return false;
   if (pct < GRAMMAR_WORDS_FROM && GRAMMAR_WORDS.has(lower)) return false;
-  // Place names are proper nouns but we DO want to translate them (from PLACES),
-  // unless this one is a person or a phrase ("Clare O'Mahony", "Down Under")
-  if (dict.places[lower] !== undefined) return !notAPlaceHere(lower, next);
+  // Place names are proper nouns but we DO want to translate them (from PLACES)
+  // when placeFor accepts them here: a capital where the word is risky, and not
+  // a person or a phrase ("Clare O'Mahony", "Down Under"). Otherwise the word
+  // carries on as an ordinary word, so lowercase "down" no longer reaches
+  // MyMemory as a place candidate (rule W11).
+  if (placeFor(tok, next, dict) !== undefined) return true;
   if (/^\p{Lu}/u.test(tok)) return false;
   if (/^\p{N}+$/u.test(tok)) return false;
   if (tok.length <= 1) return false;
