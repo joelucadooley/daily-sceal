@@ -324,6 +324,41 @@ await test("outage: Beginner is unchanged when MyMemory is down (dictionary only
   assert(await words.buildLevel(LONG_TEXT, 10, down, { ctx: NEWS }) === await level(LONG_TEXT, 10), "Beginner changed");
 });
 
+// ---- Headlines ----
+
+await test("headlines: never side by side, nouns only", async () => {
+  const h = words.markHeadline("Four people killed in Kyiv", dict, NEWS);
+  assert(!/maraíodh/.test(h), h);
+  const vw = words.markHeadline("VW profit warning hits shares", dict, NEWS);
+  assert(!/\]\] \[\[/.test(vw), vw);
+  assert(/\[\[/.test(vw), vw);
+});
+
+await test("headlines: a capital mid-headline is a name (Katie Price, Fair City, White House)", async () => {
+  for (const t of ["Katie Price to appear in court", "Fair City star leaves soap", "White House says talks to continue",
+    "Culture Night events across the country"]) {
+    const h = words.markHeadline(t, dict, EILE);
+    assert(!/\|(Price|City|House|Night)\]\]/.test(h), h);
+  }
+  const ok = words.markHeadline("Analysis: Budget brings little for renters", dict, NEWS);
+  assert(ok.includes("[[Buiséad|Budget]]"), ok);
+});
+
+await test("headlines: three-letter dictionary nouns count, verbs and months do not", async () => {
+  const h = words.markHeadline("Pay deal agreed for nurses after long talks", dict, NEWS);
+  assert(h.includes("[[Pá|Pay]]"), h);
+  const v = words.markHeadline("Government announced plan to show new rules", dict, NEWS);
+  assert(!/d'fhógair|léiríonn/.test(v), v);
+  const m = words.markHeadline("February rents rise again", dict, NEWS);
+  assert(!/Mí Feabhra/.test(m), m);
+});
+
+await test("headlines: an approved sense comes before the dictionary", async () => {
+  const d = { ...dict, senses: { title: { sport: "craobh" } } };
+  const h = words.markHeadline("Kerry win the title in Croke Park", d, SPORT);
+  assert(h.includes("[[craobh|title]]"), h);
+});
+
 // ---- Irish form ----
 
 await test("matchCase keeps the dictionary's capitals and fixes machine ones", async () => {

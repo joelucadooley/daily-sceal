@@ -170,7 +170,10 @@ export function measure(texts, { dict, senses = {} }) {
 // Headline figures: no Irish, side by side, name parts (a capitalised word
 // marked mid-headline that is not a place).
 export function measureHeadlines(items, { dict }) {
-  const placeIrish = new Set(Object.values(dict.places));
+  // Places and the dictionary's own name entries (Irish written with a
+  // capital, e.g. Comhaontú Aoine an Chéasta) are names on purpose.
+  const placeIrish = new Set([...Object.values(dict.places),
+    ...Object.entries(dict.overrides).filter(([en, ga]) => /\s/.test(en) && /\p{Lu}/u.test(ga)).map(([, ga]) => ga)]);
   const r = { n: 0, none: 0, noneWithEligible: 0, withEligible: 0, sideBySide: 0, nameParts: 0, nameExamples: [] };
   for (const { titleIr, eligible } of items) {
     r.n++;

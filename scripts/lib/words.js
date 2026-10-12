@@ -752,34 +752,101 @@ export function markedKeys(text) {
   return new Set([...text.matchAll(/\[\[[^|\]]+\|([^\]]+)\]\]/g)].map(m => m[1].toLowerCase().split(/[\s-]+/).join(" ")));
 }
 
-// ---- Headlines ----
+// ---- Headlines (rules H1 to H4) ----
 
-// Mark up to 3 headline words with Irish, using ONLY the verified dictionaries
-// (overrides + places), never MyMemory, so the most visible text is always right.
-export function markHeadline(title, dict) {
-  const tokens = title.split(/(\s+)/);
-  const candidates = [];
-  tokens.forEach((tok, i) => {
-    const clean = tok.replace(/[^A-Za-zÀ-ÿ'’]/g, "");
-    if (!clean) return;
-    const lower = clean.toLowerCase();
-    // placeFor applies the same capital-letter check as the summaries, so
-    // "steps down" stays English while "Down win Ulster title" is the county.
-    const place = placeFor(clean, (tokens[i + 2] || "").replace(/[^A-Za-zÀ-ÿ'’]/g, ""), dict);
-    if (place !== undefined) {
-      candidates.push({ i, clean, irish: place, place: true });
-    } else if (dict.overrides[lower] !== undefined && clean.length >= 4) {
-      let irish = dict.overrides[lower];
-      if (/^[A-Z]/.test(clean)) irish = irish.charAt(0).toUpperCase() + irish.slice(1);
-      candidates.push({ i, clean, irish, place: false });
-    }
-  });
-  // Prefer place names, then longer words; cap at 3 so it stays readable
-  candidates.sort((a, b) => (b.place ? 1 : 0) - (a.place ? 1 : 0) || b.clean.length - a.clean.length);
-  for (const c of candidates.slice(0, 3)) {
-    tokens[c.i] = tokens[c.i].replace(c.clean, `[[${c.irish}|${c.clean}]]`);
+export const HEADLINE_MAX = 3;
+export const HEADLINE_MIN_LENGTH = 3;
+// Months stay off in headlines as in story text (question 6).
+const MONTHS = new Set(["january", "february", "march", "april", "june", "july", "august",
+  "september", "october", "november", "december"]);
+
+// A headline word with a capital is a name ("Katie Price", "Fair City",
+// "White House") unless it opens the headline or follows : ? ! . or a dash.
+function headlineStart(tokens, i) {
+  for (let j = i - 1; j >= 0; j--) {
+    if (/^\s+$/.test(tokens[j])) continue;
+    return /^[:?!.–—-]$/.test(tokens[j]);
   }
-  return tokens.join("");
+  return true;
+}
+
+// Every headline unit that may carry Irish: dictionary phrases, place
+// names and dictionary nouns (senses first), never MyMemory (H1, H3).
+function headlineCandidates(title, dict, ctx = {}) {
+  const tokens = tokenize(title);
+  const wordPos = new Map();
+  let n = 0;
+  tokens.forEach((tok, i) => { if (isWordToken(tok)) wordPos.set(i, n++); });
+  const out = [];
+  const covered = new Set();
+  for (const p of findPhrases(tokens, dict, ctx, { body: false })) {
+    for (let k = p.i; k <= p.j; k++) covered.add(k);
+    if (!p.irish) continue;
+    if (p.source !== "place" && DICT_VERBS.has(p.key)) continue;
+    out.push({ i: p.i, j: p.j, text: p.text, irish: p.irish, source: p.source, phrase: true, start: wordPos.get(p.i), end: wordPos.get(p.j) });
+  }
+  tokens.forEach((tok, i) => {
+    if (!isWordToken(tok) || covered.has(i)) return;
+    const lower = tok.toLowerCase();
+    const next = nextWord(tokens, i), prev = prevWord(tokens, i).toLowerCase();
+    const at = { i, j: i, text: tok, phrase: false, start: wordPos.get(i), end: wordPos.get(i) };
+    const place = placeFor(tok, next, dict);
+    if (place !== undefined) {
+      out.push({ ...at, irish: place, source: "place" });
+      return;
+    }
+    if (/^\p{Lu}/u.test(tok) && !headlineStart(tokens, i)) return;      // part of a name (B5)
+    if (tok.length < HEADLINE_MIN_LENGTH || MONTHS.has(lower)) return;
+    if (FUNCTION_WORDS.has(lower) || PARTICLES.has(lower) || NUMBER_WORDS.has(lower) ||
+      GRAMMAR_WORDS.has(lower) || POSSESSIVE.test(tok)) return;
+    const hit = dictionaryFor(tok, { next, prev, ctx }, dict);
+    if (!hit || hit.irish === null) return;
+    if (SKIP_ROOT_FORMS && hit.source === "dict" && ROOT_FORMS.has(lower)) return;
+    if (isVerbLike(lower, hit.irish, { englishList: hit.source === "dict" })) return;   // nouns only (H3)
+    const noun = looksNoun(lower) || (hit.source === "sense" && DETERMINERS.has(prev));
+    if (!noun) return;
+    if (hit.source === "dict" && VERB_CUES.has(prev) && NOUN_VERB_WORDS.has(lower)) return;
+    out.push({ ...at, irish: hit.irish, source: hit.source, afterDet: DETERMINERS.has(prev) });
+  });
+  return { tokens, candidates: out };
+}
+
+// True when the headline has at least one word markHeadline may mark.
+export function headlineHasEligible(title, dict, ctx = {}) {
+  return headlineCandidates(title, dict, ctx).candidates.length > 0;
+}
+
+// Mark up to 3 headline units with Irish, using ONLY trusted Irish (places,
+// approved senses, overrides), never MyMemory, so the most visible text is
+// always right. Places first, then phrases, then nouns after a determiner,
+// then longer words; never two markers side by side (H2).
+export function markHeadline(title, dict, ctx = {}) {
+  const { tokens, candidates } = headlineCandidates(title, dict, ctx);
+  candidates.sort((a, b) =>
+    (b.source === "place") - (a.source === "place") || b.phrase - a.phrase ||
+    (b.afterDet ? 1 : 0) - (a.afterDet ? 1 : 0) || b.text.length - a.text.length || a.start - b.start);
+  const chosen = [];
+  for (const c of candidates) {
+    if (chosen.length >= HEADLINE_MAX) break;
+    if (chosen.some(p => c.start - p.end < 2 && p.start - c.end < 2)) continue;
+    chosen.push(c);
+  }
+  const byI = new Map(chosen.map(c => [c.i, c]));
+  const out = [];
+  for (let i = 0; i < tokens.length; i++) {
+    const c = byI.get(i);
+    if (!c) {
+      out.push(tokens[i]);
+      continue;
+    }
+    let irish = c.irish;
+    if (c.source !== "place" && !/\p{Lu}/u.test(irish) && /^\p{Lu}/u.test(c.text)) {
+      irish = irish.charAt(0).toUpperCase() + irish.slice(1);
+    }
+    out.push(`[[${irish}|${c.text}]]`);
+    i = c.j;
+  }
+  return out.join("");
 }
 
 // ---- Story ----
