@@ -10,7 +10,8 @@
     "test": "node scripts/test/cases.mjs && node scripts/test/replay.mjs",
     "cases": "node scripts/test/cases.mjs",
     "replay": "node scripts/test/replay.mjs",
-    "categories": "node scripts/test/categories.mjs"
+    "categories": "node scripts/test/categories.mjs",
+    "report": "node scripts/test/report.mjs"
   },
   "dependencies": {
     "react": "^18.2.0",
