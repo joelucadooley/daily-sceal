@@ -1,6 +1,7 @@
 // Word selection and marking. No network and no file access: the dictionary
 // comes in as `dict` ({ overrides, places, senses }) and MyMemory comes in as
 // `lookup(word)`, so the same code runs in the daily job and in the tests.
+import { splitSentences } from "../summary.js";
 
 export const NEVER_TRANSLATE = new Set([
   "ireland", "irish", "dublin", "cork", "galway", "limerick", "belfast",
@@ -272,7 +273,7 @@ export const DETERMINERS = new Set(["the","a","an","its","their","his","her","th
 //   "gap"    machine translation only to close a gap the dictionary cannot
 //   "nouns"  machine translation for noun-like words only
 //   "normal" machine translation like any other word, after the dictionary
-export const MACHINE_AT = { 10: "nouns", 25: "nouns", 50: "normal" };
+export const MACHINE_AT = { 10: "none", 25: "gap", 50: "normal" };
 
 // Dictionary entries that are verbs. There is no part-of-speech tagger, so
 // this list and the Irish endings in isVerbLike stand in for one.
@@ -539,25 +540,144 @@ export function candidateUnits(tokens, pct, dict, ctx = {}) {
   return units.sort((a, b) => a.i - b.i);
 }
 
-// Choose which units get marked: highest tier first, then score, and never
-// two units side by side.
-export function selectMarkerIndices(tokens, units, targetCount, pct, dict, ctx = {}) {
-  const ranked = [];
+// ---- Spacing (rules P1 to P5) ----
+
+// Question 10: the longest run of English words allowed with no marker,
+// wherever a word that can be marked exists.
+export const MAX_GAP = { 10: 40, 25: 25, 50: 12 };
+// Question 11: how many times one English word may be marked in a text.
+export const REPEAT_CAP = { 10: 1, 25: 2, 50: 3 };
+// Fewest words between two markers (P2).
+export const MIN_BETWEEN = { 10: 4, 25: 3, 50: 2 };
+// Most markers in one sentence, and in a sentence of LONG_SENTENCE+ words.
+export const SENTENCE_CAP = { 10: [1, 2], 25: [2, 3], 50: [Infinity, Infinity] };
+// Tuned from the draft's 30 words to 20 at Beginner and Foundation: with
+// one marker per sentence up to 30 words, Beginner (dictionary only) fell
+// 25% below today's density and Foundation 30% (rule L1 allows 15%).
+export const LONG_SENTENCE = { 10: 20, 25: 20, 50: 30 };
+// Foundation's gap repair (question 2): a gap of this many words with no
+// dictionary word left in it may take a machine noun. Half of Foundation's
+// maxGap: at 25 (repair only over-long gaps) Foundation fell 31% below
+// today's density; at 12 it stays within 10%.
+export const GAP_REPAIR_FROM = 12;
+
+// Everything about a level in one place (the replay reads this too).
+export const LEVEL_RULES = Object.fromEntries([10, 25, 50].map(p => [p, {
+  maxGap: MAX_GAP[p], minBetween: MIN_BETWEEN[p], repeatCap: REPEAT_CAP[p],
+  sentenceCap: SENTENCE_CAP[p], longSentence: LONG_SENTENCE[p], machine: MACHINE_AT[p] !== "none", machineMode: MACHINE_AT[p],
+}]));
+
+// Sentence number of every word position (summary.js's split, as the app
+// and the metrics use) and the length of each sentence in words.
+export function sentenceMap(text) {
+  const ofWord = [];
+  const lengths = [];
+  splitSentences(text).forEach((sentence, n) => {
+    const count = tokenize(sentence).filter(isWordToken).length;
+    lengths.push(count);
+    for (let k = 0; k < count; k++) ofWord.push(n);
+  });
+  return { ofWord, lengths };
+}
+
+// Ranked units that may be marked at this level: rankUnit says yes, the tier
+// is allowed (machine nouns at Foundation only for gap repair, flagged
+// gapOnly) and the word is not clearly a non-noun from MyMemory.
+export function rankedUnits(tokens, units, pct, dict, ctx = {}, { prefer } = {}) {
+  const out = [];
   for (const u of units) {
     const r = rankUnit(u, tokens, pct, dict, ctx);
-    if (!r || !tierAllowed(r.tier, pct)) continue;
-    if (r.tier <= 1 && r.score < 0) continue;                                 // clearly not a noun
-    ranked.push({ ...u, ...r });
+    if (!r) continue;
+    const allowed = tierAllowed(r.tier, pct);
+    if (!allowed && !tierAllowed(r.tier, pct, { gapRepair: true })) continue;
+    if (r.tier <= 1 && r.score < 0) continue;
+    // Summaries: words the same story's article marked at this level score
+    // higher, so the app and the site agree more often (A6).
+    const score = r.score + (prefer && prefer.has(u.key) ? 2 : 0);
+    out.push({ ...u, ...r, score, gapOnly: !allowed });
   }
-  ranked.sort((a, b) => b.tier - a.tier || b.score - a.score || a.start - b.start);
+  return out;
+}
 
+// Choose markers gap by gap. Repeatedly take the largest gap (counting the
+// start and the end of the text) that holds an eligible unit, and try its
+// units in order: middle half of the gap first, then tier, score, nearness
+// to the middle and position. The first whose Irish is acceptable is kept;
+// a rejected one is never tried again in this text (P4 backfill). Stops at
+// `target` markers, but goes on closing gaps longer than maxGap (P1).
+//   tryUnit(unit) -> marker text or null
+export async function pickMarkers(ranked, { words, sentences, target, pct, tryUnit }) {
+  const rules = LEVEL_RULES[pct];
   const chosen = [];
-  for (const c of ranked) {
-    if (chosen.length >= targetCount) break;
-    if (chosen.some(p => c.start - p.end < 2 && p.start - c.end < 2)) continue; // no side-by-side markers
-    chosen.push(c);
+  const rejected = new Set();
+  const uses = new Map();
+  const perSentence = new Map();
+  const capOf = n => rules.sentenceCap[sentences.lengths[n] >= rules.longSentence ? 1 : 0];
+
+  // The sentence cap gives way in a gap longer than maxGap: no long gaps
+  // (P1) matters more than the per-sentence limit (P2). The spacing and the
+  // repeat cap never give way.
+  const fits = (u, a, b, long) => u.start > a && u.end < b &&
+    (a < 0 || u.start - a - 1 >= rules.minBetween) &&
+    (b >= words || b - u.end - 1 >= rules.minBetween) &&
+    !rejected.has(u) &&
+    (uses.get(u.key) || 0) < rules.repeatCap &&
+    (long || (perSentence.get(sentences.ofWord[u.start]) || 0) < capOf(sentences.ofWord[u.start]));
+
+  for (;;) {
+    const need = chosen.length < target;
+    const sorted = [...chosen].sort((x, y) => x.start - y.start);
+    const gaps = [];
+    let a = -1;
+    for (const c of sorted) {
+      gaps.push({ a, b: c.start });
+      a = c.end;
+    }
+    gaps.push({ a, b: words });
+    for (const g of gaps) g.len = g.b - g.a - 1;
+    gaps.sort((x, y) => y.len - x.len || x.a - y.a);
+
+    let picked = false;
+    for (const g of gaps) {
+      const long = g.len > rules.maxGap;
+      if (!need && !long) break;
+      let pool = ranked.filter(u => fits(u, g.a, g.b, long));
+      // Foundation: machine nouns only in a gap of GAP_REPAIR_FROM+ words
+      // with no dictionary word left to mark there (question 2).
+      const dictPool = pool.filter(u => !u.gapOnly);
+      pool = dictPool.length || g.len < GAP_REPAIR_FROM ? dictPool : pool;
+      if (!pool.length) continue;
+      const mid = (g.a + g.b) / 2;
+      const centre = u => (u.start + u.end) / 2;
+      const inMiddle = u => Math.abs(centre(u) - mid) <= g.len / 4;
+      pool.sort((x, y) =>
+        (inMiddle(y) - inMiddle(x)) || (y.tier - x.tier) || (y.score - x.score) ||
+        (Math.abs(centre(x) - mid) - Math.abs(centre(y) - mid)) || (x.start - y.start));
+      for (const u of pool) {
+        const marker = await tryUnit(u);
+        if (!marker) {
+          rejected.add(u);
+          continue;
+        }
+        chosen.push({ ...u, marker });
+        uses.set(u.key, (uses.get(u.key) || 0) + 1);
+        const sn = sentences.ofWord[u.start];
+        perSentence.set(sn, (perSentence.get(sn) || 0) + 1);
+        picked = true;
+        break;
+      }
+      if (picked) break;
+    }
+    if (!picked) break;
   }
   return chosen;
+}
+
+// Word spans [start, end, key] the rules could mark in `text` at this level
+// (before any lookup). The replay uses it for "gaps with a markable word".
+export function eligibleSpans(text, pct, dict, ctx = {}) {
+  const tokens = tokenize(text);
+  return rankedUnits(tokens, candidateUnits(tokens, pct, dict, ctx), pct, dict, ctx).map(u => [u.start, u.end, u.key]);
 }
 
 // ---- Levels ----
@@ -591,29 +711,45 @@ export async function irishFor(unit, tokens, deps, ctx = {}) {
 // Mark about pct% of the candidate units in `text` as [[irish|english]].
 // deps: { dict, lookup, onRejected? }. onRejected(word, irish) is told about
 // machine results that fail isGoodTranslation, for the run counters.
-export async function buildLevel(text, pct, deps, { ctx = {} } = {}) {
+// opts: { ctx, prefer }: prefer is a Set of lowercase English to favour.
+export async function buildLevel(text, pct, deps, { ctx = {}, prefer } = {}) {
   const { dict } = deps;
   const tokens = tokenize(text);
   const units = candidateUnits(tokens, pct, dict, ctx);
-  const targetCount = Math.ceil(units.length * (pct / 100));
-  const chosen = selectMarkerIndices(tokens, units, targetCount, pct, dict, ctx);
+  const ranked = rankedUnits(tokens, units, pct, dict, ctx, { prefer });
+  const words = tokens.filter(isWordToken).length;
+  const chosen = await pickMarkers(ranked, {
+    words,
+    sentences: sentenceMap(text),
+    target: Math.ceil(units.length * (pct / 100) * DENSITY[pct]),
+    pct,
+    tryUnit: u => irishFor(u, tokens, deps, ctx),
+  });
 
-  const marked = new Map();
-  for (const u of chosen) {
-    const m = await irishFor(u, tokens, deps, ctx);
-    if (m) marked.set(u.i, { u, m });
-  }
+  const marked = new Map(chosen.map(u => [u.i, u]));
   const result = [];
   for (let i = 0; i < tokens.length; i++) {
-    const hit = marked.get(i);
-    if (!hit) {
+    const u = marked.get(i);
+    if (!u) {
       result.push(tokens[i]);
       continue;
     }
-    result.push(hit.m);
-    i = hit.u.j;
+    result.push(u.marker);
+    i = u.j;
   }
   return result.join("");
+}
+
+// Target markers = candidates x level x DENSITY. 1 is today's formula. The
+// spacing rules (minBetween, sentence and repeat caps) now hold markers back
+// where today's code crowded them, so Beginner and Foundation ask for more
+// to stay within 15% of today's density (rule L1). Beginner then marks about
+// as many dictionary nouns as its spacing rules allow.
+export const DENSITY = { 10: 1.6, 25: 1.2, 50: 1 };
+
+// The English of every marker in a marked text, lowercased.
+export function markedKeys(text) {
+  return new Set([...text.matchAll(/\[\[[^|\]]+\|([^\]]+)\]\]/g)].map(m => m[1].toLowerCase().split(/[\s-]+/).join(" ")));
 }
 
 // ---- Headlines ----
@@ -678,7 +814,7 @@ export async function markStory({ title, text, rss, ctx }, deps, { pause, log, w
   const summaryLevels = {};
   for (const pct of LEVELS) {
     try {
-      summaryLevels[pct] = await buildLevel(rss, pct, deps, { ctx });
+      summaryLevels[pct] = await buildLevel(rss, pct, deps, { ctx, prefer: markedKeys(levels[pct] || "") });
     } catch (err) {
       if (warn) warn(`  Failed summary level ${pct}: ${err.message}`);
       summaryLevels[pct] = rss;

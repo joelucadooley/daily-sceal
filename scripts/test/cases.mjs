@@ -9,6 +9,7 @@ import { tmpdir } from "os";
 import { join } from "path";
 import { pathToFileURL } from "url";
 import * as words from "../lib/words.js";
+import { parse as parseMarked } from "./metrics.mjs";
 import { createMyMemory } from "../lib/mymemory.js";
 
 const dict = loadDict();
@@ -86,7 +87,7 @@ await test("'the cost of living crisis' gives one phrase marker", async () => {
   for (const out of outs.slice(1)) {
     assert(markers(out).some(x => x.en === "cost of living" && x.ga === dict.overrides["cost of living"]), out);
   }
-  const hy = await level("Rising cost-of-living pressures were raised by every party at the meeting in the town.", 10);
+  const hy = await level("Rising cost-of-living pressures were raised by every party at the meeting in the town.", 25);
   assert(markers(hy).some(x => x.en === "cost-of-living"), hy);
 });
 
@@ -241,6 +242,86 @@ await test("words with many meanings never go to machine translation (S4)", asyn
   const d = { dict, lookup: async w => { asked.push(w.toLowerCase()); return MACHINE[w.toLowerCase()] ?? w; } };
   await words.buildLevel("The former minister said the season would end at home after the record draw and the case.", 50, d, { ctx: SPORT });
   for (const w of ["former", "season", "end", "home", "record", "draw", "case"]) assert(!asked.includes(w), `${w} sent to MyMemory`);
+});
+
+// ---- Spacing ----
+
+const LONG_TEXT = "The government said the budget would help families with the cost of housing this winter. " +
+  "Officials expect the plan to reduce prices for workers and farmers across the country. " +
+  "The minister told the meeting in the town that the hospital and the school would get more money. " +
+  "Critics argued the measures were too small for people struggling with bills, rent and energy costs. " +
+  "The report into the economy found that the year had been hard for every family and every business. " +
+  "A spokesperson for the union said its members would vote on the offer at a meeting next week.";
+const wordGaps = text => {
+  const { markers: ms, words: n } = parseMarked(text);
+  const gaps = [];
+  let a = -1;
+  for (const m of ms) { gaps.push(m.start - a - 1); a = m.end; }
+  gaps.push(n - a - 1);
+  return { ms, gaps };
+};
+
+await test("spacing: fewest words between markers and the repeat cap hold at every level", async () => {
+  for (const p of [10, 25, 50]) {
+    const out = await level(LONG_TEXT, p);
+    const { ms, gaps } = wordGaps(out);
+    const r = words.LEVEL_RULES[p];
+    assert(gaps.slice(1, -1).every(g => g >= r.minBetween), `${p}: ${gaps.join(",")} ${out}`);
+    const seen = {};
+    for (const m of ms) seen[m.en.toLowerCase()] = (seen[m.en.toLowerCase()] || 0) + 1;
+    assert(Object.values(seen).every(n => n <= r.repeatCap), `${p}: ${JSON.stringify(seen)}`);
+  }
+});
+
+await test("Beginner: one marker per sentence under 20 words, and dictionary Irish only", async () => {
+  const out = await level(LONG_TEXT, 10);
+  const { ms } = wordGaps(out);
+  assert(ms.length >= 4, out);
+  for (const m of ms) {
+    const key = m.en.toLowerCase().split(/[\s-]+/).join(" ");
+    assert(dict.overrides[key] !== undefined || Object.values(dict.places).includes(m.ga), `${m.en}=${m.ga} not from the dictionary`);
+  }
+  for (const sentence of LONG_TEXT.split(/(?<=\.) /)) {
+    const marked = await level(sentence, 10);
+    assert(markers(marked).length <= 1, marked);
+  }
+});
+
+await test("no long gaps: the longest stretch with no marker stays under the level limit here", async () => {
+  for (const p of [10, 25, 50]) {
+    const { gaps } = wordGaps(await level(LONG_TEXT, p));
+    assert(Math.max(...gaps) <= words.LEVEL_RULES[p].maxGap, `${p}: ${gaps.join(",")}`);
+  }
+});
+
+await test("backfill: a rejected machine answer is replaced by another word nearby", async () => {
+  const text = "Residents of the valley said the pylon and the turbine were built near the lake without any warning.";
+  const asked = [];
+  // pylon comes back as junk; turbine is fine.
+  const d = { dict, lookup: async w => { asked.push(w); return { pylon: "pylon", turbine: "tuirbín" }[w.toLowerCase()] ?? w; } };
+  const out = await words.buildLevel(text, 50, d, { ctx: NEWS });
+  assert(out.includes("[[tuirbín|turbine]]"), out);
+  assert(!out.includes("|pylon]]"), out);
+});
+
+await test("Foundation uses machine Irish only where the dictionary leaves a gap", async () => {
+  const asked = [];
+  const d = { dict, lookup: async w => { asked.push(w.toLowerCase()); return MACHINE[w.toLowerCase()] ?? w; } };
+  // Dictionary words all through: no machine call needed.
+  await words.buildLevel(LONG_TEXT, 25, d, { ctx: NEWS });
+  const dense = asked.length;
+  asked.length = 0;
+  // A long stretch with no dictionary word: machine nouns may close it.
+  const sparse = "The squad trained on the beach with the ball before the visit, and the result was a deal on the pitch, " +
+    "said the coach, who praised the squad for their life and energy over the long months of preparation.";
+  const out = await words.buildLevel(sparse, 25, d, { ctx: SPORT });
+  assert(dense === 0, `machine asked ${dense} times on a dictionary-rich text`);
+  assert(asked.length > 0 && markers(out).length > 0, out);
+});
+
+await test("outage: Beginner is unchanged when MyMemory is down (dictionary only)", async () => {
+  const down = { dict, lookup: async () => { throw new Error("down"); } };
+  assert(await words.buildLevel(LONG_TEXT, 10, down, { ctx: NEWS }) === await level(LONG_TEXT, 10), "Beginner changed");
 });
 
 // ---- Irish form ----

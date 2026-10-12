@@ -113,9 +113,16 @@ export function measure(texts, { dict, senses = {} }) {
     r.longest.push(Math.max(...gaps.map(g => g.len)));
     if (eligible) {
       // A gap counts when an eligible unit fits in it with the level's
-      // spacing to the markers on either side.
-      const fits = g => eligible.some(([s, e]) =>
+      // spacing to the markers on either side, and its word has not used up
+      // the level's repeat cap in this text.
+      const used = new Map();
+      for (const m of markers) {
+        const k = m.en.toLowerCase().split(/[\s-]+/).join(" ");
+        used.set(k, (used.get(k) || 0) + 1);
+      }
+      const fits = g => eligible.some(([s, e, key]) =>
         s > g.a && e < g.b &&
+        (key === undefined || (used.get(key) || 0) < lim.repeatCap) &&
         (g.a < 0 || s - g.a - 1 >= lim.minBetween) &&
         (g.b >= words || g.b - e - 1 >= lim.minBetween));
       const withEl = gaps.filter(fits).map(g => g.len);
