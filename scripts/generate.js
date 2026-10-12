@@ -1,4 +1,5 @@
-import { writeFileSync, readFileSync, mkdirSync } from "fs";
+import { writeFileSync, readFileSync, mkdirSync, realpathSync } from "fs";
+import { fileURLToPath } from "url";
 import { DOMParser } from "@xmldom/xmldom";
 import {
   activeFeeds, feedUrl, FETCH_PER_FEED,
@@ -6,6 +7,9 @@ import {
 } from "./feeds.js";
 import { catInfo } from "./categories.js";
 import { firstSentences, stripMarkers } from "./summary.js";
+import { loadDict } from "./lib/dict.js";
+import { buildLevel, markHeadline } from "./lib/words.js";
+import { createMyMemory } from "./lib/mymemory.js";
 // Levels actually generated. 75 (Advanced) and 100 (As Gaeilge) are locked
 // funding goals in the app — the sentence-alignment approach isn't reliable
 // enough to ship, so we don't generate them at all.
@@ -15,13 +19,13 @@ const LEVELS = [10, 25, 50];
 // read far more widely than this and then filtered down to it.
 //
 // Raised from 20 to fill the section tabs on the site. The homepage only shows
-// HOMEPAGE_COUNT of these; the rest live under their section. At ~50 lookups
-// per story this is still well inside MyMemory's daily allowance.
+// HOMEPAGE_COUNT of these; the rest live under their section. A cold run
+// makes about 22 MyMemory lookups per story, well inside the daily allowance.
 const STORY_COUNT = 30;
 
 // How many paragraphs of each article to keep. Raising this makes the stories
-// longer but multiplies the translation calls, so watch the run log for quota
-// warnings after any change.
+// longer but multiplies the translation calls, so check the MyMemory line at
+// the end of the run log after any change.
 const PARAGRAPH_LIMIT = 6;
 // Below this, something is wrong upstream (feeds down, RTÉ layout change,
 // MyMemory quota) and publishing would replace a good day with a broken one.
@@ -29,49 +33,23 @@ const PARAGRAPH_LIMIT = 6;
 // outcome, and the workflow raises an issue so it does not pass unnoticed.
 const MIN_STORIES = 8;
 
-const CAT_MAP = {
-  ireland: "Éire", sport: "Spórt", politics: "Polaitíocht",
-  business: "Gnó", entertainment: "Siamsaíocht", world: "Domhan",
-  health: "Sláinte", science: "Eolaíocht", technology: "Teicneolaíocht",
-  culture: "Cultúr", weather: "Aimsir", travel: "Taisteal",
-  dublin: "Baile Átha Cliath", hurling: "Iomáint", football: "Peil",
+// Where the day's files are written. Set OUT_DIR for a dry run so public/data
+// is never touched.
+const OUT_DIR = process.env.OUT_DIR || "public/data";
+
+// Curated dictionary (overrides.json + places.json) and the MyMemory client.
+const DICT = loadDict();
+const OVERRIDES = DICT.overrides;
+const PLACES = DICT.places;
+console.log(`Loaded ${Object.keys(OVERRIDES).length} translation overrides`);
+console.log(`Loaded ${Object.keys(PLACES).length} place names`);
+
+const myMemory = createMyMemory();
+const wordDeps = {
+  dict: DICT,
+  lookup: myMemory.lookup,
+  onRejected: word => myMemory.noteRejected(word),
 };
-
-const NEVER_TRANSLATE = new Set([
-  "ireland", "irish", "dublin", "cork", "galway", "limerick", "belfast",
-  "donegal", "kerry", "mayo", "wicklow", "wexford", "kilkenny", "tipperary",
-  "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday",
-  "january", "february", "march", "april", "june", "july", "august",
-  "september", "october", "november", "december",
-  "euro", "euros", "rte", "garda", "gardaí", "taoiseach", "tánaiste", "dáil",
-  "leinster", "munster", "connacht", "ulster",
-]);
-
-// Only skipped at lower levels — at 75%+ these get included
-const FUNCTION_WORDS = new Set([
-  "the","a","an","and","or","but","in","on","at","to","for","of","with",
-  "is","are","was","were","be","been","has","have","had","will","would",
-  "could","should","may","might","this","that","these","those","it","its",
-  "he","she","they","we","you","his","her","their","our","my","your",
-  "as","by","from","not","no","so","if","than","then","when","which","who",
-  "over","into","after","before","about","up","out","also","just","more",
-  "there","said","says","very","well","still","even","only","here","now",
-]);
-
-const BAD_MARKERS = [
-  "optional", "city name", "probably does not", "file is being downloaded",
-  "no translation", "translation not found", "mymemory", "daily quota",
-  "contact us", "quota", "abuse", "being downloaded", "does not need",
-  "place name", "proper noun", "not need a translation", "probably", "(optional",
-  "name (", "untranslated", "leave as", "keep as", "do not translate",
-];
-
-function getIrCat(c) {
-  if (!c) return "Nuacht";
-  const l = c.toLowerCase();
-  for (const [k, v] of Object.entries(CAT_MAP)) if (l.includes(k)) return v;
-  return "Nuacht";
-}
 
 function msAgo(d) {
   const m = Math.floor((Date.now() - d) / 60000);
@@ -79,63 +57,6 @@ function msAgo(d) {
 }
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-
-function isGoodTranslation(original, raw) {
-  if (!raw) return false;
-  const t = raw.trim().replace(/^[.,;:!?]+|[.,;:!?]+$/g, "").trim();
-  if (!t) return false;
-  if (t.toLowerCase() === original.toLowerCase()) return false;
-  if (/[\n\r\t]/.test(t)) return false;
-  if (/[\[\](){}]/.test(t)) return false;
-  const tl = t.toLowerCase();
-  if (BAD_MARKERS.some(m => tl.includes(m))) return false;
-  // Reject any parenthetical note, e.g. "ard mhacha (optional...)"
-  if (/[()]/.test(t)) return false;
-  // A single source word should map to at most 2 Irish words; note-blobs are long
-  if (t.trim().split(/\s+/).length > 2) return false;
-  if (t.length > original.length * 5) return false;
-  if (/\d/.test(t) && !/\d/.test(original)) return false;
-  if (/[_/\\@#$%^&*=+|<>]/.test(t)) return false;
-  if (tl.includes("http") || tl.includes("www")) return false;
-  // Reject suspiciously short results: a 1-2 char translation for a real word
-  // is almost always junk (e.g. "south" -> "D")
-  if (original.length >= 4 && t.replace(/[.,;:!?]/g, "").length <= 2) return false;
-  // Reject words with letters/combinations that don't occur in standard Irish.
-  // Irish doesn't use j, k, q, v, w, x, y, z (except in loanwords), so a result
-  // full of them is likely junk or an untranslated foreign string.
-  if (/[jkqwxyz]/i.test(t)) return false;
-  // Irish words must contain at least one vowel (incl. fada vowels)
-  if (!/[aeiouáéíóú]/i.test(t)) return false;
-  // Reject 4+ consonants in a row (not a valid Irish cluster) — catches mangled output
-  if (/[bcdfghlmnprst]{5,}/i.test(t)) return false;
-  return true;
-}
-
-// A small set of common real Irish words we trust outright (helps avoid
-// over-rejecting good short words). Not exhaustive — just a safety net.
-const KNOWN_GOOD = new Set([
-  "rialtas","tithíocht","cíosanna","teach","tithe","scéal","nuacht","lá",
-  "bliain","blianta","tír","domhan","airgead","obair","duine","daoine",
-  "rud","áit","cúirt","dlí","sláinte","scoil","oideachas","aimsir","báisteach",
-]);
-
-// Match the casing of the original word so MyMemory can't randomly capitalise.
-// Handles both "Tuar" (wrong leading cap) and "tRIALACHA" (weird internal caps).
-function matchCase(original, translated) {
-  if (!translated) return translated;
-  // Original is a normal lowercase word: force the whole translation lowercase,
-  // since Irish mid-sentence words are lowercase and any caps here are junk.
-  if (/^[a-z]/.test(original)) {
-    return translated.toLowerCase();
-  }
-  // Original starts uppercase (sentence start): lowercase everything after the
-  // first letter, then capitalise the first, to fix mixed-case noise.
-  return translated.charAt(0).toUpperCase() + translated.slice(1).toLowerCase();
-}
-
-function cleanTranslation(raw) {
-  return raw.trim().replace(/^[.,;:!?]+|[.,;:!?]+$/g, "").trim();
-}
 
 async function scrapeArticle(url) {
   try {
@@ -170,325 +91,6 @@ async function scrapeArticle(url) {
     console.warn(`  Could not scrape ${url}: ${e.message}`);
     return null;
   }
-}
-
-// Curated overrides: english (lowercase) -> trusted Irish. Checked before MyMemory.
-// Grows over time as corrections are made — every fix here is permanent.
-let OVERRIDES = {};
-try {
-  OVERRIDES = JSON.parse(readFileSync("scripts/overrides.json", "utf-8"));
-  console.log(`Loaded ${Object.keys(OVERRIDES).length} translation overrides`);
-} catch {
-  console.log("No overrides file found, continuing without");
-}
-
-// Verified Irish place names (english lowercase -> properly-capitalised Irish).
-// These are translated even though they're proper nouns, and keep their capitals.
-let PLACES = {};
-try {
-  PLACES = JSON.parse(readFileSync("scripts/places.json", "utf-8"));
-  console.log(`Loaded ${Object.keys(PLACES).length} place names`);
-} catch {
-  console.log("No places file found, continuing without");
-}
-
-async function translate(word) {
-  const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(word)}&langpair=en|ga&de=joelucadooley@gmail.com`;
-  const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
-  const data = await res.json();
-  if (data.responseStatus === 200) return data.responseData.translatedText;
-  throw new Error(`Translation failed: ${data.responseStatus}`);
-}
-
-const translationCache = {};
-
-// Place keys that are also ordinary English words. Matching these on a
-// lowercase token turns "stepped down" into County Down, so they only count
-// when the source text capitalised them as a proper noun.
-const RISKY_PLACE_KEYS = new Set([
-  "down", "clare", "bray", "lu", "sord", "laois", "ennis", "naas",
-  "meath", "mayo", "trim", "cork", "clones", "athlone", "cobh",
-]);
-
-// Words that can follow a county name and still mean the county:
-// "Clare County Council", "Clare GAA", "Clare FM".
-const COUNTY_FOLLOWERS = new Set([
-  "county", "co", "gaa", "fm", "council", "senior", "minor", "hurling", "football", "camogie", "ladies",
-]);
-
-// A couple of place names are something else when a capital follows them:
-// "Clare O'Mahony" is a person and "Down Under" is Australia.
-function notAPlaceHere(key, next) {
-  if (key === "down" && /^under$/i.test(next)) return true;
-  if (key === "clare" && /^[A-Z]/.test(next) && !COUNTY_FOLLOWERS.has(next.toLowerCase().replace(/[^a-z]/g, ""))) return true;
-  return false;
-}
-
-// The next word after token i, skipping spaces; "" if punctuation comes first.
-function nextWord(tokens, i) {
-  let j = i + 1;
-  while (j < tokens.length && /^\s+$/.test(tokens[j])) j++;
-  return j < tokens.length && /^\w/.test(tokens[j]) ? tokens[j] : "";
-}
-
-function placeFor(word, next = "") {
-  const key = word.toLowerCase();
-  if (PLACES[key] === undefined) return undefined;
-  if (RISKY_PLACE_KEYS.has(key) && word[0] !== word[0].toUpperCase()) return undefined;
-  if (notAPlaceHere(key, next)) return undefined;
-  return PLACES[key];
-}
-
-async function translateCached(word, next = "") {
-  const key = word.toLowerCase();
-  // Verified place names win first, with their proper capitalisation
-  const place = placeFor(word, next);
-  if (place !== undefined) return place;
-  // Curated overrides win over MyMemory
-  if (OVERRIDES[key] !== undefined) return OVERRIDES[key];
-  if (translationCache[key] !== undefined) return translationCache[key];
-  await sleep(250);
-  const result = await translate(word);
-  translationCache[key] = result;
-  return result;
-}
-
-function shouldTranslate(tok, pct, next = "") {
-  const lower = tok.toLowerCase();
-  if (NEVER_TRANSLATE.has(lower)) return false;
-  // Place names are proper nouns but we DO want to translate them (from PLACES),
-  // unless this one is a person or a phrase ("Clare O'Mahony", "Down Under")
-  if (PLACES[lower] !== undefined) return !notAPlaceHere(lower, next);
-  if (/^[A-Z]/.test(tok)) return false;
-  if (/^\d+$/.test(tok)) return false;
-  if (tok.length <= 1) return false;
-
-  if (pct <= 25) {
-    // Beginner and Foundation: content words only, no short words
-    if (FUNCTION_WORDS.has(lower)) return false;
-    if (tok.length <= 3) return false;
-  } else if (pct <= 50) {
-    // Intermediate: content words, allow slightly shorter
-    if (FUNCTION_WORDS.has(lower)) return false;
-    if (tok.length <= 2) return false;
-  }
-  // Advanced (75%) and above: translate everything including function words
-  return true;
-}
-
-// Words that read as nouns often enough to be worth marking, and endings that
-// give a word away as a verb or adverb. There is no part-of-speech tagger here,
-// so this is a heuristic, but it is a great deal better than picking by
-// position, which is what this used to do.
-const NOUN_ENDINGS = [/tion$/, /sion$/, /ment$/, /ness$/, /ity$/, /ance$/, /ence$/, /ship$/, /hood$/, /ism$/, /ist$/, /age$/, /ure$/];
-const NOT_NOUN_ENDINGS = [/ly$/, /ing$/, /ed$/, /ise$/, /ize$/, /ful$/, /ous$/, /ive$/, /able$/, /ible$/];
-const DETERMINERS = new Set(["the","a","an","its","their","his","her","this","that","these","those","our","some","any","each","every","no"]);
-
-function nounScore(tok, prevWord) {
-  const w = tok.toLowerCase();
-  let score = 0;
-  if (OVERRIDES[w] !== undefined) score += 4;        // curated vocabulary, already trusted
-  if (PLACES[w] !== undefined) score += 3;
-  if (DETERMINERS.has((prevWord || "").toLowerCase())) score += 3;  // "the depot", "a warehouse"
-  if (NOUN_ENDINGS.some(re => re.test(w))) score += 3;
-  if (NOT_NOUN_ENDINGS.some(re => re.test(w))) score -= 4;
-  if (/[^s]s$/.test(w) && !/(ss|us|is)$/.test(w)) score += 1;       // plurals read as nouns
-  if (w.length >= 6) score += 1;
-  return score;
-}
-
-// Choose which words get marked. Two rules that the old even-spacing version
-// had no way to express: prefer whole nouns, and never mark two words that sit
-// side by side, so a reader always gets a standalone word rather than a
-// fragment of a phrase.
-function selectMarkerIndices(tokens, candidates, targetCount) {
-  // Position of each candidate in the sequence of words, so "adjacent" means
-  // adjacent words rather than adjacent tokens, which include whitespace.
-  const wordPos = new Map();
-  let n = 0;
-  tokens.forEach((tok, i) => { if (/^\w/.test(tok)) wordPos.set(i, n++); });
-
-  const prevWordOf = i => {
-    for (let j = i - 1; j >= 0; j--) if (/^\w/.test(tokens[j])) return tokens[j];
-    return "";
-  };
-
-  const scored = candidates
-    .map(c => ({ ...c, score: nounScore(c.tok, prevWordOf(c.i)), pos: wordPos.get(c.i) }))
-    .sort((a, b) => b.score - a.score || a.pos - b.pos);
-
-  const chosen = [];
-  for (const c of scored) {
-    if (chosen.length >= targetCount) break;
-    if (c.score < 0) continue;                                       // clearly not a noun
-    if (chosen.some(p => Math.abs(p.pos - c.pos) < 2)) continue;     // no side-by-side markers
-    chosen.push(c);
-  }
-  return new Set(chosen.map(c => c.i));
-}
-
-async function buildLevel(sentence, pct) {
-  // For Advanced (75%), translate the whole sentence at once for much better Irish density
-  if (pct >= 75) {
-    return await buildAdvancedLevel(sentence);
-  }
-
-  const tokens = sentence.match(/(\w[\w']*|[^\w\s]|\s+)/g) || [];
-
-  const candidates = tokens
-    .map((tok, i) => ({ tok, i, isWord: /^\w/.test(tok) }))
-    .filter(({ tok, i, isWord }) => isWord && shouldTranslate(tok, pct, nextWord(tokens, i)));
-
-  const targetCount = Math.ceil(candidates.length * (pct / 100));
-  const toTranslateIndices = selectMarkerIndices(tokens, candidates, targetCount);
-
-  const result = [];
-  for (const { tok, i, isWord } of tokens.map((tok, i) => ({ tok, i, isWord: /^\w/.test(tok) }))) {
-    if (isWord && toTranslateIndices.has(i)) {
-      try {
-        const next = nextWord(tokens, i);
-        const irish = await translateCached(tok, next);
-        const lower = tok.toLowerCase();
-        const isPlace = placeFor(tok, next) !== undefined;
-        const isOverride = OVERRIDES[lower] !== undefined;
-        if (isPlace) {
-          // Keep proper capitalisation, don't run matchCase
-          result.push(`[[${irish}|${tok}]]`);
-        } else if (isOverride || isGoodTranslation(tok, irish)) {
-          result.push(`[[${matchCase(tok, cleanTranslation(irish))}|${tok}]]`);
-        } else {
-          result.push(tok);
-        }
-      } catch {
-        result.push(tok);
-      }
-    } else {
-      result.push(tok);
-    }
-  }
-  return result.join("");
-}
-
-// Translate a full sentence to Irish, then pair each translated word with its English source
-async function buildAdvancedLevel(sentence) {
-  try {
-    // Split into manageable chunks at sentence boundaries
-    const chunks = sentence.match(/[^.!?]+[.!?]*/g) || [sentence];
-    const resultParts = [];
-
-    for (const chunk of chunks) {
-      await sleep(400);
-      const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(chunk.trim())}&langpair=en|ga`;
-      const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
-      const data = await res.json();
-
-      if (data.responseStatus !== 200) {
-        resultParts.push(chunk);
-        continue;
-      }
-
-      const irishSentence = data.responseData.translatedText;
-
-      // Check it's actually Irish and not garbage
-      if (!irishSentence || irishSentence.toLowerCase() === chunk.toLowerCase()) {
-        resultParts.push(chunk);
-        continue;
-      }
-
-      // Align English words with Irish words to create [[irish|english]] pairs
-      const englishWords = chunk.trim().split(/\s+/);
-      const irishWords = irishSentence.trim().split(/\s+/);
-
-      // If word counts are similar, pair them up
-      if (irishWords.length >= englishWords.length * 0.6 && irishWords.length <= englishWords.length * 1.8) {
-        const paired = [];
-        const maxLen = Math.max(englishWords.length, irishWords.length);
-        for (let i = 0; i < englishWords.length; i++) {
-          const eng = englishWords[i];
-          const ire = irishWords[i];
-          // Keep proper nouns, numbers, punctuation-only tokens in English
-          if (!ire || /^[A-Z]/.test(eng) || /^\d/.test(eng) || !/\w/.test(eng)) {
-            paired.push(eng);
-          } else {
-            const cleanEng = eng.replace(/[.,;:!?"]/g, "");
-            const cleanIre = ire.replace(/[.,;:!?"]/g, "");
-            const punct = eng.match(/[.,;:!?"]+$/)?.[0] || "";
-            if (cleanIre && cleanIre.toLowerCase() !== cleanEng.toLowerCase()) {
-              paired.push(`[[${matchCase(cleanEng, cleanIre)}|${cleanEng}]]${punct}`);
-            } else {
-              paired.push(eng);
-            }
-          }
-        }
-        resultParts.push(paired.join(" "));
-      } else {
-        // Word counts too different — just use the full Irish sentence without word markers
-        // so at least the sentence is in Irish even if untappable
-        resultParts.push(irishSentence);
-      }
-    }
-
-    return resultParts.join(" ");
-  } catch (e) {
-    console.warn(`  Advanced translation failed: ${e.message}, falling back to word-by-word`);
-    // Fall back to aggressive word-by-word
-    return buildLevelWordByWord(sentence, 75);
-  }
-}
-
-async function buildLevelWordByWord(sentence, pct) {
-  const tokens = sentence.match(/(\w[\w']*|[^\w\s]|\s+)/g) || [];
-  const candidates = tokens
-    .map((tok, i) => ({ tok, i, isWord: /^\w/.test(tok) }))
-    .filter(({ tok, i, isWord }) => isWord && shouldTranslate(tok, pct, nextWord(tokens, i)));
-  const targetCount = Math.ceil(candidates.length * (pct / 100));
-  const toTranslateIndices = selectMarkerIndices(tokens, candidates, targetCount);
-  const result = [];
-  for (const { tok, i, isWord } of tokens.map((tok, i) => ({ tok, i, isWord: /^\w/.test(tok) }))) {
-    if (isWord && toTranslateIndices.has(i)) {
-      try {
-        const next = nextWord(tokens, i);
-        const irish = await translateCached(tok, next);
-        const lower = tok.toLowerCase();
-        const isPlace = placeFor(tok, next) !== undefined;
-        const isOverride = OVERRIDES[lower] !== undefined;
-        if (isPlace) {
-          result.push(`[[${irish}|${tok}]]`);
-        } else if (isOverride || isGoodTranslation(tok, irish)) {
-          result.push(`[[${matchCase(tok, cleanTranslation(irish))}|${tok}]]`);
-        } else { result.push(tok); }
-      } catch { result.push(tok); }
-    } else { result.push(tok); }
-  }
-  return result.join("");
-}
-
-// Mark up to 3 headline words with Irish, using ONLY the verified dictionaries
-// (overrides + places), never MyMemory, so the most visible text is always right.
-function markHeadline(title) {
-  const tokens = title.split(/(\s+)/);
-  const candidates = [];
-  tokens.forEach((tok, i) => {
-    const clean = tok.replace(/[^A-Za-zÀ-ÿ'’]/g, "");
-    if (!clean) return;
-    const lower = clean.toLowerCase();
-    // placeFor applies the same capital-letter check as the summaries, so
-    // "steps down" stays English while "Down win Ulster title" is the county.
-    const place = placeFor(clean, (tokens[i + 2] || "").replace(/[^A-Za-zÀ-ÿ'’]/g, ""));
-    if (place !== undefined) {
-      candidates.push({ i, clean, irish: place, place: true });
-    } else if (OVERRIDES[lower] !== undefined && clean.length >= 4) {
-      let irish = OVERRIDES[lower];
-      if (/^[A-Z]/.test(clean)) irish = irish.charAt(0).toUpperCase() + irish.slice(1);
-      candidates.push({ i, clean, irish, place: false });
-    }
-  });
-  // Prefer place names, then longer words; cap at 3 so it stays readable
-  candidates.sort((a, b) => (b.place ? 1 : 0) - (a.place ? 1 : 0) || b.clean.length - a.clean.length);
-  for (const c of candidates.slice(0, 3)) {
-    tokens[c.i] = tokens[c.i].replace(c.clean, `[[${c.irish}|${c.clean}]]`);
-  }
-  return tokens.join("");
 }
 
 // Read one feed. A dead or slow feed logs a warning and returns nothing rather
@@ -584,7 +186,7 @@ async function processStory(story, index) {
   for (const pct of LEVELS) {
     console.log(`  Generating ${pct}% level...`);
     try {
-      levels[pct] = await buildLevel(baseText, pct);
+      levels[pct] = await buildLevel(baseText, pct, wordDeps);
     } catch (err) {
       console.warn(`  Failed level ${pct}: ${err.message}`);
       levels[pct] = baseText;
@@ -599,7 +201,7 @@ async function processStory(story, index) {
   const rssSummary = story.rssSummary || firstSentences(stripMarkers(baseText));
   for (const pct of LEVELS) {
     try {
-      summaryLevels[pct] = await buildLevel(rssSummary, pct);
+      summaryLevels[pct] = await buildLevel(rssSummary, pct, wordDeps);
     } catch (err) {
       console.warn(`  Failed summary level ${pct}: ${err.message}`);
       summaryLevels[pct] = rssSummary;
@@ -608,7 +210,7 @@ async function processStory(story, index) {
 
   // Headline with up to three verified words marked (overrides and places
   // only, never MyMemory), so the app can make headline words tappable.
-  const titleIr = markHeadline(story.title);
+  const titleIr = markHeadline(story.title, DICT);
 
   return { ...story, summary: baseText, rssSummary, levels, summaryLevels, titleIr };
 }
@@ -621,12 +223,13 @@ async function main() {
     for (let i = 0; i < stories.length; i++) {
       processed.push(await processStory(stories[i], i));
     }
+    console.log(`\n${myMemory.summary()}`);
     const output = {
       date: new Date().toISOString().slice(0, 10),
       generated: new Date().toISOString(),
       stories: processed,
     };
-    mkdirSync("public/data", { recursive: true });
+    mkdirSync(OUT_DIR, { recursive: true });
     if (output.stories.length < MIN_STORIES) {
       throw new Error(
         `Only ${output.stories.length} stories survived (minimum ${MIN_STORIES}). ` +
@@ -634,13 +237,13 @@ async function main() {
       );
     }
 
-    writeFileSync("public/data/today.json", JSON.stringify(output, null, 2));
-    console.log(`\n✓ Written public/data/today.json with ${processed.length} stories`);
+    writeFileSync(`${OUT_DIR}/today.json`, JSON.stringify(output, null, 2));
+    console.log(`\n✓ Written ${OUT_DIR}/today.json with ${processed.length} stories`);
 
     // Publish the list of verified (override) English keys so the export page
     // can mark which weekly-recap words come from the trusted dictionary.
     try {
-      writeFileSync("public/data/verified.json", JSON.stringify(Object.keys(OVERRIDES), null, 2));
+      writeFileSync(`${OUT_DIR}/verified.json`, JSON.stringify(Object.keys(OVERRIDES), null, 2));
     } catch (e) {
       console.warn("Could not write verified.json:", e.message);
     }
@@ -659,15 +262,15 @@ async function main() {
           .map(([en, ga]) => ({ ga, en })),
         places: Object.entries(PLACES).map(([en, ga]) => ({ ga, en })),
       };
-      writeFileSync("public/data/focail.json", JSON.stringify(focail, null, 2));
-      console.log(`✓ Written public/data/focail.json (${focail.words.length} words, ${focail.places.length} places)`);
+      writeFileSync(`${OUT_DIR}/focail.json`, JSON.stringify(focail, null, 2));
+      console.log(`✓ Written ${OUT_DIR}/focail.json (${focail.words.length} words, ${focail.places.length} places)`);
     } catch (e) {
       console.warn("Could not write focail.json:", e.message);
     }
 
     // Publish place names so the cover-headline tool can translate them correctly.
     try {
-      writeFileSync("public/data/places.json", JSON.stringify(PLACES, null, 2));
+      writeFileSync(`${OUT_DIR}/places.json`, JSON.stringify(PLACES, null, 2));
     } catch (e) {
       console.warn("Could not write places.json:", e.message);
     }
@@ -675,10 +278,10 @@ async function main() {
     // Archive — save a dated copy and update the index.
     // Wrapped separately so any archive problem can never break today.json or the site.
     try {
-      mkdirSync("public/data/archive", { recursive: true });
-      writeFileSync(`public/data/archive/${output.date}.json`, JSON.stringify(output, null, 2));
+      mkdirSync(`${OUT_DIR}/archive`, { recursive: true });
+      writeFileSync(`${OUT_DIR}/archive/${output.date}.json`, JSON.stringify(output, null, 2));
 
-      const indexPath = "public/data/archive/index.json";
+      const indexPath = `${OUT_DIR}/archive/index.json`;
       let index = [];
       try { index = JSON.parse(readFileSync(indexPath, "utf-8")); } catch { index = []; }
       if (!Array.isArray(index)) index = [];
@@ -700,4 +303,16 @@ async function main() {
   }
 }
 
-main();
+export { processStory, main };
+
+// Run only when started directly (node scripts/generate.js), so the tests can
+// import this file without fetching feeds or writing anything.
+function startedDirectly() {
+  try {
+    return realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url));
+  } catch {
+    return false;
+  }
+}
+
+if (startedDirectly()) main();
