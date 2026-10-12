@@ -238,50 +238,179 @@ export function nounScore(tok, prev, dict) {
   return score;
 }
 
-// Choose which words get marked: prefer whole nouns, and never mark two words
-// that sit side by side.
-export function selectMarkerIndices(tokens, candidates, targetCount, dict) {
-  // Position of each candidate in the sequence of words, so "adjacent" means
-  // adjacent words rather than adjacent tokens, which include whitespace.
+// ---- Phrases (rule W5) ----
+
+// Multi-word keys of the dictionary (overrides and places; senses later),
+// indexed by their first word, longest first. Keys match case-insensitively
+// across single spaces or hyphens, so "cost of living", "Cost of Living" and
+// "year-on-year" all find their entry.
+const PHRASE_INDEX = new WeakMap();
+const splitKey = key => key.toLowerCase().split(/[\s-]+/).filter(Boolean);
+
+export function phraseIndex(dict) {
+  let idx = PHRASE_INDEX.get(dict);
+  if (idx) return idx;
+  idx = new Map();
+  const keys = new Set([
+    ...Object.keys(dict.senses || {}), ...Object.keys(dict.overrides), ...Object.keys(dict.places),
+  ]);
+  for (const key of keys) {
+    const words = splitKey(key);
+    if (words.length < 2) continue;
+    if (!idx.has(words[0])) idx.set(words[0], []);
+    idx.get(words[0]).push({ key, words });
+  }
+  for (const list of idx.values()) list.sort((a, b) => b.words.length - a.words.length);
+  PHRASE_INDEX.set(dict, idx);
+  return idx;
+}
+
+// The last token index of `entry` when it starts at token i, else -1.
+function matchPhraseAt(tokens, i, entry) {
+  let k = i;
+  for (let w = 1; w < entry.words.length; w++) {
+    const sep = tokens[k + 1], word = tokens[k + 2];
+    if (sep !== " " && sep !== "-") return -1;
+    if (!word || word.toLowerCase() !== entry.words[w]) return -1;
+    k += 2;
+  }
+  return k;
+}
+
+// True when token i opens a sentence (or the text), so a capital there is
+// not a sign of a name.
+export function atSentenceStart(tokens, i) {
+  for (let j = i - 1; j >= 0; j--) {
+    if (/^\s+$/.test(tokens[j])) continue;
+    return /^[.!?:"“‘(\[]$/.test(tokens[j]);
+  }
+  return true;
+}
+
+// Teams on a sports page are not the town: "Cork City", "Galway United FC".
+const CLUB_NEXT = /^(fc|afc|united|rovers|rangers|celtic|athletic|wanderers)$/i;
+
+// Dictionary phrases in the text, left to right, longest match first, never
+// overlapping. Each is { i, j, text, key, irish, source } where i..j are the
+// token indices it covers; `irish === null` means "leave these words in
+// English" (a senses null).
+//   body: true for story text, where NEVER_TRANSLATE place words stay
+//   English as before (question 5); false for headlines.
+export function findPhrases(tokens, dict, ctx = {}, { body = true } = {}) {
+  const idx = phraseIndex(dict);
+  const found = [];
+  for (let i = 0; i < tokens.length; i++) {
+    if (!isWordToken(tokens[i])) continue;
+    const list = idx.get(tokens[i].toLowerCase());
+    if (!list) continue;
+    for (const entry of list) {
+      const j = matchPhraseAt(tokens, i, entry);
+      if (j < 0) continue;
+      const text = tokens.slice(i, j + 1).join("");
+      const next = nextWord(tokens, j);
+      const prev = prevWord(tokens, i);
+      const hit = phraseIrish(entry.key, { ctx, prev, next, body, dict });
+      if (hit === undefined) continue;
+      // A capital inside the phrase, or at its start mid-sentence, means a
+      // name ("Mental Health Ireland") unless the entry itself is a name.
+      const caps = tokens.slice(i, j + 1).filter((t, n) => isWordToken(t) && /^\p{Lu}/u.test(t) && !(n === 0 && atSentenceStart(tokens, i)));
+      if (hit.irish && caps.length && hit.source !== "place" && !/\p{Lu}/u.test(hit.irish)) continue;
+      found.push({ i, j, text, key: entry.words.join(" "), ...hit });
+      i = j;
+      break;
+    }
+  }
+  return found;
+}
+
+// Irish for a phrase key: place, then approved sense, then overrides.
+// undefined when it should not be used here.
+function phraseIrish(key, { ctx, prev, next, body, dict }) {
+  const lower = key.toLowerCase();
+  if (dict.places[lower] !== undefined) {
+    const first = splitKey(lower)[0];
+    const clubOrName = ctx.topic === "sport" || CLUB_NEXT.test(next) || /^\p{Lu}/u.test(next);
+    if (!clubOrName && !(body && NEVER_TRANSLATE.has(first))) return { irish: dict.places[lower], source: "place" };
+  }
+  if (dict.overrides[lower] !== undefined) return { irish: dict.overrides[lower], source: "dict" };
+  return undefined;
+}
+
+// ---- Units ----
+
+// Everything that could carry a marker in this text at this level: the
+// dictionary phrases plus every single word that passes shouldTranslate and
+// is not inside a phrase. Sorted by position. Each unit:
+//   { i, j, text, key, phrase, irish?, source?, start, end }
+// where start..end are word positions (a phrase spans several).
+export function candidateUnits(tokens, pct, dict, ctx = {}) {
   const wordPos = new Map();
   let n = 0;
   tokens.forEach((tok, i) => { if (isWordToken(tok)) wordPos.set(i, n++); });
 
-  const scored = candidates
-    .map(c => ({ ...c, score: nounScore(c.tok, prevWord(tokens, c.i), dict), pos: wordPos.get(c.i) }))
-    .sort((a, b) => b.score - a.score || a.pos - b.pos);
+  const phrases = findPhrases(tokens, dict, ctx);
+  const covered = new Set();
+  for (const p of phrases) for (let k = p.i; k <= p.j; k++) covered.add(k);
+
+  const units = [];
+  for (const p of phrases) {
+    if (p.irish === null) continue;
+    units.push({ ...p, phrase: true, start: wordPos.get(p.i), end: wordPos.get(p.j) });
+  }
+  tokens.forEach((tok, i) => {
+    if (!isWordToken(tok) || covered.has(i)) return;
+    if (!shouldTranslate(tok, pct, nextWord(tokens, i), dict)) return;
+    units.push({ i, j: i, text: tok, key: tok.toLowerCase(), phrase: false, start: wordPos.get(i), end: wordPos.get(i) });
+  });
+  return units.sort((a, b) => a.i - b.i);
+}
+
+// Choose which units get marked: prefer whole nouns, and never mark two units
+// that sit side by side. A dictionary phrase scores as a trusted noun.
+export function selectMarkerIndices(tokens, units, targetCount, dict) {
+  const scored = units
+    .map(u => ({
+      ...u,
+      score: u.phrase
+        ? 7 + (DETERMINERS.has(prevWord(tokens, u.i).toLowerCase()) ? 3 : 0)
+        : nounScore(u.text, prevWord(tokens, u.i), dict),
+    }))
+    .sort((a, b) => b.score - a.score || a.start - b.start);
 
   const chosen = [];
   for (const c of scored) {
     if (chosen.length >= targetCount) break;
-    if (c.score < 0) continue;                                       // clearly not a noun
-    if (chosen.some(p => Math.abs(p.pos - c.pos) < 2)) continue;     // no side-by-side markers
+    if (c.score < 0) continue;                                                 // clearly not a noun
+    if (chosen.some(p => c.start - p.end < 2 && p.start - c.end < 2)) continue; // no side-by-side markers
     chosen.push(c);
   }
-  return new Set(chosen.map(c => c.i));
+  return chosen;
 }
 
 // ---- Levels ----
 
-// Mark about pct% of the candidate words in `text` as [[irish|english]].
+// Mark about pct% of the candidate units in `text` as [[irish|english]].
 // deps: { dict, lookup, onRejected? }. onRejected(word, irish) is told about
 // machine results that fail isGoodTranslation, for the run counters.
-export async function buildLevel(text, pct, deps) {
+export async function buildLevel(text, pct, deps, { ctx = {} } = {}) {
   const { dict, onRejected } = deps;
   const tokens = tokenize(text);
-
-  const candidates = tokens
-    .map((tok, i) => ({ tok, i, isWord: isWordToken(tok) }))
-    .filter(({ tok, i, isWord }) => isWord && shouldTranslate(tok, pct, nextWord(tokens, i), dict));
-
-  const targetCount = Math.ceil(candidates.length * (pct / 100));
-  const chosen = selectMarkerIndices(tokens, candidates, targetCount, dict);
+  const units = candidateUnits(tokens, pct, dict, ctx);
+  const targetCount = Math.ceil(units.length * (pct / 100));
+  const chosen = new Map(selectMarkerIndices(tokens, units, targetCount, dict).map(u => [u.i, u]));
 
   const result = [];
   for (let i = 0; i < tokens.length; i++) {
     const tok = tokens[i];
-    if (!isWordToken(tok) || !chosen.has(i)) {
+    const unit = chosen.get(i);
+    if (!unit) {
       result.push(tok);
+      continue;
+    }
+    if (unit.phrase) {
+      const irish = unit.source === "place" ? unit.irish : matchCase(unit.text, unit.irish, { trusted: true });
+      result.push(`[[${irish}|${unit.text}]]`);
+      i = unit.j;
       continue;
     }
     try {

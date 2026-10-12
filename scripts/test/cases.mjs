@@ -73,6 +73,26 @@ await test("a lowercase place word is an ordinary word, never the place", async 
   assert(!words.shouldTranslate("down", 50, "", dict), "lowercase down");
 });
 
+// ---- Phrases ----
+
+await test("'the cost of living crisis' gives one phrase marker", async () => {
+  const text = "Families say the cost of living crisis is the main issue as the election campaign gets under way.";
+  const outs = await all(text);
+  for (const out of outs) assert(!markers(out).some(x => /^(cost|living)$/i.test(x.en)), out);
+  for (const out of outs.slice(1)) {
+    assert(markers(out).some(x => x.en === "cost of living" && x.ga === dict.overrides["cost of living"]), out);
+  }
+  const hy = await level("Rising cost-of-living pressures were raised by every party at the meeting in the town.", 10);
+  assert(markers(hy).some(x => x.en === "cost-of-living"), hy);
+});
+
+await test("a phrase that is a name keeps its capitals; a capitalised ordinary phrase stays English", async () => {
+  const out = await level("Talks on the Good Friday Agreement resumed in the city yesterday with all parties present.", 50);
+  assert(out.includes("[[Comhaontú Aoine an Chéasta|Good Friday Agreement]]"), out);
+  const name = await level("The charity Mental Health Ireland said the report showed a sharp rise in demand.", 50);
+  assert(!/\|Mental Health\]\]/.test(name), name);
+});
+
 // ---- Tokens ----
 
 await test("'Séamus' stays whole and is not marked", async () => {
