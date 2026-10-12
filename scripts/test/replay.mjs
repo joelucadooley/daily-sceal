@@ -5,6 +5,7 @@
 //   node scripts/test/replay.mjs                 table + checks, exit 1 on a failed check
 //   node scripts/test/replay.mjs --from 2026-10-01
 //   node scripts/test/replay.mjs --archive <dir>
+//   node scripts/test/replay.mjs --senses <file>   as if those senses were approved
 //
 // No network: fetch is replaced before anything else runs (archive.mjs), the
 // MyMemory answers come from a table built from the archive's own markers,
@@ -15,6 +16,9 @@ import {
 } from "./runs.mjs";
 import * as words from "../lib/words.js";
 import { parse, quant as quantile } from "./metrics.mjs";
+import { loadDict, loadSenses } from "../lib/dict.js";
+import { resolve } from "path";
+import { pathToFileURL } from "url";
 
 const args = process.argv.slice(2);
 const opt = (name, fallback) => {
@@ -24,6 +28,11 @@ const opt = (name, fallback) => {
 const archive = loadArchive({ dir: archiveDir(args), from: opt("--from", "2026-09-11") });
 const { stories, table, replayFiles } = archive;
 const answers = makeAnswers(table);
+const sensesFile = opt("--senses", null);
+const dict = sensesFile
+  ? { ...loadDict(), senses: loadSenses(pathToFileURL(resolve(sensesFile))) }
+  : loadDict();
+if (sensesFile) console.log(`Senses as if approved: ${Object.keys(dict.senses).length} words from ${sensesFile}`);
 
 let failed = false;
 const fail = msg => { failed = true; console.log(`FAIL ${msg}`); };
@@ -39,7 +48,7 @@ net.calls = 0;
 const before = await runBaseline(stories, answers.tableAnswer);
 const beforeCalls = net.calls;
 net.calls = 0;
-const lib = await runLib(stories, answers.tableAnswer);
+const lib = await runLib(stories, answers.tableAnswer, { dict });
 const afterCalls = net.calls;
 const mBefore = collect(stories, before, lib.dict, archive);
 const mAfter = collect(stories, lib.out, lib.dict, archive);
@@ -120,7 +129,7 @@ if (words.headlineHasEligible) {
 // ---- 2. Noisy answers: nothing odd may reach a marker ----
 
 net.calls = 0;
-const noisy = await runLib(stories, answers.noisyAnswer, { breakerLimit: Infinity });
+const noisy = await runLib(stories, answers.noisyAnswer, { breakerLimit: Infinity, dict });
 console.log(`\nNoisy answers: ${noisy.mm.summary()}`);
 if (!noisy.mm.stats.errors) fail("noisy run produced no errors");
 if (!noisy.mm.rejected) fail("noisy run produced no rejections");
@@ -142,7 +151,7 @@ if (junk && !words.isGoodTranslation("record", "barr-")) fail(`noisy run let ${j
 // ---- 3. Outage: every call fails ----
 
 net.calls = 0;
-const outage = await runLib(stories, answers.outageAnswer);
+const outage = await runLib(stories, answers.outageAnswer, { dict });
 const outageCalls = net.calls;
 console.log(`Outage: ${outage.mm.summary()}`);
 if (!outage.mm.breakerOpen) fail("breaker did not open during the outage");
