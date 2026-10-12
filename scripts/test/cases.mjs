@@ -190,6 +190,59 @@ await test("grammar words wait for Foundation", async () => {
   assert(words.shouldTranslate("during", 25, "", dict), "during at 25");
 });
 
+// ---- Ranking ----
+
+await test("nouns first: Beginner marks bank and money, not accused", async () => {
+  const text = "The bank had accused the men of stealing money from the project over several years.";
+  const out = await level(text, 10);
+  const m = markers(out);
+  assert(m.length > 0, out);
+  assert(!m.some(x => /^(accused|stealing)$/.test(x.en)), out);
+  assert(m.every(x => ["bank", "money", "men", "project", "years"].includes(x.en)), out);
+});
+
+await test("at Beginner no -ed words, even from the dictionary", async () => {
+  const text = "The minister announced the plan and confirmed that the hospital opened a new ward. " +
+    "Two people were injured and the road was closed for the day while crews worked on it.";
+  const out = await level(text, 10);
+  assert(!markers(out).some(x => /ed$/.test(x.en)), out);
+});
+
+await test("a noun gets a noun: 'the show' and 'their return' stay English without a sense", async () => {
+  for (const out of await all("The show opened to good reviews and fans cheered their return to the stage after the break.", EILE)) {
+    assert(!/\|show\]\]/.test(out), out);
+    assert(!/\|return\]\]/.test(out), out);
+  }
+});
+
+await test("'to help' is not given the noun cabhair; 'the help' can be", async () => {
+  for (const out of await all("Volunteers came to help families in the town after the flood damaged their homes.")) {
+    assert(!/\|help\]\]/.test(out), out);
+  }
+  const ok = await level("Families said the help from volunteers after the flood made a huge difference to them.", 50);
+  assert(/\[\[cabhair\|help\]\]/.test(ok), ok);
+});
+
+await test("root verb forms are skipped (question 9): rises, spans, reflects", async () => {
+  for (const out of await all("Inflation rises again as the report reflects a crisis that spans the whole economy.")) {
+    assert(!markers(out).some(x => /^(rises|reflects|spans)$/.test(x.en)), out);
+  }
+});
+
+await test("short dictionary nouns count: 'pay' can be marked at Beginner (W4)", async () => {
+  assert(words.shouldTranslate("pay", 10, "", dict), "pay is a Beginner candidate");
+  assert(!words.shouldTranslate("pet", 25, "", dict), "a short machine word is still left out");
+  const out = await level("Staff voted to accept the offer on pay late on Thursday after a long debate.", 10);
+  assert(/\[\[pá\|pay\]\]/.test(out), out);
+});
+
+await test("words with many meanings never go to machine translation (S4)", async () => {
+  let asked = [];
+  const d = { dict, lookup: async w => { asked.push(w.toLowerCase()); return MACHINE[w.toLowerCase()] ?? w; } };
+  await words.buildLevel("The former minister said the season would end at home after the record draw and the case.", 50, d, { ctx: SPORT });
+  for (const w of ["former", "season", "end", "home", "record", "draw", "case"]) assert(!asked.includes(w), `${w} sent to MyMemory`);
+});
+
 // ---- Irish form ----
 
 await test("matchCase keeps the dictionary's capitals and fixes machine ones", async () => {
@@ -222,8 +275,14 @@ await test("outage: run finishes, dictionary markers stay, breaker opens after 1
   const text = "The government said the budget would help families with the cost of housing. " +
     "Officials expect the plan to reduce prices for workers across the country this winter. " +
     "Critics argued the measures were too small to make a real difference to people struggling with bills.";
+  // Plain nouns with no dictionary entry, so every run needs MyMemory.
+  const nouns = ["kettle", "ladder", "lantern", "pebble", "saddle", "teapot", "thimble", "trumpet",
+    "walrus", "wardrobe", "anchor", "barrel", "biscuit", "blanket", "bucket", "candle", "carpet",
+    "chimney", "cushion", "envelope", "feather", "goblet", "hammer", "helmet", "jacket", "kitten"];
   let out = "";
-  for (let i = 0; i < 6; i++) out = await words.buildLevel(text + ` Extra sentence number ${i} about pylons, gizmos and widgets.`, 50, d, { ctx: NEWS });
+  for (let i = 0; i < nouns.length; i += 2) {
+    out = await words.buildLevel(text + ` The ${nouns[i]} sat beside the ${nouns[i + 1]} for a while.`, 50, d, { ctx: NEWS });
+  }
   assert(mm.breakerOpen, "breaker not open");
   assert(calls === 15, `calls ${calls}`);
   assert(slept === 15, `waits ${slept}`);

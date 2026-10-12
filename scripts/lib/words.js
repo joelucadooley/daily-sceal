@@ -247,37 +247,167 @@ export function shouldTranslate(tok, pct, next = "", dict, { prev = "", ctx = {}
   if (/^\p{N}+$/u.test(tok)) return false;
   if (tok.length <= 1) return false;
 
+  // Rule W4: the length limits are for machine words only. Short dictionary
+  // nouns (pay, tax, war, man, car, job, law, sea) count at every level.
+  const inDictionary = dict.overrides[lower] !== undefined || typeof senseFor(lower, ctx, prev, dict) === "string";
   if (pct <= 25) {
     // Beginner and Foundation: content words only, no short words
     if (FUNCTION_WORDS.has(lower)) return false;
-    if (tok.length <= 3) return false;
+    if (tok.length <= 3 && !inDictionary) return false;
   } else if (pct <= 50) {
     // Intermediate: content words, allow slightly shorter
     if (FUNCTION_WORDS.has(lower)) return false;
-    if (tok.length <= 2) return false;
+    if (tok.length <= 2 && !inDictionary) return false;
   }
   // Advanced (75%) and above: translate everything including function words
   return true;
 }
 
-// Words that read as nouns often enough to be worth marking, and endings that
-// give a word away as a verb or adverb. There is no part-of-speech tagger here,
-// so this is a heuristic.
-export const NOUN_ENDINGS = [/tion$/, /sion$/, /ment$/, /ness$/, /ity$/, /ance$/, /ence$/, /ship$/, /hood$/, /ism$/, /ist$/, /age$/, /ure$/];
-export const NOT_NOUN_ENDINGS = [/ly$/, /ing$/, /ed$/, /ise$/, /ize$/, /ful$/, /ous$/, /ive$/, /able$/, /ible$/];
+// ---- Ranking (rules W1 to W3, W8, W9, S4) ----
+
 export const DETERMINERS = new Set(["the","a","an","its","their","his","her","this","that","these","those","our","some","any","each","every","no"]);
 
-export function nounScore(tok, prev, dict) {
-  const w = tok.toLowerCase();
+// Where the Irish may come from at each level (questions 1 and 2):
+//   "none"   dictionary only (overrides, places, approved senses)
+//   "gap"    machine translation only to close a gap the dictionary cannot
+//   "nouns"  machine translation for noun-like words only
+//   "normal" machine translation like any other word, after the dictionary
+export const MACHINE_AT = { 10: "nouns", 25: "nouns", 50: "normal" };
+
+// Dictionary entries that are verbs. There is no part-of-speech tagger, so
+// this list and the Irish endings in isVerbLike stand in for one.
+export const DICT_VERBS = new Set([
+  "announce", "announced", "broke", "confirmed", "died", "flew", "hurt", "killed", "launched",
+  "lost", "missed", "opened", "operated", "publish", "published", "push", "reflects", "return",
+  "rises", "runs", "said", "say", "says", "seek out", "show", "shows", "smashed", "spans", "wants",
+  "won", "win", "called", "taking", "growing", "scoring", "comes", "means", "made", "take", "set",
+]);
+
+// Question 9: root verb forms whose Irish does not match the English form
+// (rises éirigh, spans sín, reflects léirigh, return fill). Skipped
+// everywhere until Joe changes the entries or approves a sense.
+export const SKIP_ROOT_FORMS = true;
+export const ROOT_FORMS = new Set(["rises", "spans", "reflects", "return"]);
+
+// Dictionary entries that are adjectives: marked from Foundation, not at
+// Beginner, which marks nouns only (rule W1).
+export const DICT_ADJECTIVES = new Set([
+  "annual", "big", "broken", "closed", "commercial", "critical", "daily", "dangerous", "dead",
+  "determined", "digital", "enacted", "free", "good", "guilty", "high", "higher", "historic",
+  "homeless", "huge", "illegal", "important", "injured", "innocent", "international", "legal",
+  "linked", "local", "low", "national", "new", "official", "old", "open", "political", "private",
+  "proposed", "public", "safe", "serious", "significant", "small", "standout", "unwell", "urgent",
+  "weekly", "young", "abroad", "almost", "already", "always", "anymore", "shortly", "together",
+  "today", "tomorrow", "tonight", "yesterday", "during", "among", "within", "per",
+]);
+
+// Words that are both a noun and a verb in English, with noun Irish in the
+// dictionary: after "to", a modal or a pronoun they are verbs ("to help",
+// "they work"), so the noun Irish would be wrong there (rule W9).
+export const NOUN_VERB_WORDS = new Set([
+  "help", "work", "support", "increase", "vote", "attack", "appeal", "protest", "display",
+  "arrest", "plan", "score", "strike", "study", "trade", "rise", "fund", "grant", "report",
+  "rent", "collapse", "debate", "interview", "train", "push", "question", "balance", "award",
+  "control", "travel", "change", "need", "use", "move", "face", "end", "call", "hold",
+]);
+const VERB_CUES = new Set([
+  "to", "will", "would", "can", "could", "should", "may", "might", "must", "did", "does", "do",
+  "i", "we", "you", "they", "he", "she", "it", "who", "not", "also",
+]);
+
+// -ing words that are nouns.
+export const KNOWN_NOUN_ING = new Set([
+  "building", "meeting", "funding", "housing", "hurling", "training", "spending", "warning",
+  "wedding", "evening", "morning", "parking", "clothing", "ceiling", "farming", "fishing",
+  "spring", "king", "ring", "thing", "string", "wing", "darling", "offspring", "being",
+]);
+const ED_NOUNS = new Set(["hundred", "need", "speed", "seed", "feed", "bed", "red", "shed", "greed", "creed", "breed", "deed", "reed", "weed"]);
+
+// Rule S4: words with many meanings never go to machine translation. Their
+// one-word MyMemory answer is wrong in news more often than not (season
+// biaiste, former eiteán, points ladhróg, case crotal, can canna).
+export const NEVER_MACHINE = new Set([
+  "season", "side", "record", "end", "home", "current", "time", "minutes", "former", "state",
+  "fine", "seat", "draw", "race", "point", "points", "case", "party", "can", "set", "means",
+  "comes", "whether", "while", "four", "result", "matter", "course", "couple", "action",
+  "position", "security", "resolution", "audience", "retirement", "production", "performance",
+  "stage", "industrial", "equity", "date", "pitch", "take", "made", "club", "series", "number",
+  "general", "senior", "original", "key", "specialist", "ready", "pre",
+]);
+
+const ABSTRACT_ENDINGS = /(tion|sion|ment|ness|ity|ance|ence|ship|hood|ism)$/;
+const ADJ_ENDINGS = /(ous|ive|able|ible|ful|less|ish|ise|ize)$/;
+
+// Irish that reads as a verb: d' past, lenited past for an English -ed,
+// present endings for an English -s. englishList: false skips DICT_VERBS,
+// for an approved sense, whose Irish was chosen for this use ("the show" seó).
+export function isVerbLike(en, ga = "", { englishList = true } = {}) {
+  const e = en.toLowerCase();
+  if (englishList && DICT_VERBS.has(e)) return true;
+  if (/^d['’]/.test(ga)) return true;
+  if (/ed$/.test(e) && /^(bh|ch|dh|fh|gh|mh|ph|sh|th)/i.test(ga)) return true;
+  if (/[^s]s$/.test(e) && !/\s/.test(ga) && /(íonn|aíonn|eann|ann)$/.test(ga) && !/s$/.test(ga)) return true;
+  return false;
+}
+
+// English that reads as a noun (or a phrase, which counts as one).
+export function looksNoun(key) {
+  if (/\s/.test(key)) return !DICT_VERBS.has(key);
+  if (DICT_VERBS.has(key) || DICT_ADJECTIVES.has(key)) return false;
+  if (/ly$/.test(key)) return false;
+  if (/ing$/.test(key)) return KNOWN_NOUN_ING.has(key);
+  if (/ed$/.test(key)) return ED_NOUNS.has(key);
+  if (ADJ_ENDINGS.test(key)) return false;
+  return true;
+}
+
+// Tier and score for one unit, or null when it must not be marked here.
+//   tier 3: dictionary, sense or place, and noun-like
+//   tier 2: dictionary, other
+//   tier 1: machine, noun-like
+//   tier 0: machine, other
+// Within a tier: +3 after a determiner, +1 plural, +1 for a plain (not
+// abstract) noun, -4 for -ly, -ing or -ed.
+export function rankUnit(unit, tokens, pct, dict, ctx = {}) {
+  const key = unit.key;
+  const prev = prevWord(tokens, unit.i).toLowerCase();
+  const next = nextWord(tokens, unit.j);
+  const afterDet = DETERMINERS.has(prev);
+  const verbCue = VERB_CUES.has(prev);
+  const hit = unit.phrase ? { irish: unit.irish, source: unit.source } : dictionaryFor(unit.text, { next, prev, ctx }, dict);
+  let tier, verb;
+  if (hit) {
+    if (hit.irish === null) return null;
+    verb = hit.source !== "place" && isVerbLike(key, hit.irish, { englishList: hit.source === "dict" });
+    if (SKIP_ROOT_FORMS && hit.source === "dict" && ROOT_FORMS.has(key)) return null;   // question 9
+    if (verb && afterDet) return null;                                                // W9: "the show"
+    if (!verb && hit.source === "dict" && verbCue && NOUN_VERB_WORDS.has(key)) return null; // "to help"
+    tier = hit.source === "place" || (!verb && (looksNoun(key) || (hit.source === "sense" && afterDet))) ? 3 : 2;
+  } else {
+    if (NEVER_MACHINE.has(key)) return null;                                          // S4
+    if (MACHINE_AT[pct] === "none") return null;                                      // question 1
+    verb = DICT_VERBS.has(key) || (verbCue && !afterDet);
+    tier = !verb && (afterDet || looksNoun(key)) ? 1 : 0;
+    if (MACHINE_AT[pct] !== "normal" && tier < 1) return null;                        // question 2
+  }
   let score = 0;
-  if (dict.overrides[w] !== undefined) score += 4;   // curated vocabulary, already trusted
-  if (dict.places[w] !== undefined) score += 3;
-  if (DETERMINERS.has((prev || "").toLowerCase())) score += 3;  // "the depot", "a warehouse"
-  if (NOUN_ENDINGS.some(re => re.test(w))) score += 3;
-  if (NOT_NOUN_ENDINGS.some(re => re.test(w))) score -= 4;
-  if (/[^s]s$/.test(w) && !/(ss|us|is)$/.test(w)) score += 1;  // plurals read as nouns
-  if (w.length >= 6) score += 1;
-  return score;
+  if (unit.phrase) score += 3;          // a whole dictionary phrase is prime vocabulary (W5)
+  if (afterDet) score += 3;
+  if (/[^s]s$/.test(key) && !/(ss|us|is)$/.test(key)) score += 1;
+  if (!ABSTRACT_ENDINGS.test(key)) score += 1;
+  if (!unit.phrase && (/ly$/.test(key) || (/ing$/.test(key) && !KNOWN_NOUN_ING.has(key)) || (/ed$/.test(key) && !ED_NOUNS.has(key)))) score -= 4;
+  return { tier, score, hit, verb, afterDet };
+}
+
+// Tiers each level may use (the table in rule section 1). Tier 1 at
+// Foundation is gap repair only.
+export function tierAllowed(tier, pct, { gapRepair = false } = {}) {
+  if (tier >= 3) return true;
+  if (tier === 2) return pct >= 25;
+  if (MACHINE_AT[pct] === "normal") return true;
+  if (MACHINE_AT[pct] === "nouns") return tier === 1;
+  if (MACHINE_AT[pct] === "gap") return tier === 1 && gapRepair;
+  return false;
 }
 
 // ---- Phrases (rule W5) ----
@@ -409,22 +539,21 @@ export function candidateUnits(tokens, pct, dict, ctx = {}) {
   return units.sort((a, b) => a.i - b.i);
 }
 
-// Choose which units get marked: prefer whole nouns, and never mark two units
-// that sit side by side. A dictionary phrase scores as a trusted noun.
-export function selectMarkerIndices(tokens, units, targetCount, dict) {
-  const scored = units
-    .map(u => ({
-      ...u,
-      score: u.phrase
-        ? 7 + (DETERMINERS.has(prevWord(tokens, u.i).toLowerCase()) ? 3 : 0)
-        : nounScore(u.text, prevWord(tokens, u.i), dict),
-    }))
-    .sort((a, b) => b.score - a.score || a.start - b.start);
+// Choose which units get marked: highest tier first, then score, and never
+// two units side by side.
+export function selectMarkerIndices(tokens, units, targetCount, pct, dict, ctx = {}) {
+  const ranked = [];
+  for (const u of units) {
+    const r = rankUnit(u, tokens, pct, dict, ctx);
+    if (!r || !tierAllowed(r.tier, pct)) continue;
+    if (r.tier <= 1 && r.score < 0) continue;                                 // clearly not a noun
+    ranked.push({ ...u, ...r });
+  }
+  ranked.sort((a, b) => b.tier - a.tier || b.score - a.score || a.start - b.start);
 
   const chosen = [];
-  for (const c of scored) {
+  for (const c of ranked) {
     if (chosen.length >= targetCount) break;
-    if (c.score < 0) continue;                                                 // clearly not a noun
     if (chosen.some(p => c.start - p.end < 2 && p.start - c.end < 2)) continue; // no side-by-side markers
     chosen.push(c);
   }
@@ -433,44 +562,56 @@ export function selectMarkerIndices(tokens, units, targetCount, dict) {
 
 // ---- Levels ----
 
+// The marker text for a unit, or null when its Irish is not acceptable.
+// Dictionary, place and sense Irish is trusted; machine Irish must pass
+// isGoodTranslation and, after a determiner, must not read as a verb (W9).
+export async function irishFor(unit, tokens, deps, ctx = {}) {
+  const { onRejected } = deps;
+  let hit = unit.hit;
+  if (!hit) {
+    let irish;
+    try {
+      irish = await deps.lookup(unit.text);
+    } catch {
+      return null;
+    }
+    const ok = isGoodTranslation(unit.text, irish) &&
+      !(unit.afterDet && isVerbLike(unit.key, cleanTranslation(irish)));
+    if (!ok) {
+      if (onRejected) onRejected(unit.text, irish);
+      return null;
+    }
+    hit = { irish, source: "machine" };
+  }
+  if (hit.source === "place") return `[[${hit.irish}|${unit.text}]]`;
+  const irish = matchCase(unit.text, cleanTranslation(hit.irish), { trusted: hit.source !== "machine" });
+  return `[[${irish}|${unit.text}]]`;
+}
+
 // Mark about pct% of the candidate units in `text` as [[irish|english]].
 // deps: { dict, lookup, onRejected? }. onRejected(word, irish) is told about
 // machine results that fail isGoodTranslation, for the run counters.
 export async function buildLevel(text, pct, deps, { ctx = {} } = {}) {
-  const { dict, onRejected } = deps;
+  const { dict } = deps;
   const tokens = tokenize(text);
   const units = candidateUnits(tokens, pct, dict, ctx);
   const targetCount = Math.ceil(units.length * (pct / 100));
-  const chosen = new Map(selectMarkerIndices(tokens, units, targetCount, dict).map(u => [u.i, u]));
+  const chosen = selectMarkerIndices(tokens, units, targetCount, pct, dict, ctx);
 
+  const marked = new Map();
+  for (const u of chosen) {
+    const m = await irishFor(u, tokens, deps, ctx);
+    if (m) marked.set(u.i, { u, m });
+  }
   const result = [];
   for (let i = 0; i < tokens.length; i++) {
-    const tok = tokens[i];
-    const unit = chosen.get(i);
-    if (!unit) {
-      result.push(tok);
+    const hit = marked.get(i);
+    if (!hit) {
+      result.push(tokens[i]);
       continue;
     }
-    if (unit.phrase) {
-      const irish = unit.source === "place" ? unit.irish : matchCase(unit.text, unit.irish, { trusted: true });
-      result.push(`[[${irish}|${unit.text}]]`);
-      i = unit.j;
-      continue;
-    }
-    try {
-      const { irish, source } = await translateWord(tok, nextWord(tokens, i), deps, { prev: prevWord(tokens, i), ctx });
-      if (source === "place") {
-        // Keep proper capitalisation, don't run matchCase
-        result.push(`[[${irish}|${tok}]]`);
-      } else if (source !== "machine" || isGoodTranslation(tok, irish)) {
-        result.push(`[[${matchCase(tok, cleanTranslation(irish), { trusted: source !== "machine" })}|${tok}]]`);
-      } else {
-        if (onRejected) onRejected(tok, irish);
-        result.push(tok);
-      }
-    } catch {
-      result.push(tok);
-    }
+    result.push(hit.m);
+    i = hit.u.j;
   }
   return result.join("");
 }
