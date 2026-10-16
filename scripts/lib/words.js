@@ -37,7 +37,7 @@ export const BAD_MARKERS = [
 ];
 
 export function isGoodTranslation(original, raw) {
-  if (!raw) return false;
+  if (!raw || typeof raw !== "string") return false;
   const t = raw.trim().replace(/^[.,;:!?]+|[.,;:!?]+$/g, "").trim();
   if (!t) return false;
   if (t.toLowerCase() === original.toLowerCase()) return false;
@@ -821,7 +821,10 @@ export function rankedUnits(tokens, units, pct, dict, ctx = {}, { prefer } = {})
     if (!r) continue;
     const allowed = tierAllowed(r.tier, pct);
     if (!allowed && !tierAllowed(r.tier, pct, { gapRepair: true })) continue;
-    if (r.tier <= 1 && r.score < 0) continue;
+    // Machine words ending -ly, -ing or -ed are left out (score below 0),
+    // except at Intermediate for -ly adverbs and -ed verbs: verbFormFits
+    // then holds their Irish to the English form (G3).
+    if (r.tier <= 1 && r.score < 0 && !(MACHINE_AT[pct] === "normal" && /(ly|ed)$/.test(u.key))) continue;
     // Summaries: words the same story's article marked at this level score
     // higher, so the app and the site agree more often (A6).
     const score = r.score + (prefer && prefer.has(u.key) ? 2 : 0);
@@ -832,8 +835,8 @@ export function rankedUnits(tokens, units, pct, dict, ctx = {}, { prefer } = {})
 
 // Choose markers gap by gap. Repeatedly take the largest gap (counting the
 // start and the end of the text) that holds an eligible unit, and try its
-// units in order: middle half of the gap first, then tier, score, nearness
-// to the middle and position. The first whose Irish is acceptable is kept;
+// units in order: tier, whole phrases (W5), the unit that shuts out the fewest others, the
+// middle half of the gap, score, nearness to the middle and position. The first whose Irish is acceptable is kept;
 // a rejected one is never tried again in this text (P4 backfill). Stops at
 // `target` markers, but goes on closing gaps longer than maxGap (P1).
 //   tryUnit(unit) -> marker text or null
@@ -881,8 +884,25 @@ export async function pickMarkers(ranked, { words, sentences, target, pct, tryUn
       const mid = (g.a + g.b) / 2;
       const centre = u => (u.start + u.end) / 2;
       const inMiddle = u => Math.abs(centre(u) - mid) <= g.len / 4;
+      // How many other units in this gap a pick would shut out (too close,
+      // its sentence then full, its word then at the repeat cap). Taking the
+      // unit that shuts out fewest, after the tier, packs the gap better
+      // than the exact middle and keeps the thirds even.
+      const shutOut = new Map(pool.map(u => {
+        const sn = sentences.ofWord[u.start];
+        const full = !long && (perSentence.get(sn) || 0) + 1 >= capOf(sn);
+        const used = (uses.get(u.key) || 0) + 1 >= rules.repeatCap;
+        let n = 0;
+        for (const v of pool) {
+          if (v === u) continue;
+          if ((v.start - u.end - 1 < rules.minBetween && u.start - v.end - 1 < rules.minBetween) ||
+            (full && sentences.ofWord[v.start] === sn) || (used && v.key === u.key)) n++;
+        }
+        return [u, n];
+      }));
       pool.sort((x, y) =>
-        (inMiddle(y) - inMiddle(x)) || (y.tier - x.tier) || (y.score - x.score) ||
+        (y.tier - x.tier) || (y.phrase - x.phrase) || (shutOut.get(x) - shutOut.get(y)) ||
+        (inMiddle(y) - inMiddle(x)) || (y.score - x.score) ||
         (Math.abs(centre(x) - mid) - Math.abs(centre(y) - mid)) || (x.start - y.start));
       for (const u of pool) {
         const marker = await tryUnit(u);
@@ -987,8 +1007,10 @@ export async function buildLevel(text, pct, deps, { ctx = {}, prefer } = {}) {
 // spacing rules (minBetween, sentence and repeat caps) now hold markers back
 // where today's code crowded them, so Beginner and Foundation ask for more
 // to stay within 15% of today's density (rule L1). Beginner then marks about
-// as many dictionary nouns as its spacing rules allow.
-export const DENSITY = { 10: 1.6, 25: 1.2, 50: 1 };
+// as many dictionary nouns as its spacing rules allow. Raised to 2.2 and 1.2
+// when the review fixes (G1 to G21) took out wrong markers: in short
+// summaries the target is what holds markers back.
+export const DENSITY = { 10: 2.2, 25: 1.2, 50: 1.2 };
 
 // The English of every marker in a marked text, lowercased.
 export function markedKeys(text) {

@@ -20,7 +20,7 @@ const MACHINE = {
   crowd: "slua", ball: "liathróid", squad: "painéal", result: "toradh", life: "saol",
 };
 // Answers like MyMemory: unknown words come back as the English.
-const lookup = async w => MACHINE[w.toLowerCase()] ?? w;
+const lookup = async w => (Object.hasOwn(MACHINE, w.toLowerCase()) ? MACHINE[w.toLowerCase()] : w);
 const deps = { dict, lookup };
 const SPORT = { feed: "gaa", section: "sport", topic: "sport" };
 const NEWS = { feed: "news", section: "eire", topic: "eire" };
@@ -617,6 +617,21 @@ await test("G16: machine Irish carrying a mutation from a dropped article is tur
   for (const [en, ga] of [["hall", "halla"], ["hockey", "haca"], ["changes", "athruithe"], ["angle", "uillinn"]]) {
     assert(words.isGoodTranslation(en, ga), `${en} ${ga}`);
   }
+});
+
+await test("Intermediate: machine -ed verbs and -ly adverbs pass only with the matching Irish form", async () => {
+  const lookup = async w => ({ released: "scaoil", unveiled: "nocht", recently: "le déanaí", collapsed: "thit" })[w.toLowerCase()] ?? w;
+  const out = await words.buildLevel("The band released a single while the firm unveiled plans recently, and the old bridge collapsed in the storm.", 50,
+    { dict, lookup }, { ctx: NEWS });
+  assert(!/\[\[scaoil\|released\]\]|\[\[nocht\|unveiled\]\]/.test(out), out);   // root forms for a past
+  const one = await words.buildLevel("After months of warnings, it finally collapsed.", 50, { dict, lookup }, { ctx: NEWS });
+  assert(one.includes("[[thit|collapsed]]"), one);
+  assert(words.verbFormFits({ key: "published", afterBe: true }, "foilsithe"), "participle after be");
+  assert(!words.verbFormFits({ key: "published", afterBe: true }, "d'fhoilsigh"), "past active after be");
+  assert(!words.verbFormFits({ key: "stays", verb: true }, "tréimhsí fanachta"), "-s verb needs present Irish");
+  // Foundation still leaves them out.
+  const f = await words.buildLevel("The band released a single while the firm unveiled plans recently.", 25, { dict, lookup }, { ctx: NEWS });
+  assert(!/\|(released|unveiled|recently)\]\]/.test(f), f);
 });
 
 if (net.blocked.length) { failed++; console.log(`FAIL network calls: ${net.blocked[0]}`); }
