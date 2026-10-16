@@ -14,6 +14,10 @@ function readJson(url) {
   return JSON.parse(readFileSync(url, "utf-8"));
 }
 
+// No prototype: a key such as "constructor" must find nothing, not
+// Object.prototype.constructor (which would print as broken Irish).
+const bare = obj => Object.assign(Object.create(null), obj);
+
 // Overrides are the backbone of every level. A missing or empty file would
 // quietly publish a day of machine-only Irish, so it stops the run instead.
 export function loadOverrides(url = OVERRIDES_URL) {
@@ -21,15 +25,15 @@ export function loadOverrides(url = OVERRIDES_URL) {
   if (!overrides || typeof overrides !== "object" || !Object.keys(overrides).length) {
     throw new Error(`No overrides loaded from ${url.pathname}`);
   }
-  return overrides;
+  return bare(overrides);
 }
 
 // Places stay optional, as before: without them place names are left in English.
 export function loadPlaces(url = PLACES_URL) {
   try {
-    return readJson(url);
+    return bare(readJson(url));
   } catch {
-    return {};
+    return bare({});
   }
 }
 
@@ -46,10 +50,10 @@ export function loadSenses(url = SENSES_URL, warn = msg => console.warn(msg)) {
   try {
     raw = readJson(url);
   } catch (err) {
-    if (err.code === "ENOENT") return {};
+    if (err.code === "ENOENT") return bare({});
     throw new Error(`senses.json could not be read: ${err.message}`);
   }
-  const senses = {};
+  const senses = bare({});
   for (const [en, entry] of Object.entries(raw || {})) {
     const ok = entry && typeof entry === "object" && !Array.isArray(entry) &&
       Object.entries(entry).every(([k, v]) => SENSE_KEYS.has(k) && (v === null || (typeof v === "string" && v.trim())));

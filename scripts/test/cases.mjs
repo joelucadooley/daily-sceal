@@ -417,6 +417,21 @@ await test("outage: run finishes, dictionary markers stay, breaker opens after 1
   assert(markers(out).length > 0, "no dictionary markers: " + out);
 });
 
+// ---- Review fixes (one case per confirmed defect) ----
+
+// The text with every marker replaced by its English, as App.jsx reads it.
+const appStrip = t => t.replace(/\[\[([^\|]+)\|([^\]]+)\]\]/g, "$2");
+
+await test("G22: 'constructor' stays English, in text and headline", async () => {
+  const text = "The constructor of the stadium said the new roof would be finished before the winter.";
+  for (const out of await all(text)) assert(!/native code|\|constructor\]\]/.test(out), out);
+  const h = words.markHeadline("New constructor for stadium", dict, NEWS);
+  assert(!/native code|\|constructor\]\]/.test(h), h);
+  // A plain object dictionary (as the tests build them) is safe too.
+  const plain = { ...dict, overrides: { ...dict.overrides }, places: { ...dict.places } };
+  assert(words.dictionaryFor("constructor", {}, plain) === undefined, "plain object");
+});
+
 if (net.blocked.length) { failed++; console.log(`FAIL network calls: ${net.blocked[0]}`); }
 console.log(`${passed} passed, ${failed} failed`);
 process.exit(failed ? 1 : 0);

@@ -146,12 +146,18 @@ export function notAPlaceHere(key, next) {
   return false;
 }
 
+// A dictionary value by its own key only, so "constructor" or "toString"
+// never finds a built-in function on a plain object (rule G5).
+export function own(table, key) {
+  return table && Object.hasOwn(table, key) ? table[key] : undefined;
+}
+
 export function placeFor(word, next = "", dict) {
   const key = word.toLowerCase();
-  if (dict.places[key] === undefined) return undefined;
+  if (own(dict.places, key) === undefined) return undefined;
   if (RISKY_PLACE_KEYS.has(key) && word[0] !== word[0].toUpperCase()) return undefined;
   if (notAPlaceHere(key, next)) return undefined;
-  return dict.places[key];
+  return own(dict.places, key);
 }
 
 // ---- Senses (rules S1 to S3) ----
@@ -170,7 +176,7 @@ export function storyContext(story = {}) {
 // English here") or undefined (no entry applies, fall through). Checked in
 // order: the story's feed, its topic, "noun" after a determiner, "default".
 export function senseFor(key, ctx = {}, prev = "", dict) {
-  const entry = dict.senses?.[key.toLowerCase()];
+  const entry = own(dict.senses, key.toLowerCase());
   if (!entry) return undefined;
   for (const k of [ctx.feed, ctx.topic]) {
     if (k && Object.hasOwn(entry, k)) return entry[k];
@@ -193,7 +199,7 @@ export function dictionaryFor(word, { next = "", prev = "", ctx = {} } = {}, dic
   const sense = senseFor(word, ctx, prev, dict);
   if (sense !== undefined) return { irish: sense, source: "sense" };
   const key = word.toLowerCase();
-  if (dict.overrides[key] !== undefined) return { irish: dict.overrides[key], source: "dict" };
+  if (own(dict.overrides, key) !== undefined) return { irish: own(dict.overrides, key), source: "dict" };
   return undefined;
 }
 
@@ -241,7 +247,7 @@ export function shouldTranslate(tok, pct, next = "", dict, { prev = "", ctx = {}
 
   // Rule W4: the length limits are for machine words only. Short dictionary
   // nouns (pay, tax, war, man, car, job, law, sea) count at every level.
-  const inDictionary = dict.overrides[lower] !== undefined || typeof senseFor(lower, ctx, prev, dict) === "string";
+  const inDictionary = own(dict.overrides, lower) !== undefined || typeof senseFor(lower, ctx, prev, dict) === "string";
   if (pct <= 25) {
     // Beginner and Foundation: content words only, no short words
     if (FUNCTION_WORDS.has(lower)) return false;
@@ -491,14 +497,14 @@ export function findPhrases(tokens, dict, ctx = {}, { body = true } = {}) {
 // undefined when it should not be used here.
 function phraseIrish(key, { ctx, prev, next, body, dict }) {
   const lower = key.toLowerCase();
-  if (dict.places[lower] !== undefined) {
+  if (own(dict.places, lower) !== undefined) {
     const first = splitKey(lower)[0];
     const clubOrName = ctx.topic === "sport" || CLUB_NEXT.test(next) || /^\p{Lu}/u.test(next);
-    if (!clubOrName && !(body && NEVER_TRANSLATE.has(first))) return { irish: dict.places[lower], source: "place" };
+    if (!clubOrName && !(body && NEVER_TRANSLATE.has(first))) return { irish: own(dict.places, lower), source: "place" };
   }
   const sense = senseFor(lower, ctx, prev, dict);
   if (sense !== undefined) return { irish: sense, source: "sense" };
-  if (dict.overrides[lower] !== undefined) return { irish: dict.overrides[lower], source: "dict" };
+  if (own(dict.overrides, lower) !== undefined) return { irish: own(dict.overrides, lower), source: "dict" };
   return undefined;
 }
 
