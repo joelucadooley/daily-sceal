@@ -12,7 +12,7 @@
 // and any other URL throws so a stray call fails the run.
 import { net, loadArchive, makeAnswers, archiveDir, LEVELS } from "./archive.mjs";
 import {
-  runBaseline, runLib, collect, tableRows, headlineRows, markdownTable, LEVEL_HEAD,
+  runBaseline, runLib, collect, tableRows, headlineRows, markdownTable, LEVEL_HEAD, inputsOf,
 } from "./runs.mjs";
 import * as words from "../lib/words.js";
 import { parse, quant as quantile } from "./metrics.mjs";
@@ -77,6 +77,11 @@ if (mAfter.headlines.nameExamples.length) console.log(`Name parts after: ${mAfte
   console.log("\nKey numbers, levels 10, 25, 50 (before -> after)");
   both("  article density", "levels", d);
   both("  summary density", "summaryLevels", d);
+  const change = f => LEVELS.map(p => {
+    const b = mBefore[f][p], x = mAfter[f][p];
+    return `${(100 * ((x.markers / x.words) / (b.markers / b.words) - 1)).toFixed(1)}%`;
+  }).join(", ");
+  console.log(`  density change: article ${change("levels")}; summary ${change("summaryLevels")} (L1 allows 15%)`);
   both("  article longest gap median/p90", "levels", q);
   both("  summary longest gap median/p90", "summaryLevels", q);
   both("  article pairs too close", "levels", r => r.tooClose);
@@ -119,6 +124,34 @@ if (rules) {
       if (a.edWords) fail(`${field}[10]: ${a.edWords} -ed words at Beginner (W8)`);
     }
   }
+}
+
+// W6: no marker on a grammar word, a contraction or anything with a digit;
+// G5: taking the markers out (as App.jsx reads them) gives back the input.
+{
+  const appStrip = t => t.replace(/\[\[([^\|]+)\|([^\]]+)\]\]/g, "$2");
+  const own = (o, k) => Object.hasOwn(o, k);
+  let grammar = 0, broken = 0;
+  const examples = [];
+  stories.forEach(({ story }, i) => {
+    const { text, rss, title } = inputsOf(story);
+    const r = lib.out[i];
+    const pairs = [[r.titleIr, title], ...LEVELS.flatMap(p => [[r.levels[p], text], [r.summaryLevels[p], rss]])];
+    for (const [marked, input] of pairs) {
+      if (appStrip(marked) !== input || marked.includes("[[[")) broken++;
+      for (const m of parse(marked).markers) {
+        const en = m.en.toLowerCase();
+        if (words.FUNCTION_WORDS.has(en) || /\p{N}/u.test(en) || (/['’]/.test(en) && !own(lib.dict.overrides, en))) {
+          grammar++;
+          if (examples.length < 5) examples.push(`${m.en}=${m.ga}`);
+        }
+      }
+    }
+  });
+  console.log(`\nGrammar words, contractions and numbers marked: ${grammar}${examples.length ? ` (${examples.join(", ")})` : ""}`);
+  console.log(`Texts whose markers do not strip back to the input: ${broken}`);
+  if (grammar) fail(`${grammar} markers on grammar words, contractions or numbers (W6)`);
+  if (broken) fail(`${broken} texts do not strip back to their input (G5)`);
 }
 if (words.NEVER_MACHINE && wrongLeft.length) fail(`${wrongLeft.length} known wrong pairs still present`);
 if (words.headlineHasEligible) {

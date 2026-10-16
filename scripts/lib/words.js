@@ -22,6 +22,10 @@ export const FUNCTION_WORDS = new Set([
   "as","by","from","not","no","so","if","than","then","when","which","who",
   "over","into","after","before","about","up","out","also","just","more",
   "there","said","says","very","well","still","even","only","here","now",
+  // Pronouns, auxiliaries and question words: their one-word Irish is wrong
+  // out of context (them dóibh, where i gcás, being beith), rule W6.
+  "him","them","us","me","himself","herself","itself","themselves","ourselves","yourself",
+  "did","does","do","being","what","where","how","why","both","such",
 ]);
 
 export const BAD_MARKERS = [
@@ -215,7 +219,15 @@ export const NUMBER_WORDS = new Set([
   "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen",
   "eighteen", "nineteen", "twenty",
   "first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth",
+  "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety",
+  "eleventh", "twelfth", "thirteenth", "fourteenth", "fifteenth", "sixteenth", "seventeenth",
+  "eighteenth", "nineteenth", "twentieth",
 ]);
+// The Korean currency after an amount: "107.4 trillion won" is not bhuaigh.
+const AMOUNT = /^(\p{N}+|thousand|million|billion|trillion|korean)$/iu;
+// An apostrophe inside a word that is not a possessive: a contraction
+// (isn't, they're, we'll). Its Irish would be a whole clause (rule W6).
+const CONTRACTION = /['’]/;
 // Grammar words: taught from Foundation up, not at Beginner (question 8).
 export const GRAMMAR_WORDS = new Set([
   "against", "around", "between", "through", "during", "among", "within", "without",
@@ -234,6 +246,10 @@ export function shouldTranslate(tok, pct, next = "", dict, { prev = "", ctx = {}
   if (POSSESSIVE.test(tok)) return false;
   if (PARTICLES.has(tok)) return false;            // lowercase only: "Down" can be the county
   if (NUMBER_WORDS.has(lower)) return false;
+  // Any digit: 21st, 45pm, 75million, 1980s, and escaped junk like u003EWill (W6).
+  if (/\p{N}/u.test(tok)) return false;
+  if (lower === "won" && AMOUNT.test(prev)) return false;
+  if (CONTRACTION.test(tok) && own(dict.overrides, lower) === undefined) return false;
   if (pct < GRAMMAR_WORDS_FROM && GRAMMAR_WORDS.has(lower)) return false;
   // Place names are proper nouns but we DO want to translate them (from PLACES)
   // when placeFor accepts them here: a capital where the word is risky, and not
@@ -242,7 +258,6 @@ export function shouldTranslate(tok, pct, next = "", dict, { prev = "", ctx = {}
   // MyMemory as a place candidate (rule W11).
   if (placeFor(tok, next, dict) !== undefined) return true;
   if (/^\p{Lu}/u.test(tok)) return false;
-  if (/^\p{N}+$/u.test(tok)) return false;
   if (tok.length <= 1) return false;
 
   // Rule W4: the length limits are for machine words only. Short dictionary
@@ -317,7 +332,7 @@ const VERB_CUES = new Set([
 export const KNOWN_NOUN_ING = new Set([
   "building", "meeting", "funding", "housing", "hurling", "training", "spending", "warning",
   "wedding", "evening", "morning", "parking", "clothing", "ceiling", "farming", "fishing",
-  "spring", "king", "ring", "thing", "string", "wing", "darling", "offspring", "being",
+  "spring", "king", "ring", "thing", "string", "wing", "darling", "offspring",
 ]);
 const ED_NOUNS = new Set(["hundred", "need", "speed", "seed", "feed", "bed", "red", "shed", "greed", "creed", "breed", "deed", "reed", "weed"]);
 
@@ -510,6 +525,12 @@ function phraseIrish(key, { ctx, prev, next, body, dict }) {
 
 // ---- Units ----
 
+// A word right inside square brackets ("[money]"): a marker there would
+// read as "[[[airgead|money]]]" and break the app's [[irish|english]] parser.
+export function inBrackets(tokens, i, j) {
+  return tokens[i - 1] === "[" || tokens[j + 1] === "]";
+}
+
 // Everything that could carry a marker in this text at this level: the
 // dictionary phrases plus every single word that passes shouldTranslate and
 // is not inside a phrase. Sorted by position. Each unit:
@@ -527,10 +548,12 @@ export function candidateUnits(tokens, pct, dict, ctx = {}) {
   const units = [];
   for (const p of phrases) {
     if (p.irish === null) continue;
+    if (inBrackets(tokens, p.i, p.j)) continue;
     units.push({ ...p, phrase: true, start: wordPos.get(p.i), end: wordPos.get(p.j) });
   }
   tokens.forEach((tok, i) => {
     if (!isWordToken(tok) || covered.has(i)) return;
+    if (inBrackets(tokens, i, i)) return;
     if (!shouldTranslate(tok, pct, nextWord(tokens, i), dict, { prev: prevWord(tokens, i), ctx })) return;
     units.push({ i, j: i, text: tok, key: tok.toLowerCase(), phrase: false, start: wordPos.get(i), end: wordPos.get(i) });
   });
@@ -779,6 +802,7 @@ function headlineCandidates(title, dict, ctx = {}) {
   for (const p of findPhrases(tokens, dict, ctx, { body: false })) {
     for (let k = p.i; k <= p.j; k++) covered.add(k);
     if (!p.irish) continue;
+    if (inBrackets(tokens, p.i, p.j)) continue;
     if (p.source !== "place" && DICT_VERBS.has(p.key)) continue;
     out.push({ i: p.i, j: p.j, text: p.text, irish: p.irish, source: p.source, phrase: true, start: wordPos.get(p.i), end: wordPos.get(p.j) });
   }
@@ -787,6 +811,7 @@ function headlineCandidates(title, dict, ctx = {}) {
     const lower = tok.toLowerCase();
     const next = nextWord(tokens, i), prev = prevWord(tokens, i).toLowerCase();
     const at = { i, j: i, text: tok, phrase: false, start: wordPos.get(i), end: wordPos.get(i) };
+    if (inBrackets(tokens, i, i) || /\p{N}/u.test(tok)) return;
     const place = placeFor(tok, next, dict);
     if (place !== undefined) {
       out.push({ ...at, irish: place, source: "place" });
@@ -796,6 +821,8 @@ function headlineCandidates(title, dict, ctx = {}) {
     if (tok.length < HEADLINE_MIN_LENGTH || MONTHS.has(lower)) return;
     if (FUNCTION_WORDS.has(lower) || PARTICLES.has(lower) || NUMBER_WORDS.has(lower) ||
       GRAMMAR_WORDS.has(lower) || POSSESSIVE.test(tok)) return;
+    if (CONTRACTION.test(tok) && own(dict.overrides, lower) === undefined) return;
+    if (lower === "won" && AMOUNT.test(prev)) return;
     const hit = dictionaryFor(tok, { next, prev, ctx }, dict);
     if (!hit || hit.irish === null) return;
     if (SKIP_ROOT_FORMS && hit.source === "dict" && ROOT_FORMS.has(lower)) return;

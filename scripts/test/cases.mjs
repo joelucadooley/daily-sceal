@@ -432,6 +432,38 @@ await test("G22: 'constructor' stays English, in text and headline", async () =>
   assert(words.dictionaryFor("constructor", {}, plain) === undefined, "plain object");
 });
 
+await test("G13: tokens with a digit and the currency 'won' are never marked", async () => {
+  for (const tok of ["21st", "45pm", "75million", "1980s", "u003EWill", "16bn"]) {
+    for (const p of [10, 25, 50]) assert(!words.shouldTranslate(tok, p, "", dict), `${tok} at ${p}`);
+  }
+  const text = "Samsung said profit reached 107.4 trillion won this year, and the 21st report starts at 7.45pm with £10.75million in sales.";
+  for (const out of await all(text)) assert(!/\|(won|21st|45pm|75million)\]\]/.test(out), out);
+  const h = words.markHeadline("Samsung profit hits 100 trillion won", dict, NEWS);
+  assert(!/\|won\]\]/.test(h), h);
+  // Won as a verb still can be (Intermediate).
+  assert(words.shouldTranslate("won", 50, "", dict, { prev: "Kerry" }), "Kerry won");
+});
+
+await test("G14: pronouns, auxiliaries, question words and contractions are never marked", async () => {
+  const text = "What the council did for them was where both sides agreed, being careful, and it hasn't changed what they're doing.";
+  for (const out of await all(text)) {
+    assert(!markers(out).some(m => /^(what|did|them|where|both|being|hasn't|they're)$/i.test(m.en)), out);
+  }
+  for (const w of ["him", "themselves", "does", "how", "why", "such", "isn't", "we'll"]) {
+    assert(!words.shouldTranslate(w, 50, "", dict), w);
+  }
+});
+
+await test("G19: a word in square brackets is never marked", async () => {
+  const text = "Officials said [people] and [money] would follow, and the [team] at the margins [higher yields] would help the city.";
+  for (const out of await all(text)) {
+    assert(!out.includes("[[["), out);
+    assert(appStrip(out) === text, out);
+  }
+  const h = words.markHeadline("Club says [team] will play", dict, SPORT);
+  assert(!h.includes("[[[") && appStrip(h) === "Club says [team] will play", h);
+});
+
 if (net.blocked.length) { failed++; console.log(`FAIL network calls: ${net.blocked[0]}`); }
 console.log(`${passed} passed, ${failed} failed`);
 process.exit(failed ? 1 : 0);
