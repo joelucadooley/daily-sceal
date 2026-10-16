@@ -525,6 +525,33 @@ function phraseIrish(key, { ctx, prev, next, body, dict }) {
 
 // ---- Units ----
 
+// A word joined by a hyphen to another word (nine-month, think-in,
+// All-Ireland): its own Irish is wrong for the compound. A spaced dash
+// ("word - TD") does not join. Dictionary hyphen phrases (year-on-year)
+// are matched whole before this.
+const HYPHEN = /^[-‐‑]$/;
+export function inCompound(tokens, i, j) {
+  return (HYPHEN.test(tokens[i - 1] || "") && isWordToken(tokens[i - 2] || "")) ||
+    (HYPHEN.test(tokens[j + 1] || "") && isWordToken(tokens[j + 2] || ""));
+}
+
+// A plural possessive: "members' bar", "five years’ experience". The
+// apostrophe is its own token, so POSSESSIVE does not see it. A closing
+// quote ('the players' are) is told apart by an opening quote earlier in
+// the same sentence.
+export function pluralPossessive(tokens, i) {
+  const tok = tokens[i];
+  if (!/s$/i.test(tok) || !/^['’]$/.test(tokens[i + 1] || "")) return false;
+  if (!/^\s+$/.test(tokens[i + 2] || "") || !isWordToken(tokens[i + 3] || "")) return false;
+  for (let k = i - 1; k >= 0; k--) {
+    const t = tokens[k];
+    if (/^[.!?]$/.test(t) || t === "’") break;
+    if (t === "‘" || t === "“") return false;
+    if (t === "'" && (k === 0 || /^\s+$/.test(tokens[k - 1]) || /^["“(]$/.test(tokens[k - 1]))) return false;
+  }
+  return true;
+}
+
 // A word right inside square brackets ("[money]"): a marker there would
 // read as "[[[airgead|money]]]" and break the app's [[irish|english]] parser.
 export function inBrackets(tokens, i, j) {
@@ -548,12 +575,12 @@ export function candidateUnits(tokens, pct, dict, ctx = {}) {
   const units = [];
   for (const p of phrases) {
     if (p.irish === null) continue;
-    if (inBrackets(tokens, p.i, p.j)) continue;
+    if (inBrackets(tokens, p.i, p.j) || inCompound(tokens, p.i, p.j)) continue;
     units.push({ ...p, phrase: true, start: wordPos.get(p.i), end: wordPos.get(p.j) });
   }
   tokens.forEach((tok, i) => {
     if (!isWordToken(tok) || covered.has(i)) return;
-    if (inBrackets(tokens, i, i)) return;
+    if (inBrackets(tokens, i, i) || inCompound(tokens, i, i) || pluralPossessive(tokens, i)) return;
     if (!shouldTranslate(tok, pct, nextWord(tokens, i), dict, { prev: prevWord(tokens, i), ctx })) return;
     units.push({ i, j: i, text: tok, key: tok.toLowerCase(), phrase: false, start: wordPos.get(i), end: wordPos.get(i) });
   });
@@ -802,7 +829,7 @@ function headlineCandidates(title, dict, ctx = {}) {
   for (const p of findPhrases(tokens, dict, ctx, { body: false })) {
     for (let k = p.i; k <= p.j; k++) covered.add(k);
     if (!p.irish) continue;
-    if (inBrackets(tokens, p.i, p.j)) continue;
+    if (inBrackets(tokens, p.i, p.j) || inCompound(tokens, p.i, p.j)) continue;
     if (p.source !== "place" && DICT_VERBS.has(p.key)) continue;
     out.push({ i: p.i, j: p.j, text: p.text, irish: p.irish, source: p.source, phrase: true, start: wordPos.get(p.i), end: wordPos.get(p.j) });
   }
@@ -812,6 +839,7 @@ function headlineCandidates(title, dict, ctx = {}) {
     const next = nextWord(tokens, i), prev = prevWord(tokens, i).toLowerCase();
     const at = { i, j: i, text: tok, phrase: false, start: wordPos.get(i), end: wordPos.get(i) };
     if (inBrackets(tokens, i, i) || /\p{N}/u.test(tok)) return;
+    if (inCompound(tokens, i, i) || pluralPossessive(tokens, i)) return;
     const place = placeFor(tok, next, dict);
     if (place !== undefined) {
       out.push({ ...at, irish: place, source: "place" });

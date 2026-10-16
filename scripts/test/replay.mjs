@@ -131,7 +131,7 @@ if (rules) {
 {
   const appStrip = t => t.replace(/\[\[([^\|]+)\|([^\]]+)\]\]/g, "$2");
   const own = (o, k) => Object.hasOwn(o, k);
-  let grammar = 0, broken = 0;
+  let grammar = 0, broken = 0, joined = 0, possessive = 0;
   const examples = [];
   stories.forEach(({ story }, i) => {
     const { text, rss, title } = inputsOf(story);
@@ -139,6 +139,14 @@ if (rules) {
     const pairs = [[r.titleIr, title], ...LEVELS.flatMap(p => [[r.levels[p], text], [r.summaryLevels[p], rss]])];
     for (const [marked, input] of pairs) {
       if (appStrip(marked) !== input || marked.includes("[[[")) broken++;
+      for (const m of marked.matchAll(/\[\[[^|\]]+\|([^\]]+)\]\]/g)) {
+        const before = marked.slice(0, m.index), after = marked.slice(m.index + m[0].length);
+        // W6: part of a hyphenated word (nine-[[mí|month]]).
+        if (/[\p{L}\p{N}]-$/u.test(before) || /^-[\p{L}\p{N}]/u.test(after)) joined++;
+        // W6: a plural possessive ([[baill|members]]’ bar), not a closing quote.
+        const sentence = appStrip(before).split(/[.!?]\s/).at(-1);
+        if (/s$/i.test(m[1]) && /^['’]\s+\p{Ll}/u.test(after) && !/(^|[\s"“(])['‘]/.test(sentence)) possessive++;
+      }
       for (const m of parse(marked).markers) {
         const en = m.en.toLowerCase();
         if (words.FUNCTION_WORDS.has(en) || /\p{N}/u.test(en) || (/['’]/.test(en) && !own(lib.dict.overrides, en))) {
@@ -150,6 +158,9 @@ if (rules) {
   });
   console.log(`\nGrammar words, contractions and numbers marked: ${grammar}${examples.length ? ` (${examples.join(", ")})` : ""}`);
   console.log(`Texts whose markers do not strip back to the input: ${broken}`);
+  console.log(`Markers inside a hyphenated word: ${joined}; on a plural possessive: ${possessive}`);
+  if (joined) fail(`${joined} markers inside a hyphenated word (W6)`);
+  if (possessive) fail(`${possessive} markers on a plural possessive (W6)`);
   if (grammar) fail(`${grammar} markers on grammar words, contractions or numbers (W6)`);
   if (broken) fail(`${broken} texts do not strip back to their input (G5)`);
 }

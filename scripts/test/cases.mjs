@@ -464,6 +464,32 @@ await test("G19: a word in square brackets is never marked", async () => {
   assert(!h.includes("[[[") && appStrip(h) === "Club says [team] will play", h);
 });
 
+await test("G4: a word joined by a hyphen is never marked on its own", async () => {
+  const text = "The club got a nine-month transfer ban and a two-year partnership deal, and the long-awaited " +
+    "quarter-final stages of the All-Ireland title race start on a topsy-turvy day for the 28-year-old player.";
+  for (const out of await all(text)) {
+    assert(!markers(out).some(m => /^(month|year|final|awaited|long|topsy|old|Ireland|two|nine)$/i.test(m.en)), out);
+  }
+  for (const t of ["All-Ireland title defence for Kerry", "Seanad bye-election date set", "Three-car crash on motorway"]) {
+    const h = words.markHeadline(t, dict, NEWS);
+    assert(!/\|(Ireland|election|car)\]\]/.test(h), h);
+  }
+  // A spaced dash does not join, and dictionary hyphen phrases still match.
+  const sp = await level("Rising cost-of-living pressures were raised by every party at the meeting in the town.", 25);
+  assert(markers(sp).some(x => x.en === "cost-of-living"), sp);
+});
+
+await test("G15: a plural possessive is never marked; a word before a closing quote can be", async () => {
+  for (const out of await all("The members' bar reopened and staff with five years’ experience said the families' view mattered.")) {
+    assert(!markers(out).some(m => /^(members|years|families)$/i.test(m.en)), out);
+  }
+  const t = words.tokenize("He said some 'individual players' are uncomfortable.");
+  const i = t.indexOf("players");
+  assert(!words.pluralPossessive(t, i), "closing quote");
+  const p = words.tokenize("The players' union met.");
+  assert(words.pluralPossessive(p, p.indexOf("players")), "possessive");
+});
+
 if (net.blocked.length) { failed++; console.log(`FAIL network calls: ${net.blocked[0]}`); }
 console.log(`${passed} passed, ${failed} failed`);
 process.exit(failed ? 1 : 0);
