@@ -634,6 +634,24 @@ await test("Intermediate: machine -ed verbs and -ly adverbs pass only with the m
   assert(!/\|(released|unveiled|recently)\]\]/.test(f), f);
 });
 
+await test("G23: MyMemory stops being asked after the time budget, and the run carries on", async () => {
+  let t = 0, calls = 0;
+  const mm = createMyMemory({
+    fetch: async () => { calls++; t += 60 * 1000; return { json: async () => ({ responseStatus: 200, responseData: { translatedText: "x" } }) }; },
+    sleep: async () => {},
+    now: () => t,
+    budgetMs: 5 * 60 * 1000,
+  });
+  for (const w of ["kettle", "ladder", "lantern", "pebble", "saddle", "teapot", "thimble", "trumpet"]) {
+    try { await mm.lookup(w); } catch {}
+  }
+  assert(calls === 6, `calls ${calls}`);
+  assert(mm.breakerOpen && /time budget/.test(mm.summary()), mm.summary());
+  const d = { dict, lookup: mm.lookup, onRejected: w => mm.noteRejected(w) };
+  const out = await words.buildLevel(LONG_TEXT, 50, d, { ctx: NEWS });
+  assert(markers(out).length > 0, out);
+});
+
 if (net.blocked.length) { failed++; console.log(`FAIL network calls: ${net.blocked[0]}`); }
 console.log(`${passed} passed, ${failed} failed`);
 process.exit(failed ? 1 : 0);

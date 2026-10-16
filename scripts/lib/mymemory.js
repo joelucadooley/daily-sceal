@@ -9,6 +9,10 @@ const TIMEOUT_MS = 8000;
 // rest of the run: words it would have supplied stay English, the dictionary
 // still marks its words, and the run does not sit through every timeout.
 export const BREAKER_LIMIT = 15;
+// A slow MyMemory that keeps answering, or fails on and off, never trips the
+// breaker. After this long the run stops asking it and finishes with
+// dictionary Irish, well inside the workflow's time limit.
+export const TIME_BUDGET_MS = 30 * 60 * 1000;
 
 const realSleep = ms => new Promise(r => setTimeout(r, ms));
 
@@ -16,7 +20,10 @@ export function createMyMemory({
   fetch: fetchFn = (...args) => globalThis.fetch(...args),
   sleep = realSleep,
   breakerLimit = BREAKER_LIMIT,
+  budgetMs = TIME_BUDGET_MS,
+  now = Date.now,
 } = {}) {
+  const started = now();
   // english (lowercase) -> raw MyMemory text, including results that are
   // later rejected. Failed calls are not cached, so they are retried.
   const cache = {};
@@ -24,6 +31,7 @@ export function createMyMemory({
   const stats = { calls: 0, ok: 0, errors: 0 };
   let errorsInARow = 0;
   let breakerOpen = false;
+  let overBudget = false;
 
   async function translate(word) {
     const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(word)}&langpair=en|ga&de=${EMAIL}`;
@@ -38,6 +46,10 @@ export function createMyMemory({
   async function lookup(word) {
     const key = word.toLowerCase();
     if (cache[key] !== undefined) return cache[key];
+    if (!breakerOpen && now() - started > budgetMs) {
+      breakerOpen = true;
+      overBudget = true;
+    }
     if (breakerOpen) throw new Error("MyMemory skipped: breaker open");
     await sleep(THROTTLE_MS);
     stats.calls++;
@@ -63,7 +75,7 @@ export function createMyMemory({
 
   function summary() {
     return `MyMemory: calls ${stats.calls}, ok ${stats.ok}, rejected ${rejectedWords.size}, ` +
-      `errors ${stats.errors}, breaker ${breakerOpen ? "open" : "closed"}`;
+      `errors ${stats.errors}, breaker ${breakerOpen ? (overBudget ? "open (time budget)" : "open") : "closed"}`;
   }
 
   return {

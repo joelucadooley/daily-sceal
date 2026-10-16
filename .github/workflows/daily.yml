@@ -14,9 +14,13 @@ on:
 jobs:
   generate:
     runs-on: ubuntu-latest
-    # A normal run takes a few minutes. If MyMemory hangs, the breaker stops
-    # calling it after 15 failures in a row; this is the last resort.
-    timeout-minutes: 40
+    # A normal run takes 6 to 10 minutes, a slow one over 30. If MyMemory
+    # hangs, the breaker stops calling it after 15 failures in a row, and
+    # generate.js stops asking it after 30 minutes. The step limit below is
+    # the last resort: it fails the step, so the issue step still runs (a
+    # job-level limit cancels the job and skips it). This one only catches
+    # a step limit that itself hangs.
+    timeout-minutes: 90
     permissions:
       contents: write
       actions: write
@@ -35,6 +39,7 @@ jobs:
         run: npm install && npm install @xmldom/xmldom
 
       - name: Run generation script
+        timeout-minutes: 60
         env:
           FEEDS: ${{ github.event.inputs.feeds }}
         run: node scripts/generate.js
