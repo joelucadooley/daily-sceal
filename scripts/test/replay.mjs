@@ -15,7 +15,7 @@ import {
   runBaseline, runLib, collect, tableRows, headlineRows, markdownTable, LEVEL_HEAD, inputsOf,
 } from "./runs.mjs";
 import * as words from "../lib/words.js";
-import { parse, quant as quantile } from "./metrics.mjs";
+import { parse, quant as quantile, PAST_ACTIVE_LOOSE, passiveBefore, capitalModal } from "./metrics.mjs";
 import { loadDict, loadSenses } from "../lib/dict.js";
 import { resolve } from "path";
 import { pathToFileURL } from "url";
@@ -149,7 +149,7 @@ if (rules) {
   const appStrip = t => t.replace(/\[\[([^\|]+)\|([^\]]+)\]\]/g, "$2");
   const own = (o, k) => Object.hasOwn(o, k);
   let grammar = 0, broken = 0, joined = 0, possessive = 0, cueNoun = 0, beActive = 0;
-  const cueExamples = [];
+  const cueExamples = [], possessiveExamples = [], passiveExamples = [];
   const CUES = new Set(["to", "will", "would", "can", "could", "should", "may", "might", "must", "did", "does", "do",
     "i", "we", "you", "they", "he", "she", "it", "who", "not"]);
   const examples = [];
@@ -163,21 +163,33 @@ if (rules) {
         const before = marked.slice(0, m.index), after = marked.slice(m.index + m[0].length);
         // W6: part of a hyphenated word (nine-[[mí|month]]).
         if (/[\p{L}\p{N}]-$/u.test(before) || /^-[\p{L}\p{N}]/u.test(after)) joined++;
-        // W6: a plural possessive ([[baill|members]]’ bar), not a closing quote.
+        // W6: a plural possessive ([[baill|members]]’ bar), not a closing
+        // quote: no quote is still open before it in the sentence (one that
+        // has closed, “a disaster”, does not count).
         const sentence = appStrip(before).split(/[.!?]\s/).at(-1);
-        if (/s$/i.test(m[1]) && /^['’]\s+\p{Ll}/u.test(after) && !/(^|[\s"“(])['‘]/.test(sentence)) possessive++;
+        if (/s$/i.test(m[1]) && /^['’]\s+\p{Ll}/u.test(after) && !words.quoteOpen(sentence + m[1])) {
+          possessive++;
+          if (possessiveExamples.length < 5) possessiveExamples.push(`${sentence.slice(-50)}${m[0]}${after.slice(0, 12)}`);
+        }
       }
       for (const m of parse(marked).markers) {
         const en = m.en.toLowerCase(), prev = m.prev.toLowerCase();
         // W8: the dictionary's noun Irish on a noun/verb word used as a verb
         // ("to [[pá|pay]] a", "will [[cluiche|match]]", "has [[réamhaisnéis|forecast]]").
         const nounIrish = Object.hasOwn(lib.dict.overrides, en) && lib.dict.overrides[en] === m.ga && !words.DICT_VERBS.has(en);
-        if (nounIrish && words.NOUN_VERB_WORDS.has(en) && (CUES.has(prev) || (/^(has|have|had)$/.test(prev) && !/s$/.test(en)))) {
+        // A capital May, Will or Can is a month or a name ("In May [[tuarascáil|report]]s").
+        const cue = CUES.has(prev) && !capitalModal(m.prev);
+        if (nounIrish && words.NOUN_VERB_WORDS.has(en) && (cue || (/^(has|have|had)$/.test(prev) && !/s$/.test(en)))) {
           cueNoun++;
           if (cueExamples.length < 5) cueExamples.push(`${m.prev} ${m.en}=${m.ga}`);
         }
-        // G3: be-form + -ed with past active Irish ("was [[d'fhógair|announced]]").
-        if (/^(be|been|being|is|are|was|were|get|got|gets)$/.test(prev) && /ed$/.test(en) && words.pastActiveIrish(m.ga)) beActive++;
+        // G3: be-form + -ed with past active Irish ("was [[d'fhógair|announced]]"),
+        // also with up to two adverbs between ("was first announced",
+        // "been repeatedly called"). The Irish test is loose (first word only).
+        if (/ed$/.test(en) && PAST_ACTIVE_LOOSE.test(m.ga) && passiveBefore(appStrip(marked.slice(0, m.at)))) {
+          beActive++;
+          if (passiveExamples.length < 5) passiveExamples.push(`${appStrip(marked.slice(0, m.at)).slice(-25)}[[${m.ga}|${m.en}]]`);
+        }
       }
       for (const m of parse(marked).markers) {
         const en = m.en.toLowerCase();
@@ -190,11 +202,12 @@ if (rules) {
   });
   console.log(`\nGrammar words, contractions and numbers marked: ${grammar}${examples.length ? ` (${examples.join(", ")})` : ""}`);
   console.log(`Texts whose markers do not strip back to the input: ${broken}`);
-  console.log(`Markers inside a hyphenated word: ${joined}; on a plural possessive: ${possessive}`);
+  console.log(`Markers inside a hyphenated word: ${joined}; on a plural possessive: ${possessive}` +
+    `${possessiveExamples.length ? ` (${possessiveExamples.join(" | ")})` : ""}`);
   if (joined) fail(`${joined} markers inside a hyphenated word (W6)`);
   if (possessive) fail(`${possessive} markers on a plural possessive (W6)`);
   console.log(`Noun Irish on a noun/verb word after a verb cue: ${cueNoun}${cueExamples.length ? ` (${cueExamples.join(", ")})` : ""}`);
-  console.log(`Be-form + -ed word with past active Irish: ${beActive}`);
+  console.log(`Be-form + -ed word with past active Irish: ${beActive}${passiveExamples.length ? ` (${passiveExamples.join(" | ")})` : ""}`);
   if (cueNoun) fail(`${cueNoun} noun/verb words after a verb cue carry noun Irish (W8)`);
   if (beActive) fail(`${beActive} passive -ed words carry past active Irish (G3)`);
   if (grammar) fail(`${grammar} markers on grammar words, contractions or numbers (W6)`);

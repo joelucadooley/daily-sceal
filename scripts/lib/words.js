@@ -363,6 +363,12 @@ const PERFECT = new Set(["has", "have", "had", "having"]);
 // Be-forms (and "it's", "that's"): "is meeting", "was announced".
 const BE_FORMS = new Set(["be", "been", "being", "is", "are", "was", "were", "am", "get", "gets", "got", "getting"]);
 const BE_CONTRACTION = /^(it|he|she|that|there|what|who|here)['’]s$/;
+const BE_NEGATIVE = /^(is|are|was|were)n['’]t$/;
+// get/got make a passive ("got injured") but not an -ing verb ("got funding").
+const GET_FORMS = new Set(["get", "gets", "got", "getting"]);
+// Adverbs that may stand between a be-form and its verb, with any -ly word.
+const BE_ADVERBS = new Set(["first", "now", "also", "still", "already", "later", "then", "not", "never", "recently",
+  "just", "again", "once", "previously"]);
 // Words that start an object after a verb: "to pay a", "to witness Marine", "meeting them".
 const OBJECT_START = new Set(["a", "an", "the", "his", "her", "their", "its", "our", "your", "my", "them", "him", "us", "me", "it", "you"]);
 // After "that X": an auxiliary makes X the subject noun ("that decision was").
@@ -440,10 +446,44 @@ export function isVerbLike(en, ga = "", { englishList = true } = {}) {
 //   past active: d'fhógair, chaill, dheimhnigh, and a few irregulars
 //   participle:  foilsithe, dúnta, gortaithe, scríofa
 //   present:     léiríonn, teastaíonn, reáchtálann
-export const pastActiveIrish = ga => /^d['’]/i.test(ga) || /^(bh|ch|dh|fh|gh|mh|ph|sh|th)/i.test(ga) ||
-  /^(fuair|rinne|dúirt|chonaic|tháinig|chuaigh|thug|rug|bhí)(\s|$)/i.test(ga);
-export const participleIrish = ga => /(ta|te|tha|the|fa|fe)$/i.test(ga.trim().split(/\s+/)[0]);
-export const presentIrish = ga => /(íonn|aíonn|eann|ann)$/i.test(ga.trim());
+// Strict: every word of the answer must have the shape, and an answer with
+// its own pronoun ("d'fhéach sé", "fáilte rompu") is not one English word.
+// The loose shapes (first word only) are for turning dictionary Irish down.
+const LENITED = /^(bh|ch|dh|fh|gh|mh|ph|sh|th)/i;
+const IRREGULAR_PAST_IRISH = /^(fuair|rinne|dúirt|chonaic|tháinig|chuaigh|thug|rug|bhí|chuala)$/i;
+// Subject pronouns and prepositional pronouns (rompu, dóibh, leis).
+const IRISH_PRONOUNS = new Set(["mé", "tú", "thú", "sé", "sí", "é", "í", "muid", "sinn", "sibh", "siad", "iad",
+  "mise", "tusa", "seisean", "sise", "sinne", "sibhse", "siadsan", "rompu", "roimhe", "roimpi", "romham", "romhainn",
+  "dó", "di", "dom", "duit", "dúinn", "daoibh", "dóibh", "liom", "leat", "leis", "léi", "linn", "libh", "leo",
+  "orm", "ort", "air", "uirthi", "orainn", "oraibh", "orthu", "agam", "agat", "aige", "aici", "againn", "acu",
+  "uaidh", "uaithi", "uathu", "chuige", "chuici", "chucu", "faoi", "fúithi", "fúthu", "ann", "inti", "iontu"]);
+// d' before a word that is not a verb: d'éigean (by force), d'aon (any), d'fhonn (in order to).
+const D_NOT_VERB = /^d['’](éigean|aon|fhonn|uile|ár)$/i;
+// Nouns with a participle's ending: dáta (date), pasta, fáilte (welcome).
+const PARTICIPLE_NOUNS = new Set(["dáta", "pasta", "cóta", "vóta", "fáilte", "sláinte", "beatha", "áite", "bata",
+  "pota", "leite", "píota", "páiste", "dalta", "costa", "liosta", "tráta"]);
+const irishWords = ga => String(ga).trim().split(/\s+/).filter(Boolean);
+const pastActiveWord = w => {
+  if (IRREGULAR_PAST_IRISH.test(w)) return true;
+  const d = /^d['’](.+)$/i.exec(w);
+  // d' before a vowel or fh + vowel (d'fhógair, d'iarr, d'éirigh), never a
+  // future or conditional ending (d'fhéadfadh), never d'éigean.
+  if (d) return /^(fh)?[aeiouáéíóú]/i.test(d[1]) && d[1].length >= 3 && !D_NOT_VERB.test(w) &&
+    !/(ean|fadh|feadh|faidh|fidh|faí|fí|óidh|eoidh)$/i.test(d[1]);
+  return LENITED.test(w) && /^..[aeiouáéíóúlnr]/i.test(w) && !/(fadh|feadh|faidh|fidh|óidh|eoidh)$/i.test(w);
+};
+const participleWord = w => /(ta|te|tha|the|fa|fe)$/i.test(w) && !PARTICIPLE_NOUNS.has(w.toLowerCase());
+const allWords = (ga, fn) => {
+  const ws = irishWords(ga);
+  return ws.length > 0 && ws.every(w => !IRISH_PRONOUNS.has(w.toLowerCase()) && fn(w));
+};
+export const pastActiveIrish = ga => allWords(ga, pastActiveWord);
+export const participleIrish = ga => allWords(ga, participleWord);
+export const presentIrish = ga => allWords(ga, w => /(íonn|aíonn|eann|ann)$/i.test(w));
+// Loose: the first word only. Used to turn dictionary Irish down, where a
+// near miss should still count ("was [[d'fhógair sé|announced]]").
+const pastActiveShape = ga => /^d['’]/i.test(ga) || LENITED.test(ga) || IRREGULAR_PAST_IRISH.test(irishWords(ga)[0] || "");
+const participleShape = ga => /(ta|te|tha|the|fa|fe)$/i.test(irishWords(ga)[0] || "");
 // English past form: -ed (not a noun like "hundred") or an irregular past.
 export const pastEnglish = key => (/ed$/.test(key) && !ED_NOUNS.has(key)) || IRREGULAR_PAST.has(key);
 // Subjects: a past verb after one is active ("he closed"), never a participle.
@@ -514,7 +554,29 @@ export function wordSetting(tokens, i, j, key) {
     if (DETERMINERS.has(w) || FUNCTION_WORDS.has(w) || LINKS.has(w) || /ly$/.test(w) || /[^su]s$/.test(w)) break;
     words++;
   }
-  const afterBe = BE_FORMS.has(prev) || BE_CONTRACTION.test(prev);
+  // Up to two adverbs may stand between a be-form and its word: "was first
+  // announced", "been repeatedly called", "is now meeting".
+  let afterBe = false, afterCopula = false;
+  {
+    let b = i;
+    for (let n = 0; n < 3; n++) {
+      while (b > 0 && !isWordToken(tokens[b - 1]) && !/^[.!?;:]$/.test(tokens[b - 1])) b--;
+      if (b <= 0 || !isWordToken(tokens[b - 1])) break;
+      b--;
+      const w = tokens[b].toLowerCase();
+      if (BE_FORMS.has(w) || BE_CONTRACTION.test(w) || BE_NEGATIVE.test(w)) {
+        afterBe = true;
+        afterCopula = !GET_FORMS.has(w);
+        break;
+      }
+      if (!BE_ADVERBS.has(w) && !(/ly$/.test(w) && !KNOWN_NOUNS.has(w))) break;
+    }
+  }
+  // A capital May, Will or Can is a month or a name, not a modal ("In May
+  // hospital lists rose"); at a sentence start it opens a question whose
+  // next word is the subject ("Can hospitals cope?").
+  const prevRaw = prevWord(tokens, i);
+  const modal = MODALS.has(prev) && !/^\p{Lu}/u.test(prevRaw);
   let k = i - 1;
   while (k >= 0 && /^\s+$/.test(tokens[k])) k--;
   const nameBefore = k >= 0 && isWordToken(tokens[k]) && /^\p{Lu}/u.test(tokens[k]) && !atSentenceStart(tokens, k);
@@ -523,8 +585,9 @@ export function wordSetting(tokens, i, j, key) {
     subjectBefore: SUBJECT_PRONOUNS.has(prev) || nameBefore,
     // An object or a particle after a past form makes it active: "closed out", "closed the gap".
     objectAfter: OBJECT_START.has(nextLower) || PARTICLES.has(nextLower) || nextLower === "out",
-    verbCue: VERB_CUES.has(prev) || thatVerb,
-    afterModal: MODALS.has(prev),
+    afterCopula,
+    verbCue: (VERB_CUES.has(prev) && (modal || !MODALS.has(prev))) || thatVerb,
+    afterModal: modal,
     afterPerfect: PERFECT.has(prev),
     opensObject: OBJECT_START.has(nextLower) || /^[\p{Lu}\p{N}]/u.test(next),
     modifies: !!next && /^\s$/.test(tokens[j + 1] || "") &&
@@ -541,7 +604,11 @@ export function nounFits(key, verb, set) {
   if (nv && set.afterPerfect && !/s$/.test(key)) return false;           // "has forecast"
   if (set.afterModal && looksNoun(key)) return false;                    // "will match", "could flood"
   if (set.prev === "to" && looksNoun(key) && set.opensObject) return false; // "to pay a", "to witness Marine"
-  if (/ing$/.test(key) && (set.afterBe || set.prev === "to")) return false; // "is meeting", "to meeting them"
+  // "is meeting Mr Burnham", "to meeting them", "is training with": a verb.
+  // A known -ing noun with no object stays a noun: "access to funding",
+  // "got funding from", "the problem is housing".
+  if (/ing$/.test(key) && (set.afterCopula || set.prev === "to") &&
+    (!KNOWN_NOUN_ING.has(key) || set.opensObject || /^with$/i.test(set.next))) return false;
   if (NOUN_ADJ_WORDS.has(key) && set.modifies) return false;            // "the final day"
   return true;
 }
@@ -573,8 +640,8 @@ export function rankUnit(unit, tokens, pct, dict, ctx = {}) {
       // before "by" an -ed word is passive ("was announced", "published by"),
       // so past active Irish (d'fhógair) is wrong; after a subject it is
       // active, so a participle (dúnta) is wrong.
-      if (set.pastForm && pastActiveIrish(hit.irish) && (set.afterBe || /^by$/i.test(next))) return null;
-      if (set.pastForm && participleIrish(hit.irish) && !pastActiveIrish(hit.irish) && !set.afterBe &&
+      if (set.pastForm && pastActiveShape(hit.irish) && (set.afterBe || /^by$/i.test(next))) return null;
+      if (set.pastForm && participleShape(hit.irish) && !pastActiveShape(hit.irish) && !set.afterBe &&
         (set.subjectBefore || set.objectAfter)) return null;
     }
     const noun = looksNoun(key) || (NOUN_VERB_WORDS.has(key) && afterDet);
@@ -718,21 +785,41 @@ export function inCompound(tokens, i, j) {
     (HYPHEN.test(tokens[j + 1] || "") && isWordToken(tokens[j + 2] || ""));
 }
 
+// True when a single quote opened in `text` is still open at its end, so a
+// ' or ’ after the next plural closes it ('the players' are) rather than
+// marking a possessive. ‘ pairs with ’, and a ' after a space, a bracket or
+// a double quote (or at the start) with the next ' followed by a space,
+// punctuation or the end. A ' or ’ inside a word (hospital's, O’Brien) or
+// after a plural with nothing open (nurses') is an apostrophe. Double
+// quotes never close with a single one, so “a disaster” or "reflects
+// travellers' desire" leave nothing open.
+export function quoteOpen(text) {
+  let curly = false, straight = false;
+  const opens = k => k === 0 || /[\s(\[“‘"]/.test(text[k - 1]);
+  const closes = k => k === text.length - 1 || !/[\p{L}\p{M}\p{N}]/u.test(text[k + 1]);
+  for (let k = 0; k < text.length; k++) {
+    const c = text[k];
+    if (c === "‘") curly = true;
+    else if (c === "’") { if (curly && closes(k)) curly = false; }
+    else if (c === "'") {
+      if (straight && !opens(k) && closes(k)) straight = false;
+      else if (!straight && opens(k)) straight = true;
+    }
+  }
+  return curly || straight;
+}
+
 // A plural possessive: "members' bar", "five years’ experience". The
 // apostrophe is its own token, so POSSESSIVE does not see it. A closing
-// quote ('the players' are) is told apart by an opening quote earlier in
-// the same sentence.
+// quote ('the players' are) is told apart by a quote still open earlier in
+// the same sentence; a quote that has closed ("a disaster”) does not count.
 export function pluralPossessive(tokens, i) {
   const tok = tokens[i];
   if (!/s$/i.test(tok) || !/^['’]$/.test(tokens[i + 1] || "")) return false;
   if (!/^\s+$/.test(tokens[i + 2] || "") || !isWordToken(tokens[i + 3] || "")) return false;
-  for (let k = i - 1; k >= 0; k--) {
-    const t = tokens[k];
-    if (/^[.!?]$/.test(t) || t === "’") break;
-    if (t === "‘" || t === "“") return false;
-    if (t === "'" && (k === 0 || /^\s+$/.test(tokens[k - 1]) || /^["“(]$/.test(tokens[k - 1]))) return false;
-  }
-  return true;
+  let s = i;
+  while (s > 0 && !/^[.!?]$/.test(tokens[s - 1])) s--;
+  return !quoteOpen(tokens.slice(s, i + 1).join(""));
 }
 
 // A word right inside square brackets ("[money]"): a marker there would
@@ -935,11 +1022,14 @@ export function eligibleSpans(text, pct, dict, ctx = {}) {
 
 // G3 for machine Irish, which comes with no sentence: a past English verb
 // needs past Irish (a participle after a be-form), and an English -s verb
-// needs present Irish. Root forms (bunaigh for found) and nouns
-// (tréimhsí fanachta for stays) are turned down. Words in noun position
-// (after a determiner) are not verbs and are not checked here.
+// needs present Irish. Root forms (bunaigh for found), nouns (tréimhsí
+// fanachta for stays, dáta ceaptha for appointed) and answers with their
+// own pronoun (d'fhéach sé) are turned down. After a determiner an -ed
+// word is an adjective ("an experienced player"): one participle or
+// adjective word (scriosta, clúiteach), never a noun (taithí).
+const adjectiveIrish = ga => allWords(ga, w => /(ach|each|úil|iúil|mhar|mhail)$/i.test(w)) && irishWords(ga).length === 1;
 export function verbFormFits(unit, ga) {
-  if (unit.afterDet) return true;
+  if (unit.afterDet) return !pastEnglish(unit.key) || ((participleIrish(ga) || adjectiveIrish(ga)) && irishWords(ga).length === 1);
   if (pastEnglish(unit.key)) return unit.afterBe ? participleIrish(ga) && !pastActiveIrish(ga) : pastActiveIrish(ga);
   if (unit.verb && /[^s]s$/.test(unit.key)) return presentIrish(ga);
   return true;

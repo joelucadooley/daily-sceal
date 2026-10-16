@@ -634,6 +634,82 @@ await test("Intermediate: machine -ed verbs and -ly adverbs pass only with the m
   assert(!/\|(released|unveiled|recently)\]\]/.test(f), f);
 });
 
+await test("Intermediate: machine Irish for an -ed word must be one verb form, with no noun, adverb or pronoun", async () => {
+  const bad = { looked: "d'fhéach sé", appointed: "dáta ceaptha", welcomed: "fáilte rompu", forced: "d'éigean", experienced: "taithí" };
+  const lookup = async w => bad[w.toLowerCase()] ?? w;
+  for (const t of ["She said the EU had looked at Australia before the talks began.",
+    "A new officer has been appointed to lead the unit in the city.",
+    "This increase will be welcomed by families across the country.",
+    "Stiff Person Syndrome forced her to cancel the tour last year.",
+    "The club signed an experienced player from the city."]) {
+    const out = await words.buildLevel(t, 50, { dict, lookup }, { ctx: NEWS });
+    assert(!/d'fhéach sé|dáta ceaptha|fáilte rompu|d'éigean|taithí/.test(out), out);
+  }
+  assert(!words.verbFormFits({ key: "appointed", afterBe: true }, "dáta ceaptha"), "noun phrase");
+  assert(!words.verbFormFits({ key: "forced" }, "d'éigean"), "adverb");
+  assert(!words.verbFormFits({ key: "looked" }, "d'fhéach sé"), "own pronoun");
+  assert(!words.verbFormFits({ key: "welcomed", afterBe: true }, "fáilte rompu"), "prepositional pronoun");
+  assert(!words.verbFormFits({ key: "experienced", afterDet: true }, "taithí"), "noun after a determiner");
+  assert(!words.participleIrish("pasta") && !words.participleIrish("dáta"), "nouns with a participle's ending");
+  for (const [key, ga, afterBe] of [["looked", "d'fhéach"], ["called", "d'iarr"], ["helped", "chabhraigh"], ["happened", "tharla"],
+    ["appointed", "ceaptha", true], ["welcomed", "fáiltithe", true]]) {
+    assert(words.verbFormFits({ key, afterBe }, ga), `${key} ${ga}`);
+  }
+  assert(words.verbFormFits({ key: "renowned", afterDet: true }, "clúiteach"), "adjective after a determiner");
+});
+
+await test("A capital May, Will or Can is not a modal: the noun after it is still marked", async () => {
+  for (const out of await all("In May hospital waiting lists rose again, the report said.")) {
+    assert(out.includes("[[ospidéal|hospital]]"), out);
+  }
+  for (const p of [10, 25, 50]) {
+    const spans = words.eligibleSpans("Since May housing costs rose sharply across the country.", p, dict, NEWS);
+    assert(spans.some(([, , k]) => k === "housing"), `${p} ${JSON.stringify(spans)}`);
+  }
+  // A lowercase modal still makes a verb: "may help", "will match".
+  for (const out of await all("Staff said they may help the families, and the club will match the funding.")) {
+    assert(!/\|(help|match)\]\]/.test(out), out);
+  }
+});
+
+await test("W6: a plural possessive after a quote that has closed is still not marked", async () => {
+  for (const t of ["The report called the plan “a disaster” and said the players’ union would meet the minister.",
+    "He said the hospital's 'new wing' was opened, and the nurses' union welcomed the news.",
+    "The editors write that this year's list \"reflects travellers' growing desire to slow down\"."]) {
+    for (const out of await all(t)) assert(!/\|(players|nurses|travellers)\]\]/.test(out), out);
+    const tk = words.tokenize(t);
+    const i = tk.findIndex(x => /^(players|nurses|travellers)$/.test(x));
+    assert(words.pluralPossessive(tk, i), t);
+  }
+  assert(!words.quoteOpen("He said “a disaster” and the players") && words.quoteOpen("He said 'the players"), "quote balance");
+  assert(words.quoteOpen("He said ‘individual players") && !words.quoteOpen("He said O’Brien's players"), "curly quotes");
+});
+
+await test("G3: up to two adverbs between a be-form and an -ed word still make it passive", async () => {
+  const lookup = async w => ({ announced: "d'fhógair", called: "d'iarr" })[w.toLowerCase()] ?? w;
+  for (const t of ["The project, which was first announced in 2019, is now called a failure by many in the town.",
+    "The ground, which has been repeatedly called a disgrace, will close next year after the vote."]) {
+    for (const p of [10, 25, 50]) {
+      const out = await words.buildLevel(t, p, { dict, lookup }, { ctx: NEWS });
+      assert(!/d'fhógair\|announced|d'iarr\|called/.test(out), out);
+    }
+  }
+  const tk = words.tokenize("It was not first announced.");
+  assert(words.wordSetting(tk, tk.indexOf("announced"), tk.indexOf("announced"), "announced").afterBe, "was not first announced");
+});
+
+await test("A known -ing noun after to, got or a be-form stays a noun unless an object follows", async () => {
+  const out = await level("The local club got funding from the council for the new pitch.", 50);
+  assert(out.includes("[[maoiniú|funding]]"), out);
+  for (const [t, k] of [["The problem is housing, he said.", "housing"], ["They want access to funding for the project.", "funding"],
+    ["The local club got funding from the council for the new pitch.", "funding"]]) {
+    for (const p of [10, 25, 50]) assert(words.eligibleSpans(t, p, dict, NEWS).some(([, , x]) => x === k), `${p} ${t}`);
+  }
+  for (const out of await all("The minister is meeting Mr Burnham in the city, and the squad is training with the coach today.")) {
+    assert(!/\|(meeting|training)\]\]/.test(out), out);
+  }
+});
+
 await test("G23: MyMemory stops being asked after the time budget, and the run carries on", async () => {
   let t = 0, calls = 0;
   const mm = createMyMemory({

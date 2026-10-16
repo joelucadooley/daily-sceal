@@ -5,7 +5,7 @@
 //   node scripts/test/report.mjs --out <file.html> [--from 2026-09-11] [--senses <file>]
 import { net, loadArchive, makeAnswers, archiveDir, LEVELS, MARKER } from "./archive.mjs";
 import { runBaseline, runLib, collect, tableRows, headlineRows, LEVEL_HEAD, inputsOf } from "./runs.mjs";
-import { KNOWN_WRONG, parse } from "./metrics.mjs";
+import { KNOWN_WRONG, parse, PAST_ACTIVE_LOOSE, passiveBefore, capitalModal } from "./metrics.mjs";
 import * as words from "../lib/words.js";
 import { loadDict, loadSenses } from "../lib/dict.js";
 import { writeFileSync } from "fs";
@@ -123,14 +123,15 @@ function reviewCounts(out) {
       for (const m of t.matchAll(MARKER)) {
         const [all, ga, en] = m;
         const lo = en.toLowerCase(), before = t.slice(0, m.index), rest = t.slice(m.index + all.length);
-        const prev = (appStrip(before).match(/([\p{L}\p{N}'’]+)[^\p{L}\p{N}]*$/u) || [])[1]?.toLowerCase() || "";
+        const rawPrev = (appStrip(before).match(/([\p{L}\p{N}'’]+)[^\p{L}\p{N}]*$/u) || [])[1] || "";
+        const prev = rawPrev.toLowerCase();
         const next = (appStrip(rest).match(/^\s+([\p{L}\p{N}'’]+)/u) || [])[1] || "";
         if (words.FUNCTION_WORDS.has(lo) || /\p{N}/u.test(en) || (/['’]/.test(en) && !Object.hasOwn(dict.overrides, lo))) c.grammar++;
         if (/[\p{L}\p{N}]-$/u.test(before) || /^-[\p{L}\p{N}]/u.test(rest)) c.joined++;
-        if (/s$/i.test(en) && /^['’]\s+\p{Ll}/u.test(rest) && !/(^|[\s"“(])['‘]/.test(appStrip(before).split(/[.!?]\s/).at(-1))) c.possessive++;
+        if (/s$/i.test(en) && /^['’]\s+\p{Ll}/u.test(rest) && !words.quoteOpen(appStrip(before).split(/[.!?]\s/).at(-1) + en)) c.possessive++;
         const nounIrish = Object.hasOwn(dict.overrides, lo) && dict.overrides[lo] === ga && !words.DICT_VERBS.has(lo);
-        if (nounIrish && words.NOUN_VERB_WORDS.has(lo) && (CUES.has(prev) || (/^(has|have|had)$/.test(prev) && !/s$/.test(lo)))) c.cueNoun++;
-        if (/^(be|been|being|is|are|was|were|get|got|gets)$/.test(prev) && /ed$/.test(lo) && words.pastActiveIrish(ga)) c.beActive++;
+        if (nounIrish && words.NOUN_VERB_WORDS.has(lo) && ((CUES.has(prev) && !capitalModal(rawPrev)) || (/^(has|have|had)$/.test(prev) && !/s$/.test(lo)))) c.cueNoun++;
+        if (/ed$/.test(lo) && PAST_ACTIVE_LOOSE.test(ga) && passiveBefore(appStrip(before))) c.beActive++;
         if (/léiríonn/.test(ga) && words.DETERMINERS.has(prev)) c.nounShow++;
         if (placeIrish.has(ga) && /^\p{Lu}/u.test(next) && !/^(county|co|gaa|fm|council|senior|minor|hurling|football|camogie|ladies)$/i.test(next)) c.placeName++;
       }
@@ -145,7 +146,7 @@ const reviewRows = [
   ["Plural possessive (members' bar)", "possessive"],
   ["Place name before a capital (Derry City, Tyrone McKenna)", "placeName"],
   ["Noun Irish on a verb (to pay a, will match, has forecast)", "cueNoun"],
-  ["Past Irish on a passive (was announced, be published)", "beActive"],
+  ["Past Irish on a passive (was announced, was first announced)", "beActive"],
   ["léiríonn after a determiner (the show)", "nounShow"],
   ["Texts with [[[ (a word in square brackets)", "brackets"],
 ].map(([label, k]) => [label, String(rcB[k]), String(rcA[k])]);
@@ -215,7 +216,7 @@ const tuning = [
   ["Foundation gap repair", "Machine nouns for a gap of 12+ words with no dictionary word (L4: over 25)", "GAP_REPAIR_FROM"],
   ["Target", "Candidates x level x 2.2 / 1.2 / 1.2, as the spacing rules and the review fixes hold markers back", "DENSITY"],
   ["Which word first", "Tier, whole phrases, then the word that shuts out fewest others, then the middle of the gap", "pickMarkers"],
-  ["Intermediate verbs", "Machine -ed verbs and -ly adverbs, only with past (or participle) Irish to match", "verbFormFits"],
+  ["Intermediate verbs", "Machine -ed verbs and -ly adverbs, only with one past, participle or adjective Irish word (no noun, adverb or pronoun)", "verbFormFits"],
   ["Long gaps", "The sentence cap gives way in a gap over the limit; spacing and repeats never do", "pickMarkers"],
 ];
 

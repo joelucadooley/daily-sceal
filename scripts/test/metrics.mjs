@@ -26,12 +26,34 @@ export const KNOWN_WRONG = [
   ["minutes", "miontuairiscí"], ["whether", "aimsir"], ["while", "comhad"], ["position", "deashuíomh"],
   ["action", "aicsean"], ["means", "acmhainn"], ["set", "babhta"], ["take", "beir ar"],
   ["amus", "amas"], ["tel", "teil"], ["number", "uimhir"], ["club", "bata"], ["series", "dreas buillí"],
+  // Found in the review of the Intermediate -ed change: a noun phrase, an
+  // adverb and Irish with its own pronoun for one English verb.
+  ["appointed", "dáta ceaptha"], ["forced", "d'éigean"], ["looked", "d'fhéach sé"], ["welcomed", "fáilte rompu"],
 ];
 // Context-dependent wrong uses: a verb gloss right after a determiner (W9).
 export const DETERMINER_VERB = [["show", "léiríonn"], ["return", "fill"], ["return", "aisbhuille"]];
 const DETERMINERS = new Set(["the","a","an","its","their","his","her","this","that","these","those","our","some","any","each","every","no"]);
 const KNOWN_WRONG_SET = new Set(KNOWN_WRONG.map(([e, g]) => `${e}|${g}`));
 const DET_VERB_SET = new Set(DETERMINER_VERB.map(([e, g]) => `${e}|${g}`));
+
+// Review checks shared by the replay and the report.
+// G3: past active Irish, loosely (the first word only): d'fhógair, chaill.
+export const PAST_ACTIVE_LOOSE = /^(d['’]|bh|ch|dh|fh|gh|mh|ph|sh|th|fuair(\s|$)|rinne|dúirt|chonaic|tháinig|chuaigh|thug|rug)/i;
+const BE = /^(be|been|being|is|are|was|were|am|get|got|gets|getting|isn['’]t|aren['’]t|wasn['’]t|weren['’]t|(it|he|she|that|there|what|who|here)['’]s)$/i;
+const ADVERB = /^(first|now|also|still|already|later|then|not|never|recently|just|again|once|previously|\p{L}+ly)$/iu;
+// True when plain text before a word ends in a be-form, with up to two
+// adverbs after it: "was announced", "was first announced", "been repeatedly called".
+export function passiveBefore(lead) {
+  const ws = (lead.split(/[.!?;:]\s/).at(-1).match(WORD) || []).slice(-3).reverse();
+  for (const w of ws) {
+    if (BE.test(w)) return true;
+    if (!ADVERB.test(w) || /^family$/i.test(w)) return false;
+  }
+  return false;
+}
+// W8: a modal written with a capital is a month or a name ("In May", "Will Smith").
+export const MODAL_CUES = new Set(["will", "would", "can", "could", "should", "may", "might", "must", "did", "does", "do"]);
+export const capitalModal = word => MODAL_CUES.has(word.toLowerCase()) && /^\p{Lu}/u.test(word);
 
 // Parse a marked text into words and markers (word positions; a phrase
 // marker spans all its English words). Sentences use summary.js's split.
