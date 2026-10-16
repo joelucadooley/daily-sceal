@@ -167,6 +167,8 @@ export function measure(texts, { dict, senses = {} }) {
   return r;
 }
 
+const COUNTY_WORD = /^(county|co|gaa|fm|council|senior|minor|hurling|football|camogie|ladies)$/i;
+
 // Headline figures: no Irish, side by side, name parts (a capitalised word
 // marked mid-headline that is not a place).
 export function measureHeadlines(items, { dict }) {
@@ -185,7 +187,15 @@ export function measureHeadlines(items, { dict }) {
     }
     if (markers.some((m, i) => i > 0 && m.start - markers[i - 1].end === 1)) r.sideBySide++;
     for (const m of markers) {
-      if (m.start > 0 && /^\p{Lu}/u.test(m.en) && !placeIrish.has(m.ga) && !/[:?!.–—-]\s*$/.test(titleIr.slice(0, m.at))) {
+      const plainAfter = titleIr.slice(m.at).replace(/\[\[[^|\]]+\|([^\]]+)\]\]/g, "$1").slice(m.en.length);
+      const next = (plainAfter.match(/^\s+([\p{L}\p{N}'’]+)/u) || [])[1] || "";
+      const atStart = m.start === 0 || /[:?!.–—-]\s*$/.test(titleIr.slice(0, m.at));
+      // A capital mid-headline that is not a place; or any capitalised
+      // marker (a place too) with a capital after it, which starts a name
+      // (Derry City, Man United, World Cup). County words do not count.
+      const midName = !atStart && !placeIrish.has(m.ga);
+      const nameStart = /^\p{Lu}/u.test(next) && !COUNTY_WORD.test(next);
+      if (/^\p{Lu}/u.test(m.en) && (midName || nameStart)) {
         r.nameParts++;
         if (r.nameExamples.length < 12) r.nameExamples.push(`${m.en}=${m.ga}`);
       }

@@ -490,6 +490,32 @@ await test("G15: a plural possessive is never marked; a word before a closing qu
   assert(words.pluralPossessive(p, p.indexOf("players")), "possessive");
 });
 
+await test("G2: a place followed by a capital is part of a name; a county word keeps it", async () => {
+  const text = "Fans saw Drogheda United face Derry City and Sligo Rovers, while boxers Tyrone McKenna and others " +
+    "met at Kildare Street and in Armagh City before Clare County Council spoke about Cork, Galway, Tyrone and Connacht.";
+  for (const out of await all(text, SPORT)) {
+    assert(!/\|(Drogheda|Derry|Sligo|Kildare|Armagh)\]\]/.test(out), out);
+    assert(!/Tír Eoghain\|Tyrone\]\] McKenna/.test(out), out);
+  }
+  assert(words.placeFor("Tyrone", "", dict) !== undefined, "Tyrone before a comma is the county");
+  assert(words.placeFor("Clare", "County", dict) !== undefined, "Clare County Council");
+  assert(words.placeFor("Derry", "City", dict) === undefined, "Derry City");
+  for (const t of ["Galway United 0-2 Derry City", "Cork Jazz Festival returns", "Ulster Unionists pick leader"]) {
+    const h = words.markHeadline(t, dict, SPORT);
+    assert(!/\|(Galway|Derry|Cork|Ulster)\]\]/.test(h), h);
+  }
+});
+
+await test("G3: the first word of a name at the start of a headline stays English", async () => {
+  for (const t of ["Premier League: Man United 0-1 Man City recap", "World Cup play-off draw made",
+    "South Africa power past Wales", "West Bank sanctions agreed", "Report released - Law Society"]) {
+    const h = words.markHeadline(t, dict, SPORT);
+    assert(!/\|(Man|World|South|West|Law)\]\]/.test(h), h);
+  }
+  const ok = words.markHeadline("Analysis: Budget brings little for renters", dict, NEWS);
+  assert(ok.includes("[[Buiséad|Budget]]"), ok);
+});
+
 if (net.blocked.length) { failed++; console.log(`FAIL network calls: ${net.blocked[0]}`); }
 console.log(`${passed} passed, ${failed} failed`);
 process.exit(failed ? 1 : 0);

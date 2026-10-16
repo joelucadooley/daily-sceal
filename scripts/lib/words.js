@@ -142,11 +142,19 @@ export const COUNTY_FOLLOWERS = new Set([
   "county", "co", "gaa", "fm", "council", "senior", "minor", "hurling", "football", "camogie", "ladies",
 ]);
 
-// A couple of place names are something else when a capital follows them:
-// "Clare O'Mahony" is a person and "Down Under" is Australia.
+// Teams on a sports page are not the town: "Cork City", "Galway United FC".
+const CLUB_NEXT = /^(fc|afc|united|rovers|rangers|celtic|athletic|wanderers)$/i;
+
+// A place name followed by a capital is part of a longer name (rule W6):
+// "Clare O'Mahony" and "Tyrone McKenna" are people, "Derry City" and
+// "Sligo Rovers" teams, "Kildare Street" a street, "Cork Jazz Festival" an
+// event. "Down Under" is Australia. A county word (Clare County Council,
+// Clare GAA) keeps the place; a lowercase word or punctuation after it
+// ("Cork, Galway and Tyrone") is left alone.
 export function notAPlaceHere(key, next) {
   if (key === "down" && /^under$/i.test(next)) return true;
-  if (key === "clare" && /^\p{Lu}/u.test(next) && !COUNTY_FOLLOWERS.has(next.toLowerCase().replace(/[^a-z]/g, ""))) return true;
+  if (CLUB_NEXT.test(next)) return true;
+  if (/^\p{Lu}/u.test(next) && !COUNTY_FOLLOWERS.has(next.toLowerCase().replace(/[^a-z]/g, ""))) return true;
   return false;
 }
 
@@ -471,9 +479,6 @@ export function atSentenceStart(tokens, i) {
   }
   return true;
 }
-
-// Teams on a sports page are not the town: "Cork City", "Galway United FC".
-const CLUB_NEXT = /^(fc|afc|united|rovers|rangers|celtic|athletic|wanderers)$/i;
 
 // Dictionary phrases in the text, left to right, longest match first, never
 // overlapping. Each is { i, j, text, key, irish, source } where i..j are the
@@ -846,6 +851,10 @@ function headlineCandidates(title, dict, ctx = {}) {
       return;
     }
     if (/^\p{Lu}/u.test(tok) && !headlineStart(tokens, i)) return;      // part of a name (B5)
+    // At the start of a headline (or after : or -) a capital followed by
+    // another capital is the first word of a name: Man United, World Cup,
+    // South Africa, West Bank, Law Society.
+    if (/^\p{Lu}/u.test(tok) && /^\p{Lu}/u.test(next)) return;
     if (tok.length < HEADLINE_MIN_LENGTH || MONTHS.has(lower)) return;
     if (FUNCTION_WORDS.has(lower) || PARTICLES.has(lower) || NUMBER_WORDS.has(lower) ||
       GRAMMAR_WORDS.has(lower) || POSSESSIVE.test(tok)) return;
