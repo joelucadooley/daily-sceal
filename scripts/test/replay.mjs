@@ -96,6 +96,23 @@ if (mAfter.headlines.nameExamples.length) console.log(`Name parts after: ${mAfte
   console.log(`  MyMemory words per day: ${mBefore.mmPerDay.toFixed(0)} -> ${mAfter.mmPerDay.toFixed(0)}`);
 }
 
+// Plan targets that pull against L1 (G17, G20). Printed, not checked, until
+// Joe chooses between them and the density band; then the kept ones move
+// into the checks below.
+{
+  const share = (r) => 100 * r.verified / Math.max(1, r.markers);
+  const a = mAfter.levels;
+  const rows = [
+    ["Foundation article verified share", `${share(a[25]).toFixed(1)}%`, "75%+"],
+    ["Intermediate article verified share", `${share(a[50]).toFixed(1)}%`, "45%+"],
+    ["Beginner sentences of 6+ words with no marker", `${(100 * a[10].sentences6Empty / Math.max(1, a[10].sentences6)).toFixed(1)}%`, "20% or less"],
+  ];
+  console.log("\nPlan targets waiting for Joe (not checked: they pull against L1)");
+  for (const [label, got, want] of rows) console.log(`  ${label}: ${got} (plan ${want})`);
+  console.log(`  Foundation machine Irish only in gaps of ${words.GAP_REPAIR_FROM}+ words (L4 as written: 26+); ` +
+    `one marker per sentence under ${words.LONG_SENTENCE?.[10]} words at Beginner (rules table: 30)`);
+}
+
 // L1: density within 15% of today at every level, article and summary.
 const DENSITY_TOLERANCE = 0.15;
 for (const field of ["levels", "summaryLevels"]) {
