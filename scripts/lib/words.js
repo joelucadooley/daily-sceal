@@ -71,6 +71,12 @@ export function isGoodTranslation(original, raw) {
   if (/["“”‘’«»]/.test(t)) return false;
   // Rule S4 and G1: an article in front (an chéad, an bhainistíocht, na ...).
   if (/^(an|na)\s/i.test(t)) return false;
+  // Rule G1: a mutation left by an article MyMemory dropped (na hathruithe,
+  // na dtailte, na ngrúpaí): h before a vowel when the English has no h, or
+  // an eclipsis. Turned down rather than stripped, so P4 picks another word
+  // and real h- loanwords (halla, haca) are never cut.
+  if (/^h[aeiouáéíóú]/i.test(t) && !/^h/i.test(original)) return false;
+  if (/^(bhf|dt|gc|mb|nd|bp|n-)/i.test(t) || /^ng[^aeiouáéíóú]/i.test(t)) return false;
   return true;
 }
 

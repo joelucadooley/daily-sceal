@@ -609,6 +609,16 @@ await test("G21: family, fish and prize are nouns; rise is a noun only after a d
   assert(/\|(family|fish|prize)\]\]/.test(out), out);
 });
 
+await test("G16: machine Irish carrying a mutation from a dropped article is turned down", async () => {
+  for (const [en, ga] of [["changes", "hathruithe"], ["lands", "dtailte"], ["groups", "ngrúpaí"], ["rupture", "heirne"],
+    ["helps", "gcuidíonn seo"], ["farms", "bhfeirmeacha"], ["water", "n-uisce"], ["boxes", "mboscaí"]]) {
+    assert(!words.isGoodTranslation(en, ga), `${en} ${ga}`);
+  }
+  for (const [en, ga] of [["hall", "halla"], ["hockey", "haca"], ["changes", "athruithe"], ["angle", "uillinn"]]) {
+    assert(words.isGoodTranslation(en, ga), `${en} ${ga}`);
+  }
+});
+
 if (net.blocked.length) { failed++; console.log(`FAIL network calls: ${net.blocked[0]}`); }
 console.log(`${passed} passed, ${failed} failed`);
 process.exit(failed ? 1 : 0);
