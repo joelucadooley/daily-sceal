@@ -72,6 +72,26 @@ export function eligibleFor(text, pct, dict, ctx) {
   return words.eligibleSpans ? words.eligibleSpans(text, pct, dict, ctx) : undefined;
 }
 
+// H4's yardstick, kept apart from the lib's own choice (headlineCandidates
+// and looksNoun), so a word the lib wrongly turns down still counts: a
+// headline word of 3+ letters whose lowercase is a dictionary key that is
+// not a listed verb or adjective, whose Irish is not a verb form, and that
+// is not a grammar, number or month word. A capital counts only at the
+// start of the headline or after : or a dash (names stay out).
+const MONTHS = new Set(["january", "february", "march", "april", "june", "july", "august", "september", "october", "november", "december"]);
+export function hasDictionaryNoun(title, dict) {
+  const tokens = words.tokenize(title);
+  return tokens.some((tok, i) => {
+    if (!words.isWordToken(tok) || tok.length < 3) return false;
+    const key = tok.toLowerCase();
+    if (/^\p{Lu}/u.test(tok) && !/(^|[:?!.–—-])\s*$/.test(tokens.slice(0, i).join(""))) return false;
+    if (!Object.hasOwn(dict.overrides, key)) return false;
+    if (words.DICT_VERBS.has(key) || words.DICT_ADJECTIVES.has(key) || words.FUNCTION_WORDS.has(key) ||
+      words.NUMBER_WORDS.has(key) || words.GRAMMAR_WORDS.has(key) || words.PARTICLES.has(key) || MONTHS.has(key)) return false;
+    return !words.isVerbLike(key, dict.overrides[key], { englishList: false });
+  });
+}
+
 export function collect(stories, out, dict, archive) {
   const senses = dict.senses || {};
   const res = {};
@@ -88,7 +108,7 @@ export function collect(stories, out, dict, archive) {
   }
   res.headlines = measureHeadlines(stories.map(({ story }, i) => ({
     titleIr: out[i].titleIr,
-    eligible: words.headlineHasEligible ? words.headlineHasEligible(story.title || "", dict, inputsOf(story).ctx) : undefined,
+    eligible: words.headlineHasEligible ? hasDictionaryNoun(story.title || "", dict) : undefined,
   })), { dict });
   // Unique MyMemory words per archive day (30 stories, cold cache).
   const perDay = archive.days.map(d => {

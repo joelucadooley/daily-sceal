@@ -131,7 +131,10 @@ if (rules) {
 {
   const appStrip = t => t.replace(/\[\[([^\|]+)\|([^\]]+)\]\]/g, "$2");
   const own = (o, k) => Object.hasOwn(o, k);
-  let grammar = 0, broken = 0, joined = 0, possessive = 0;
+  let grammar = 0, broken = 0, joined = 0, possessive = 0, cueNoun = 0, beActive = 0;
+  const cueExamples = [];
+  const CUES = new Set(["to", "will", "would", "can", "could", "should", "may", "might", "must", "did", "does", "do",
+    "i", "we", "you", "they", "he", "she", "it", "who", "not"]);
   const examples = [];
   stories.forEach(({ story }, i) => {
     const { text, rss, title } = inputsOf(story);
@@ -148,6 +151,18 @@ if (rules) {
         if (/s$/i.test(m[1]) && /^['’]\s+\p{Ll}/u.test(after) && !/(^|[\s"“(])['‘]/.test(sentence)) possessive++;
       }
       for (const m of parse(marked).markers) {
+        const en = m.en.toLowerCase(), prev = m.prev.toLowerCase();
+        // W8: the dictionary's noun Irish on a noun/verb word used as a verb
+        // ("to [[pá|pay]] a", "will [[cluiche|match]]", "has [[réamhaisnéis|forecast]]").
+        const nounIrish = Object.hasOwn(lib.dict.overrides, en) && lib.dict.overrides[en] === m.ga && !words.DICT_VERBS.has(en);
+        if (nounIrish && words.NOUN_VERB_WORDS.has(en) && (CUES.has(prev) || (/^(has|have|had)$/.test(prev) && !/s$/.test(en)))) {
+          cueNoun++;
+          if (cueExamples.length < 5) cueExamples.push(`${m.prev} ${m.en}=${m.ga}`);
+        }
+        // G3: be-form + -ed with past active Irish ("was [[d'fhógair|announced]]").
+        if (/^(be|been|being|is|are|was|were|get|got|gets)$/.test(prev) && /ed$/.test(en) && words.pastActiveIrish(m.ga)) beActive++;
+      }
+      for (const m of parse(marked).markers) {
         const en = m.en.toLowerCase();
         if (words.FUNCTION_WORDS.has(en) || /\p{N}/u.test(en) || (/['’]/.test(en) && !own(lib.dict.overrides, en))) {
           grammar++;
@@ -161,6 +176,10 @@ if (rules) {
   console.log(`Markers inside a hyphenated word: ${joined}; on a plural possessive: ${possessive}`);
   if (joined) fail(`${joined} markers inside a hyphenated word (W6)`);
   if (possessive) fail(`${possessive} markers on a plural possessive (W6)`);
+  console.log(`Noun Irish on a noun/verb word after a verb cue: ${cueNoun}${cueExamples.length ? ` (${cueExamples.join(", ")})` : ""}`);
+  console.log(`Be-form + -ed word with past active Irish: ${beActive}`);
+  if (cueNoun) fail(`${cueNoun} noun/verb words after a verb cue carry noun Irish (W8)`);
+  if (beActive) fail(`${beActive} passive -ed words carry past active Irish (G3)`);
   if (grammar) fail(`${grammar} markers on grammar words, contractions or numbers (W6)`);
   if (broken) fail(`${broken} texts do not strip back to their input (G5)`);
 }

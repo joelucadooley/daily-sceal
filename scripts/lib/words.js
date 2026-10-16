@@ -186,14 +186,19 @@ export function storyContext(story = {}) {
 
 // The approved sense of `key` here: a string (trusted Irish), null ("leave in
 // English here") or undefined (no entry applies, fall through). Checked in
-// order: the story's feed, its topic, "noun" after a determiner, "default".
-export function senseFor(key, ctx = {}, prev = "", dict) {
+// order: the story's feed, its topic, "noun", "default".
+// "noun" applies after a determiner (det: one up to three words back, as
+// wordSetting finds it; default the word before) and only where the word
+// ends its noun phrase, so "a fine of €500" is a noun but "a fine finish"
+// falls to "default".
+export function senseFor(key, ctx = {}, prev = "", dict, { next = "", det, end } = {}) {
   const entry = own(dict.senses, key.toLowerCase());
   if (!entry) return undefined;
   for (const k of [ctx.feed, ctx.topic]) {
     if (k && Object.hasOwn(entry, k)) return entry[k];
   }
-  if (Object.hasOwn(entry, "noun") && DETERMINERS.has(prev.toLowerCase())) return entry.noun;
+  const governed = det ?? DETERMINERS.has(prev.toLowerCase());
+  if (Object.hasOwn(entry, "noun") && governed && (end ?? endsNounPhrase(next))) return entry.noun;
   if (Object.hasOwn(entry, "default")) return entry.default;
   return undefined;
 }
@@ -205,10 +210,10 @@ export function senseFor(key, ctx = {}, prev = "", dict) {
 // with source "place", "sense" or "dict"; { irish: null, source: "sense" }
 // when a sense says to leave it in English; undefined when the dictionary
 // has nothing.
-export function dictionaryFor(word, { next = "", prev = "", ctx = {} } = {}, dict) {
+export function dictionaryFor(word, { next = "", prev = "", ctx = {}, det, end } = {}, dict) {
   const place = placeFor(word, next, dict);
   if (place !== undefined) return { irish: place, source: "place" };
-  const sense = senseFor(word, ctx, prev, dict);
+  const sense = senseFor(word, ctx, prev, dict, { next, det, end });
   if (sense !== undefined) return { irish: sense, source: "sense" };
   const key = word.toLowerCase();
   if (own(dict.overrides, key) !== undefined) return { irish: own(dict.overrides, key), source: "dict" };
@@ -246,11 +251,12 @@ export const GRAMMAR_WORDS_FROM = 25;
 // Possessives: "year's", "country's". Marking them loses the 's.
 const POSSESSIVE = /['’]s$/i;
 
-export function shouldTranslate(tok, pct, next = "", dict, { prev = "", ctx = {} } = {}) {
+export function shouldTranslate(tok, pct, next = "", dict, { prev = "", ctx = {}, det, end } = {}) {
   const lower = tok.toLowerCase();
   if (NEVER_TRANSLATE.has(lower)) return false;
   // A senses null: "leave this word in English here" (rule S3).
-  if (senseFor(lower, ctx, prev, dict) === null && placeFor(tok, next, dict) === undefined) return false;
+  const sense = senseFor(lower, ctx, prev, dict, { next, det, end });
+  if (sense === null && placeFor(tok, next, dict) === undefined) return false;
   if (POSSESSIVE.test(tok)) return false;
   if (PARTICLES.has(tok)) return false;            // lowercase only: "Down" can be the county
   if (NUMBER_WORDS.has(lower)) return false;
@@ -270,7 +276,7 @@ export function shouldTranslate(tok, pct, next = "", dict, { prev = "", ctx = {}
 
   // Rule W4: the length limits are for machine words only. Short dictionary
   // nouns (pay, tax, war, man, car, job, law, sea) count at every level.
-  const inDictionary = own(dict.overrides, lower) !== undefined || typeof senseFor(lower, ctx, prev, dict) === "string";
+  const inDictionary = own(dict.overrides, lower) !== undefined || typeof sense === "string";
   if (pct <= 25) {
     // Beginner and Foundation: content words only, no short words
     if (FUNCTION_WORDS.has(lower)) return false;
@@ -325,16 +331,47 @@ export const DICT_ADJECTIVES = new Set([
 // Words that are both a noun and a verb in English, with noun Irish in the
 // dictionary: after "to", a modal or a pronoun they are verbs ("to help",
 // "they work"), so the noun Irish would be wrong there (rule W9).
-export const NOUN_VERB_WORDS = new Set([
+const NOUN_VERB_BASE = [
   "help", "work", "support", "increase", "vote", "attack", "appeal", "protest", "display",
   "arrest", "plan", "score", "strike", "study", "trade", "rise", "fund", "grant", "report",
   "rent", "collapse", "debate", "interview", "train", "push", "question", "balance", "award",
   "control", "travel", "change", "need", "use", "move", "face", "end", "call", "hold",
+  "pay", "witness", "fire", "flood", "forecast", "murder", "bank", "match", "pressure",
+  "experience", "shop", "sentence", "talk", "claim", "cut", "warn", "fear", "deal", "charge",
+];
+// With their -s forms (plans, talks, attacks): "team plans Israel match",
+// "Casey Walsh talks Tall Tales". "meeting" is a verb after "to" or a be-form.
+export const NOUN_VERB_WORDS = new Set([
+  ...NOUN_VERB_BASE,
+  ...NOUN_VERB_BASE.map(w => (/(sh|ch|ss|x)$/.test(w) ? `${w}es` : /[^aeiou]y$/.test(w) ? `${w.slice(0, -1)}ies` : `${w}s`)),
+  "meeting",
 ]);
 const VERB_CUES = new Set([
   "to", "will", "would", "can", "could", "should", "may", "might", "must", "did", "does", "do",
   "i", "we", "you", "they", "he", "she", "it", "who", "not", "also",
 ]);
+// A word after one of these is a verb, never a noun: "will match", "could flood".
+const MODALS = new Set(["will", "would", "can", "could", "should", "may", "might", "must", "did", "does", "do", "shall"]);
+// has/have/had before a noun/verb word that is not a plural: "has forecast".
+const PERFECT = new Set(["has", "have", "had", "having"]);
+// Be-forms (and "it's", "that's"): "is meeting", "was announced".
+const BE_FORMS = new Set(["be", "been", "being", "is", "are", "was", "were", "am", "get", "gets", "got", "getting"]);
+const BE_CONTRACTION = /^(it|he|she|that|there|what|who|here)['’]s$/;
+// Words that start an object after a verb: "to pay a", "to witness Marine", "meeting them".
+const OBJECT_START = new Set(["a", "an", "the", "his", "her", "their", "its", "our", "your", "my", "them", "him", "us", "me", "it", "you"]);
+// After "that X": an auxiliary makes X the subject noun ("that decision was").
+const AUX = new Set(["is", "are", "was", "were", "has", "have", "had", "will", "would", "could", "can", "should", "may", "might", "must", "be"]);
+// Verbs that take a "that" clause: "said that", "believes that".
+const CLAUSE_VERBS = new Set(["said", "says", "say", "believe", "believes", "think", "thinks", "know", "knows",
+  "show", "shows", "mean", "means", "hope", "hopes", "suggest", "suggests", "claim", "claims", "warn", "warns",
+  "insist", "insists", "ensure", "argue", "argues", "admit", "admits", "add", "adds", "state", "states",
+  "told", "found", "felt", "thought", "knew", "meant", "so", "is", "was", "now", "such", "fact", "clear"]);
+// Prepositions and conjunctions: a word before one of these ends its noun phrase.
+const LINKS = new Set(["against", "at", "in", "of", "on", "after", "and", "to", "for", "with", "from", "by", "as",
+  "or", "but", "nor", "than", "into", "over", "under", "about", "before", "between", "during", "since", "until", "via",
+  "inside", "outside", "near", "across", "through", "around", "within", "without", "like", "onto", "upon",
+  "behind", "beyond", "below", "above", "beside", "among", "despite", "toward", "towards", "throughout", "alongside",
+  "that", "which", "whose", "where", "when", "while"]);
 
 // -ing words that are nouns.
 export const KNOWN_NOUN_ING = new Set([
@@ -343,6 +380,28 @@ export const KNOWN_NOUN_ING = new Set([
   "spring", "king", "ring", "thing", "string", "wing", "darling", "offspring",
 ]);
 const ED_NOUNS = new Set(["hundred", "need", "speed", "seed", "feed", "bed", "red", "shed", "greed", "creed", "breed", "deed", "reed", "weed"]);
+// Irregular past forms. They end in neither -ed nor -ing, so without this
+// list they look like nouns (told, wrote, found) and reach Foundation as
+// machine nouns ("Siriano [[inste|told]]", "Vinnie [[bunaigh|found]]").
+export const IRREGULAR_PAST = new Set([
+  "told", "wrote", "written", "found", "slid", "took", "taken", "gave", "given", "came", "went", "gone",
+  "knew", "known", "thought", "brought", "bought", "caught", "taught", "kept", "held", "met", "paid",
+  "sent", "spent", "stood", "sold", "led", "ran", "began", "begun", "became", "chose", "chosen",
+  "drove", "driven", "fell", "fallen", "flew", "flown", "grew", "grown", "rose", "risen", "shook",
+  "spoke", "spoken", "stole", "stolen", "threw", "thrown", "struck", "sought", "fought", "built",
+  "meant", "lost", "broke", "broken", "showed", "shown", "seen", "done", "beaten", "forgot", "forgotten",
+  "hid", "hidden", "swore", "sworn", "tore", "torn", "drew", "drawn", "fled", "dealt", "hung", "laid",
+  "lent", "sang", "sank", "slept", "sped", "spun", "stuck", "swept", "swung", "underwent", "undertook",
+  "withdrew", "withdrawn", "overcame", "overtook", "oversaw", "upheld", "withheld", "won", "made", "said",
+]);
+// Dictionary nouns whose ending looks like an adverb or a verb (-ly, -ish,
+// -ise, -ize): family teaghlach, fish iasc, prize duais. "rise" is in
+// NOUN_VERB_WORDS and counts as a noun only after a determiner.
+export const KNOWN_NOUNS = new Set(["family", "fish", "prize"]);
+// Words whose dictionary Irish is the noun, though in news they are often an
+// adjective before another noun: "the final day", "capital punishment", "sound
+// foundation". Marked only where nothing but a link word or punctuation follows.
+export const NOUN_ADJ_WORDS = new Set(["final", "sound", "capital", "kind", "average", "potential"]);
 
 // Rule S4: words with many meanings never go to machine translation. Their
 // one-word MyMemory answer is wrong in news more often than not (season
@@ -366,19 +425,118 @@ export function isVerbLike(en, ga = "", { englishList = true } = {}) {
   const e = en.toLowerCase();
   if (englishList && DICT_VERBS.has(e)) return true;
   if (/^d['’]/.test(ga)) return true;
-  if (/ed$/.test(e) && /^(bh|ch|dh|fh|gh|mh|ph|sh|th)/i.test(ga)) return true;
+  if ((/ed$/.test(e) || IRREGULAR_PAST.has(e)) && /^(bh|ch|dh|fh|gh|mh|ph|sh|th)/i.test(ga)) return true;
   if (/[^s]s$/.test(e) && !/\s/.test(ga) && /(íonn|aíonn|eann|ann)$/.test(ga) && !/s$/.test(ga)) return true;
   return false;
 }
 
+// Irish verb forms, by their shape (rule G3).
+//   past active: d'fhógair, chaill, dheimhnigh, and a few irregulars
+//   participle:  foilsithe, dúnta, gortaithe, scríofa
+//   present:     léiríonn, teastaíonn, reáchtálann
+export const pastActiveIrish = ga => /^d['’]/i.test(ga) || /^(bh|ch|dh|fh|gh|mh|ph|sh|th)/i.test(ga) ||
+  /^(fuair|rinne|dúirt|chonaic|tháinig|chuaigh|thug|rug|bhí)(\s|$)/i.test(ga);
+export const participleIrish = ga => /(ta|te|tha|the|fa|fe)$/i.test(ga.trim().split(/\s+/)[0]);
+export const presentIrish = ga => /(íonn|aíonn|eann|ann)$/i.test(ga.trim());
+// English past form: -ed (not a noun like "hundred") or an irregular past.
+export const pastEnglish = key => (/ed$/.test(key) && !ED_NOUNS.has(key)) || IRREGULAR_PAST.has(key);
+// Subjects: a past verb after one is active ("he closed"), never a participle.
+const SUBJECT_PRONOUNS = new Set(["i", "we", "you", "they", "he", "she", "it", "who"]);
+
 // English that reads as a noun (or a phrase, which counts as one).
 export function looksNoun(key) {
   if (/\s/.test(key)) return !DICT_VERBS.has(key);
+  if (KNOWN_NOUNS.has(key)) return true;
   if (DICT_VERBS.has(key) || DICT_ADJECTIVES.has(key)) return false;
   if (/ly$/.test(key)) return false;
   if (/ing$/.test(key)) return KNOWN_NOUN_ING.has(key);
   if (/ed$/.test(key)) return ED_NOUNS.has(key);
+  if (IRREGULAR_PAST.has(key)) return false;
   if (ADJ_ENDINGS.test(key)) return false;
+  return true;
+}
+
+// The words around unit i..j that tell a noun from a verb. There is no
+// part-of-speech tagger; these cues stand in for one.
+//   afterDet   a determiner right before ("the show"); "that" counts only
+//              when the phrase ends after the word ("that decision was")
+//   detNear    a determiner up to three words back over plain words ("the
+//              launch show", "the best TV show")
+//   verbCue    "to", a modal, a pronoun, "not"; "that" before an -s/-ed or
+//              noun/verb word with a word after it ("parties that support Mr")
+//   nounEnd    nothing but punctuation, a link word or a verb follows
+// True when the word before `next` ends its noun phrase: punctuation or the
+// end of the text, a link word (of, in, and), an auxiliary or a verb.
+export function endsNounPhrase(next) {
+  const w = next.toLowerCase();
+  return !next || LINKS.has(w) || AUX.has(w) || VERB_CUES.has(w) || (/ed$/.test(w) && !ED_NOUNS.has(w)) || DICT_VERBS.has(w);
+}
+
+export function wordSetting(tokens, i, j, key) {
+  const prev = prevWord(tokens, i).toLowerCase();
+  const next = nextWord(tokens, j);
+  const nextLower = next.toLowerCase();
+  const nounEnd = endsNounPhrase(next);
+  // For a senses "noun" entry: "a fine, unusual comedy" is a list of
+  // adjectives, so a comma then a plain word does not end the noun phrase.
+  let senseEnd = nounEnd;
+  if (!next && tokens[j + 1] === ",") {
+    const w = nextWord(tokens, j + 1);
+    if (/^\p{Ll}/u.test(w) && !LINKS.has(w) && !FUNCTION_WORDS.has(w) && !DETERMINERS.has(w)) senseEnd = false;
+  }
+  const pastForm = pastEnglish(key);
+  // "that" before an -s/-ed or noun/verb word with more of the clause after
+  // it is a subject pronoun ("parties that support Mr Putin", "a clip that
+  // stays with me"); after a reporting verb it opens a clause whose first
+  // word is a noun ("noted that profits in", "decided that unions would").
+  let thatVerb = false;
+  if (prev === "that" && next && (/(s|ed)$/.test(key) || NOUN_VERB_WORDS.has(key))) {
+    let b = i - 1;
+    while (b >= 0 && !isWordToken(tokens[b])) b--;
+    const beforeThat = prevWord(tokens, b).toLowerCase();
+    const clause = /(ed|ing)$/.test(beforeThat) || CLAUSE_VERBS.has(beforeThat);
+    thatVerb = !nounEnd || (LINKS.has(nextLower) && !clause);
+  }
+  const afterDet = DETERMINERS.has(prev) && (prev !== "that" || (nounEnd && !pastForm && !thatVerb));
+  let detNear = afterDet;
+  for (let k = i - 1, words = 0; !detNear && k >= 0 && words < 3; k--) {
+    if (/^\s+$/.test(tokens[k])) continue;
+    if (!isWordToken(tokens[k])) break;
+    const w = tokens[k].toLowerCase();
+    if (DETERMINERS.has(w)) detNear = w !== "that" || nounEnd;
+    // A plural in between is more likely the subject: "the figures show".
+    if (DETERMINERS.has(w) || FUNCTION_WORDS.has(w) || LINKS.has(w) || /ly$/.test(w) || /[^su]s$/.test(w)) break;
+    words++;
+  }
+  const afterBe = BE_FORMS.has(prev) || BE_CONTRACTION.test(prev);
+  let k = i - 1;
+  while (k >= 0 && /^\s+$/.test(tokens[k])) k--;
+  const nameBefore = k >= 0 && isWordToken(tokens[k]) && /^\p{Lu}/u.test(tokens[k]) && !atSentenceStart(tokens, k);
+  return {
+    prev, next, afterDet, detNear, nounEnd, senseEnd, thatVerb, afterBe, pastForm,
+    subjectBefore: SUBJECT_PRONOUNS.has(prev) || nameBefore,
+    // An object or a particle after a past form makes it active: "closed out", "closed the gap".
+    objectAfter: OBJECT_START.has(nextLower) || PARTICLES.has(nextLower) || nextLower === "out",
+    verbCue: VERB_CUES.has(prev) || thatVerb,
+    afterModal: MODALS.has(prev),
+    afterPerfect: PERFECT.has(prev),
+    opensObject: OBJECT_START.has(nextLower) || /^[\p{Lu}\p{N}]/u.test(next),
+    modifies: !!next && /^\s$/.test(tokens[j + 1] || "") &&
+      (/^\p{N}/u.test(next) || (/^\p{Ll}/u.test(next) && !LINKS.has(nextLower) && !FUNCTION_WORDS.has(nextLower) && !AUX.has(nextLower))),
+  };
+}
+
+// False when dictionary Irish that is a noun would sit where the English is
+// a verb or an adjective (rules W8, W9). `verb` is isVerbLike's answer.
+export function nounFits(key, verb, set) {
+  if (verb) return true;
+  const nv = NOUN_VERB_WORDS.has(key);
+  if (nv && set.verbCue) return false;                                   // "to help", "it plans"
+  if (nv && set.afterPerfect && !/s$/.test(key)) return false;           // "has forecast"
+  if (set.afterModal && looksNoun(key)) return false;                    // "will match", "could flood"
+  if (set.prev === "to" && looksNoun(key) && set.opensObject) return false; // "to pay a", "to witness Marine"
+  if (/ing$/.test(key) && (set.afterBe || set.prev === "to")) return false; // "is meeting", "to meeting them"
+  if (NOUN_ADJ_WORDS.has(key) && set.modifies) return false;            // "the final day"
   return true;
 }
 
@@ -391,21 +549,35 @@ export function looksNoun(key) {
 // abstract) noun, -4 for -ly, -ing or -ed.
 export function rankUnit(unit, tokens, pct, dict, ctx = {}) {
   const key = unit.key;
-  const prev = prevWord(tokens, unit.i).toLowerCase();
-  const next = nextWord(tokens, unit.j);
-  const afterDet = DETERMINERS.has(prev);
-  const verbCue = VERB_CUES.has(prev);
-  const hit = unit.phrase ? { irish: unit.irish, source: unit.source } : dictionaryFor(unit.text, { next, prev, ctx }, dict);
+  const set = wordSetting(tokens, unit.i, unit.j, key);
+  const { prev, next, afterDet, verbCue } = set;
+  const hit = unit.phrase ? { irish: unit.irish, source: unit.source } : dictionaryFor(unit.text, { next, prev, ctx, det: set.detNear, end: set.senseEnd }, dict);
   let tier, verb;
   if (hit) {
     if (hit.irish === null) return null;
     verb = hit.source !== "place" && isVerbLike(key, hit.irish, { englishList: hit.source === "dict" });
     if (SKIP_ROOT_FORMS && hit.source === "dict" && ROOT_FORMS.has(key)) return null;   // question 9
-    if (verb && afterDet) return null;                                                // W9: "the show"
-    if (!verb && hit.source === "dict" && verbCue && NOUN_VERB_WORDS.has(key)) return null; // "to help"
-    tier = hit.source === "place" || (!verb && (looksNoun(key) || (hit.source === "sense" && afterDet))) ? 3 : 2;
+    if (hit.source !== "place" && !unit.phrase) {
+      // W9: "the show", "the launch show", "a show." are nouns; present-tense
+      // Irish (léiríonn) is also wrong after "to" or a modal ("to show").
+      if (verb && (afterDet || (!/(ed|s)$/.test(key) && (set.detNear || (!verbCue && set.nounEnd))))) return null;
+      if (verb && (set.afterModal || prev === "to" || prev === "not") && /(íonn|aíonn|eann|ann)$/.test(hit.irish)) return null;
+      if (hit.source === "dict" && !nounFits(key, verb, set)) return null;              // W8: "to help", "will match"
+      // G3: the Irish verb form must match the English. After a be-form or
+      // before "by" an -ed word is passive ("was announced", "published by"),
+      // so past active Irish (d'fhógair) is wrong; after a subject it is
+      // active, so a participle (dúnta) is wrong.
+      if (set.pastForm && pastActiveIrish(hit.irish) && (set.afterBe || /^by$/i.test(next))) return null;
+      if (set.pastForm && participleIrish(hit.irish) && !pastActiveIrish(hit.irish) && !set.afterBe &&
+        (set.subjectBefore || set.objectAfter)) return null;
+    }
+    const noun = looksNoun(key) || (NOUN_VERB_WORDS.has(key) && afterDet);
+    tier = hit.source === "place" || (!verb && (noun || (hit.source === "sense" && afterDet))) ? 3 : 2;
   } else {
     if (NEVER_MACHINE.has(key)) return null;                                          // S4
+    // One word with no sentence: for a noun/verb word MyMemory gives the noun,
+    // wrong after "to", a modal or a pronoun ("to [[aghaidh|face]] Israel").
+    if (NOUN_VERB_WORDS.has(key) && verbCue && !afterDet) return null;
     if (MACHINE_AT[pct] === "none") return null;                                      // question 1
     verb = DICT_VERBS.has(key) || (verbCue && !afterDet);
     tier = !verb && (afterDet || looksNoun(key)) ? 1 : 0;
@@ -417,7 +589,7 @@ export function rankUnit(unit, tokens, pct, dict, ctx = {}) {
   if (/[^s]s$/.test(key) && !/(ss|us|is)$/.test(key)) score += 1;
   if (!ABSTRACT_ENDINGS.test(key)) score += 1;
   if (!unit.phrase && (/ly$/.test(key) || (/ing$/.test(key) && !KNOWN_NOUN_ING.has(key)) || (/ed$/.test(key) && !ED_NOUNS.has(key)))) score -= 4;
-  return { tier, score, hit, verb, afterDet };
+  return { tier, score, hit, verb, afterDet, afterBe: set.afterBe };
 }
 
 // Tiers each level may use (the table in rule section 1). Tier 1 at
@@ -522,7 +694,7 @@ function phraseIrish(key, { ctx, prev, next, body, dict }) {
     const clubOrName = ctx.topic === "sport" || CLUB_NEXT.test(next) || /^\p{Lu}/u.test(next);
     if (!clubOrName && !(body && NEVER_TRANSLATE.has(first))) return { irish: own(dict.places, lower), source: "place" };
   }
-  const sense = senseFor(lower, ctx, prev, dict);
+  const sense = senseFor(lower, ctx, prev, dict, { next });
   if (sense !== undefined) return { irish: sense, source: "sense" };
   if (own(dict.overrides, lower) !== undefined) return { irish: own(dict.overrides, lower), source: "dict" };
   return undefined;
@@ -586,7 +758,8 @@ export function candidateUnits(tokens, pct, dict, ctx = {}) {
   tokens.forEach((tok, i) => {
     if (!isWordToken(tok) || covered.has(i)) return;
     if (inBrackets(tokens, i, i) || inCompound(tokens, i, i) || pluralPossessive(tokens, i)) return;
-    if (!shouldTranslate(tok, pct, nextWord(tokens, i), dict, { prev: prevWord(tokens, i), ctx })) return;
+    const ws = wordSetting(tokens, i, i, tok.toLowerCase());
+    if (!shouldTranslate(tok, pct, nextWord(tokens, i), dict, { prev: prevWord(tokens, i), ctx, det: ws.detNear, end: ws.senseEnd })) return;
     units.push({ i, j: i, text: tok, key: tok.toLowerCase(), phrase: false, start: wordPos.get(i), end: wordPos.get(i) });
   });
   return units.sort((a, b) => a.i - b.i);
@@ -734,6 +907,18 @@ export function eligibleSpans(text, pct, dict, ctx = {}) {
 
 // ---- Levels ----
 
+// G3 for machine Irish, which comes with no sentence: a past English verb
+// needs past Irish (a participle after a be-form), and an English -s verb
+// needs present Irish. Root forms (bunaigh for found) and nouns
+// (tréimhsí fanachta for stays) are turned down. Words in noun position
+// (after a determiner) are not verbs and are not checked here.
+export function verbFormFits(unit, ga) {
+  if (unit.afterDet) return true;
+  if (pastEnglish(unit.key)) return unit.afterBe ? participleIrish(ga) && !pastActiveIrish(ga) : pastActiveIrish(ga);
+  if (unit.verb && /[^s]s$/.test(unit.key)) return presentIrish(ga);
+  return true;
+}
+
 // The marker text for a unit, or null when its Irish is not acceptable.
 // Dictionary, place and sense Irish is trusted; machine Irish must pass
 // isGoodTranslation and, after a determiner, must not read as a verb (W9).
@@ -747,8 +932,8 @@ export async function irishFor(unit, tokens, deps, ctx = {}) {
     } catch {
       return null;
     }
-    const ok = isGoodTranslation(unit.text, irish) &&
-      !(unit.afterDet && isVerbLike(unit.key, cleanTranslation(irish)));
+    const ga = isGoodTranslation(unit.text, irish) ? cleanTranslation(irish) : "";
+    const ok = !!ga && !(unit.afterDet && isVerbLike(unit.key, ga)) && verbFormFits(unit, ga);
     if (!ok) {
       if (onRejected) onRejected(unit.text, irish);
       return null;
@@ -860,14 +1045,20 @@ function headlineCandidates(title, dict, ctx = {}) {
       GRAMMAR_WORDS.has(lower) || POSSESSIVE.test(tok)) return;
     if (CONTRACTION.test(tok) && own(dict.overrides, lower) === undefined) return;
     if (lower === "won" && AMOUNT.test(prev)) return;
-    const hit = dictionaryFor(tok, { next, prev, ctx }, dict);
+    const ws = wordSetting(tokens, i, i, lower);
+    const hit = dictionaryFor(tok, { next, prev, ctx, det: ws.detNear, end: ws.senseEnd }, dict);
     if (!hit || hit.irish === null) return;
     if (SKIP_ROOT_FORMS && hit.source === "dict" && ROOT_FORMS.has(lower)) return;
     if (isVerbLike(lower, hit.irish, { englishList: hit.source === "dict" })) return;   // nouns only (H3)
-    const noun = looksNoun(lower) || (hit.source === "sense" && DETERMINERS.has(prev));
+    const set = wordSetting(tokens, i, i, lower);
+    const noun = looksNoun(lower) || (hit.source === "sense" && set.afterDet) || (NOUN_VERB_WORDS.has(lower) && set.afterDet);
     if (!noun) return;
-    if (hit.source === "dict" && VERB_CUES.has(prev) && NOUN_VERB_WORDS.has(lower)) return;
-    out.push({ ...at, irish: hit.irish, source: hit.source, afterDet: DETERMINERS.has(prev) });
+    if (hit.source === "dict" && !nounFits(lower, false, set)) return;
+    // A noun/verb word with no determiner and a name or a determiner after
+    // it is the headline's verb: "Houthis attack Riyadh", "team plans Israel
+    // match", "Casey Walsh talks Tall Tales". "drone attack" and "attack on" stay.
+    if (NOUN_VERB_WORDS.has(lower) && !set.afterDet && (/^\p{Lu}/u.test(next) || DETERMINERS.has(next.toLowerCase()))) return;
+    out.push({ ...at, irish: hit.irish, source: hit.source, afterDet: set.afterDet });
   });
   return { tokens, candidates: out };
 }

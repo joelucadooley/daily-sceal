@@ -516,6 +516,99 @@ await test("G3: the first word of a name at the start of a headline stays Englis
   assert(ok.includes("[[Buiséad|Budget]]"), ok);
 });
 
+await test("G1: a noun/verb word after to, a modal, has or a pronoun keeps no noun Irish", async () => {
+  const text = "Officials failed to pay a 1% rise and travelled to witness Marine One land. It plans to operate, " +
+    "and the firm could flood the market, while Met Éireann has forecast rain. I will match it. " +
+    "They hope to pressure Andy Burnham and look forward to meeting them to experience Donegal.";
+  for (const out of await all(text)) {
+    assert(!markers(out).some(m => /^(pay|witness|plans|flood|forecast|match|pressure|meeting|experience)$/i.test(m.en)), out);
+  }
+  // Nouns stay nouns: "to hospital.", "the pay", "a meeting".
+  const ok = await level("He was taken to hospital. The pay rise was agreed at a meeting of the union in the city.", 10);
+  assert(/\|(hospital|pay|meeting)\]\]/.test(ok), ok);
+});
+
+await test("G6: final, sound and capital before a noun stay English; the final itself can be marked", async () => {
+  const text = "On the final day of play, in their final game, capital punishment and a sound foundation were discussed.";
+  for (const out of await all(text, SPORT)) assert(!/\|(final|capital|sound)\]\]/.test(out), out);
+  const ok = await level("Kerry beat Dublin in the final. Fans travelled to the capital for the game against Mayo.", 10, SPORT);
+  assert(/\[\[cluiche ceannais\|final\]\]/.test(ok) || /\|capital\]\]/.test(ok), ok);
+});
+
+await test("G8: with the fine sense approved, 'a fine finish' stays English and 'a fine of' is fíneáil", async () => {
+  const d = withSenses({ fine: { noun: "fíneáil", default: null } });
+  for (const t of ["He scored with a fine finish late in the game at the stadium.",
+    "He described his play as a \"fine, unusual, tragic comedy\" at the festival.",
+    "She followed up a fine first try with another in the second half."]) {
+    for (const p of [10, 25, 50]) {
+      const out = await words.buildLevel(t, p, d, { ctx: SPORT });
+      assert(!/fíneáil/.test(out), out);
+    }
+  }
+  const ok = await words.buildLevel("The company was given a fine of €5,000 by the court in the city.", 10, d, { ctx: NEWS });
+  assert(ok.includes("[[fíneáil|fine]]"), ok);
+  assert(!/fíneáil/.test(words.markHeadline("The 'fine margins' that decided the final", d.dict, SPORT)), "headline");
+});
+
+await test("G9: a noun/verb word that is the headline's verb stays English", async () => {
+  for (const t of ["Escalation fears in Middle East as Houthis attack Riyadh",
+    "Wheelchair basketball team plans Israel match gesture", "Casey Walsh talks Tall Tales & Murder"]) {
+    const h = words.markHeadline(t, dict, NEWS);
+    assert(!/\|(attack|plans|talks)\]\]/.test(h), h);
+  }
+  const ok = words.markHeadline("Drone attack on power station", dict, NEWS);
+  assert(/\|attack\]\]/.test(ok), ok);
+});
+
+await test("G10: 'that' before a verb is not a determiner", async () => {
+  const text = "Only parties that support Mr Putin took part, and a clip that stays with me shows a jar that sets four records.";
+  for (const out of await all(text)) assert(!/\|(support|stays|sets)\]\]/.test(out), out);
+  for (const t of ["We all agreed that decision was right.", "Everyone said that year was hard."]) {
+    const ok = await level(t, 10);
+    assert(/\|(decision|year)\]\]/.test(ok), ok);
+  }
+});
+
+await test("G11: show in noun position never gets léiríonn, even two words after the determiner", async () => {
+  for (const t of ["Fans gathered ahead of the launch show in the city on Friday night.",
+    "This expansive show highlights the work of many artists from the country.",
+    "It was the second season of the BBC show and the best TV show of the year.",
+    "Crowds came to the Fashion Week show. Then she did not show it to anyone at the event."]) {
+    for (const out of await all(t, EILE)) assert(!/léiríonn/.test(out), out);
+  }
+  const d = withSenses({ show: { noun: "seó", default: null } });
+  const out = await words.buildLevel("Fans gathered ahead of the launch show in the city on Friday night.", 50, d, { ctx: EILE });
+  assert(out.includes("[[seó|show]]"), out);
+});
+
+await test("G12 and G18: the Irish verb form matches the English (passive, participle, irregular past)", async () => {
+  const text = "The Budget will be announced at 1pm, and the book will be published by Gill Books. " +
+    "It was announced that the show is not to be missed. Power closed out his tournament in style.";
+  for (const out of await all(text)) {
+    assert(!/d'fhógair\|announced|d'fhoilsigh\|published|chaill\|missed|dúnta\|closed/.test(out), out);
+  }
+  // Machine Irish for an irregular past: a root or a participle is turned down.
+  const lookup = async w => ({ told: "inste", found: "bunaigh", slid: "sleamhnaigh", wrote: "scríofa", stays: "tréimhsí fanachta" })[w.toLowerCase()] ?? w;
+  const m = await words.buildLevel("Siriano told the press, Vinnie found himself alone and sales slid while he wrote: a clip that stays with me.", 50,
+    { dict, lookup }, { ctx: NEWS });
+  assert(!/inste|bunaigh|sleamhnaigh|scríofa|tréimhsí/.test(m), m);
+  assert(!words.looksNoun("told") && !words.looksNoun("found"), "irregular pasts are not nouns");
+  // Active past after a subject is fine.
+  const spans = words.eligibleSpans("The minister announced a new plan for the hospital in the town yesterday.", 25, dict, NEWS);
+  assert(spans.some(([, , k]) => k === "announced"), JSON.stringify(spans));
+});
+
+await test("G21: family, fish and prize are nouns; rise is a noun only after a determiner", async () => {
+  assert(words.looksNoun("family") && words.looksNoun("fish") && words.looksNoun("prize"), "known nouns");
+  const h = words.markHeadline("German, US scientists win Nobel prize for optogenetics", dict, NEWS);
+  assert(h.includes("[[duais|prize]]"), h);
+  assert(words.markHeadline("H&M founding family builds stake", dict, NEWS).includes("[[teaghlach|family]]"), "family");
+  assert(!/ardú/.test(words.markHeadline("Breastfeeding rates rise to record high", dict, NEWS)), "rise as a verb");
+  assert(/ardú/.test(words.markHeadline("Warning over a rise in rents", dict, NEWS)), "a rise");
+  const out = await level("The family said the fish was a prize catch for the town.", 10);
+  assert(/\|(family|fish|prize)\]\]/.test(out), out);
+});
+
 if (net.blocked.length) { failed++; console.log(`FAIL network calls: ${net.blocked[0]}`); }
 console.log(`${passed} passed, ${failed} failed`);
 process.exit(failed ? 1 : 0);
