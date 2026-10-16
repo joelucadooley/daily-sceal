@@ -100,7 +100,56 @@ const tally = (filter) => {
 const DET = words.DETERMINERS;
 const afterDet = tally(m => DET.has(m.prev.toLowerCase()) && !isVerified(m.en, m.ga));
 const ingMarkers = tally(m => /ing$/i.test(m.en));
-const thinBeginner = stories.map((s, k) => k).filter(k => count(after[k].levels[10]) < 3);
+const thinBeginner = stories.map((s, k) => k).filter(k => count(after[k].levels[10]) < 3)
+  .map(k => ({ k, title: stories[k].story.title || "", day: stories[k].day, b: count(before[k].levels[10]), a: count(after[k].levels[10]), words: wc(k) }))
+  .sort((x, y) => (y.b - y.a) - (x.b - x.a) || y.words - x.words);
+const thinBefore = stories.filter((s, k) => count(before[k].levels[10]) < 3).length;
+// Capitals (G4): dictionary or sense Irish whose capitals the old matchCase
+// would have changed (it lowercased everything after the first letter).
+const oldMatchCase = (en, ga) => /^\p{Ll}/u.test(en) ? ga.toLowerCase() : ga.charAt(0).toUpperCase() + ga.slice(1).toLowerCase();
+const capitals = tally(m => isVerified(m.en, m.ga) && m.ga !== oldMatchCase(m.en, m.ga) && !placeIrish.has(m.ga));
+
+// Checks added after the review: the same counts on the before and after
+// output (the replay fails on any of these after).
+const CUES = new Set(["to", "will", "would", "can", "could", "should", "may", "might", "must", "did", "does", "do",
+  "i", "we", "you", "they", "he", "she", "it", "who", "not"]);
+const appStrip = t => t.replace(/\[\[([^\|]+)\|([^\]]+)\]\]/g, "$2");
+function reviewCounts(out) {
+  const c = { grammar: 0, joined: 0, possessive: 0, cueNoun: 0, beActive: 0, nounShow: 0, brackets: 0, placeName: 0 };
+  out.forEach((r, k) => {
+    const texts = [r.titleIr, ...LEVELS.flatMap(p => [r.levels[p], r.summaryLevels[p]])];
+    texts.forEach((t, n) => {
+      if (t.includes("[[[")) c.brackets++;
+      for (const m of t.matchAll(MARKER)) {
+        const [all, ga, en] = m;
+        const lo = en.toLowerCase(), before = t.slice(0, m.index), rest = t.slice(m.index + all.length);
+        const prev = (appStrip(before).match(/([\p{L}\p{N}'’]+)[^\p{L}\p{N}]*$/u) || [])[1]?.toLowerCase() || "";
+        const next = (appStrip(rest).match(/^\s+([\p{L}\p{N}'’]+)/u) || [])[1] || "";
+        if (words.FUNCTION_WORDS.has(lo) || /\p{N}/u.test(en) || (/['’]/.test(en) && !Object.hasOwn(dict.overrides, lo))) c.grammar++;
+        if (/[\p{L}\p{N}]-$/u.test(before) || /^-[\p{L}\p{N}]/u.test(rest)) c.joined++;
+        if (/s$/i.test(en) && /^['’]\s+\p{Ll}/u.test(rest) && !/(^|[\s"“(])['‘]/.test(appStrip(before).split(/[.!?]\s/).at(-1))) c.possessive++;
+        const nounIrish = Object.hasOwn(dict.overrides, lo) && dict.overrides[lo] === ga && !words.DICT_VERBS.has(lo);
+        if (nounIrish && words.NOUN_VERB_WORDS.has(lo) && (CUES.has(prev) || (/^(has|have|had)$/.test(prev) && !/s$/.test(lo)))) c.cueNoun++;
+        if (/^(be|been|being|is|are|was|were|get|got|gets)$/.test(prev) && /ed$/.test(lo) && words.pastActiveIrish(ga)) c.beActive++;
+        if (/léiríonn/.test(ga) && words.DETERMINERS.has(prev)) c.nounShow++;
+        if (placeIrish.has(ga) && /^\p{Lu}/u.test(next) && !/^(county|co|gaa|fm|council|senior|minor|hurling|football|camogie|ladies)$/i.test(next)) c.placeName++;
+      }
+    });
+  });
+  return c;
+}
+const rcB = reviewCounts(before), rcA = reviewCounts(after);
+const reviewRows = [
+  ["Grammar words, contractions and numbers (them, what, hasn't, 21st)", "grammar"],
+  ["Part of a hyphenated word (nine-month, All-Ireland)", "joined"],
+  ["Plural possessive (members' bar)", "possessive"],
+  ["Place name before a capital (Derry City, Tyrone McKenna)", "placeName"],
+  ["Noun Irish on a verb (to pay a, will match, has forecast)", "cueNoun"],
+  ["Past Irish on a passive (was announced, be published)", "beActive"],
+  ["léiríonn after a determiner (the show)", "nounShow"],
+  ["Texts with [[[ (a word in square brackets)", "brackets"],
+].map(([label, k]) => [label, String(rcB[k]), String(rcA[k])]);
+const share = r => `${(100 * r.verified / Math.max(1, r.markers)).toFixed(1)}%`;
 const thinSummary = stories.map((s, k) => k).filter(k => count(after[k].summaryLevels[10]) === 0);
 
 // Same-event pairs (question 12: reported only, story choice unchanged).
@@ -162,9 +211,11 @@ const defaults = [
   ["Q12 Story choice", "Unchanged; same-event pairs listed below", "feeds.js untouched"],
 ];
 const tuning = [
-  ["Sentence cap", "2 markers in a sentence of 20+ words at Beginner and Foundation (draft: 30+)", "LONG_SENTENCE"],
-  ["Foundation gap repair", "Machine nouns for a gap of 12+ words with no dictionary word (draft: over 25)", "GAP_REPAIR_FROM"],
-  ["Target", "Candidates x level x 1.6 / 1.2 / 1, as the spacing rules now hold markers back", "DENSITY"],
+  ["Sentence cap", "2 markers in a sentence of 20+ words at Beginner and Foundation (rules table: 30+)", "LONG_SENTENCE"],
+  ["Foundation gap repair", "Machine nouns for a gap of 12+ words with no dictionary word (L4: over 25)", "GAP_REPAIR_FROM"],
+  ["Target", "Candidates x level x 2.2 / 1.2 / 1.2, as the spacing rules and the review fixes hold markers back", "DENSITY"],
+  ["Which word first", "Tier, whole phrases, then the word that shuts out fewest others, then the middle of the gap", "pickMarkers"],
+  ["Intermediate verbs", "Machine -ed verbs and -ly adverbs, only with past (or participle) Irish to match", "verbFormFits"],
   ["Long gaps", "The sentence cap gives way in a gap over the limit; spacing and repeats never do", "pickMarkers"],
 ];
 
@@ -223,12 +274,27 @@ ${table(["Question", "Default", "Setting"], defaults)}
 <h2>Tuning to keep density within 15%</h2>
 ${table(["What", "Now", "Setting"], tuning)}
 
+<h2>Your choice: density or hand-checked Irish</h2>
+<p>Two settings keep Irish per 100 words within 15% of today (L1) but go past the rules as written. Each pulls against a plan target.</p>
+${table(["", "Now", "Plan"], [
+  ["Foundation hand-checked share, story", share(mA.levels[25]), "75%+"],
+  ["Intermediate hand-checked share, story", share(mA.levels[50]), "45%+"],
+  ["Beginner sentences of 6+ words with no Irish", `${(100 * mA.levels[10].sentences6Empty / Math.max(1, mA.levels[10].sentences6)).toFixed(1)}%`, "20% or less"],
+])}
+<p>Foundation machine Irish only for gaps over 25 words (L4 as written): Foundation Irish falls 27.5% in stories and 33.9% in app summaries, and the hand-checked share rises to 77%. From 18 words: 14.8% and 22.0% fewer, 65% hand-checked. Now: from 12 words.</p>
+
+<h2>Checks added after review</h2>
+${table(["Never marked", "Before", "After"], reviewRows)}
+
 <h2>Spot checks</h2>
-<p>Beginner stories with fewer than 3 Irish words: ${thinBeginner.length} of ${stories.length}. App summaries with none at Beginner: ${thinSummary.length} (none of them has a dictionary word).</p>
-<p>Machine Irish after a, the, his and the like (top 30):</p>
-<ul class="list">${afterDet.slice(0, 30).map(([k, n]) => `<li>${esc(k)} · ${n}</li>`).join("")}</ul>
-<p>Words ending in -ing (top 30):</p>
-<ul class="list">${ingMarkers.slice(0, 30).map(([k, n]) => `<li>${esc(k)} · ${n}</li>`).join("")}</ul>
+<p>Beginner stories with fewer than 3 Irish words: ${thinBeginner.length} of ${stories.length} (before: ${thinBefore}). App summaries with none at Beginner: ${thinSummary.length} (none of them has a dictionary word).</p>
+${table(["Day", "Story", "Words", "Irish before", "Irish after"], thinBeginner.map(t => [t.day, t.title, String(t.words), String(t.b), String(t.a)]))}
+<p>Machine Irish after a, the, his and the like: ${afterDet.length} different pairs, the 100 most used:</p>
+<ul class="list">${afterDet.slice(0, 100).map(([k, n]) => `<li>${esc(k)} · ${n}</li>`).join("")}</ul>
+<p>Every word ending in -ing (${ingMarkers.length}):</p>
+<ul class="list">${ingMarkers.map(([k, n]) => `<li>${esc(k)} · ${n}</li>`).join("")}</ul>
+<p>Capitals kept from the dictionary that the old code would have changed (${capitals.length}):</p>
+<ul class="list">${capitals.map(([k, n]) => `<li>${esc(k)} · ${n}</li>`).join("") || "<li>None</li>"}</ul>
 
 <h2>Same event, same day</h2>
 <p>${uniquePairs.length} pairs at word overlap ${SAME_EVENT} or more. Story choice is unchanged for now.</p>
