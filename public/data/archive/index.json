@@ -1,5 +1,635 @@
 [
   {
+    "date": "2026-10-17",
+    "generated": "2026-10-17T07:38:07.732Z",
+    "stories": [
+      {
+        "title": "Trump signs executive order waiving new Russia sanctions",
+        "category": "Meiriceá"
+      },
+      {
+        "title": "Connolly says human rights must guide response to crises",
+        "category": "Éire"
+      },
+      {
+        "title": "Uisce Éireann CEO defends €118,000 pay rise",
+        "category": "Polaitíocht"
+      },
+      {
+        "title": "AIB cuts 4-year fixed rate for mortgages over €250,000",
+        "category": "Gnó"
+      },
+      {
+        "title": "Pope holds phone call with Putin during hospital recovery",
+        "category": "Domhan"
+      },
+      {
+        "title": "Friday's League of Ireland results and reports",
+        "category": "Sacar"
+      },
+      {
+        "title": "Wicklow and Down dominate Tailteann Cup Team of the Year",
+        "category": "Peil"
+      },
+      {
+        "title": "LOI preview: Onus back on Pat's after unwanted hiatus",
+        "category": "Sacar"
+      },
+      {
+        "title": "Cullen excited by 'good little tweak' to bonus-points",
+        "category": "Rugbaí"
+      },
+      {
+        "title": "Wexford Festival Opera - watch Rossini's L'equivoco stravagante",
+        "category": "Cultúr"
+      },
+      {
+        "title": "Bob Geldof reflects on Live Aid and Ireland's generosity",
+        "category": "Siamsaíocht"
+      },
+      {
+        "title": "How Ireland Fashion Week created a homecoming for Irish designers",
+        "category": "Saol"
+      },
+      {
+        "title": "Meetings on structure of public sector pay talks to begin",
+        "category": "Polaitíocht"
+      },
+      {
+        "title": "Pensioner 'back counting pennies' as council doubles rent",
+        "category": "Éire"
+      },
+      {
+        "title": "Aontú to table no confidence motion in Helen McEntee",
+        "category": "Polaitíocht"
+      },
+      {
+        "title": "Diesel prices: can US-Russia deal ease global pressure?",
+        "category": "Gnó"
+      },
+      {
+        "title": "Settlers burn olive trees, injure journalist in West Bank",
+        "category": "An Meánoirthear"
+      },
+      {
+        "title": "Bradley: Win two more games and we know what that brings",
+        "category": "Sacar"
+      },
+      {
+        "title": "Clifford disappointed over Fossa manager's departure",
+        "category": "Peil"
+      },
+      {
+        "title": "O'Neill heartened by Celtic resolve despite Lisbon loss",
+        "category": "Sacar"
+      },
+      {
+        "title": "Edogbo signs new contract up to 2029",
+        "category": "Rugbaí"
+      },
+      {
+        "title": "Cinema at the edge of Ireland - Disappear Here returns to Donegal",
+        "category": "Cultúr"
+      },
+      {
+        "title": "Anna Faris 'hurt' by Chuck Lorre's comments",
+        "category": "Siamsaíocht"
+      },
+      {
+        "title": "Creative Director McGirr to leave McQueen after 3 years",
+        "category": "Saol"
+      },
+      {
+        "title": "Ukraine's bruising week at the hands of Trump and Putin",
+        "category": "Nuacht"
+      },
+      {
+        "title": "Illegal vapes, cannabis-based products worth €3m seized",
+        "category": "Éire"
+      },
+      {
+        "title": "Minister 'shocked' at UK decision on Sally Rooney books",
+        "category": "Domhan"
+      },
+      {
+        "title": "HFA posts 26% increase in lending activity in first half",
+        "category": "Gnó"
+      },
+      {
+        "title": "Nineteen injured after bus collides with Eurotunnel train",
+        "category": "An Eoraip"
+      },
+      {
+        "title": "Changed Lisowski hopeful season can catch fire in Belfast",
+        "category": "Snúcar"
+      }
+    ]
+  },
+  {
+    "date": "2026-10-16",
+    "generated": "2026-10-16T11:28:50.969Z",
+    "stories": [
+      {
+        "title": "Three children, teacher killed in US school shooting",
+        "category": "Meiriceá"
+      },
+      {
+        "title": "Donaldson 'deserves every day' of sentence, says DUP",
+        "category": "Éire"
+      },
+      {
+        "title": "Uisce Éireann CEO defends €118,000 pay rise",
+        "category": "Polaitíocht"
+      },
+      {
+        "title": "France, Germany deal to safeguard European car industry",
+        "category": "Gnó"
+      },
+      {
+        "title": "Ukraine will keep hitting Russian refineries - Zelensky",
+        "category": "An Úcráin"
+      },
+      {
+        "title": "Champions Cup Round 1: All You Need to Know",
+        "category": "Rugbaí"
+      },
+      {
+        "title": "Huge blow for Donegal as Roarty signs for Collingwood",
+        "category": "Peil"
+      },
+      {
+        "title": "Strikers coming to the boil at business end of the season",
+        "category": "Sacar"
+      },
+      {
+        "title": "Edogbo signs new contract up to 2029",
+        "category": "Rugbaí"
+      },
+      {
+        "title": "Something for the Weekend: Ghaliah Conroy's cultural picks",
+        "category": "Cultúr"
+      },
+      {
+        "title": "Damien Rice to return with 25 Years; 25 Cities tour",
+        "category": "Ceol"
+      },
+      {
+        "title": "Creative Director McGirr to leave McQueen after 3 years",
+        "category": "Saol"
+      },
+      {
+        "title": "Ukraine strikes on Russia refineries 'a disgrace' - Trump",
+        "category": "An Úcráin"
+      },
+      {
+        "title": "Fórsa awaiting formal Government approach on talks",
+        "category": "Éire"
+      },
+      {
+        "title": "Aontú to table no confidence motion in Helen McEntee",
+        "category": "Polaitíocht"
+      },
+      {
+        "title": "AIB cuts 4-year fixed rate for mortgages over €250,000",
+        "category": "Gnó"
+      },
+      {
+        "title": "Trump says gunman's execution will not be livestreamed",
+        "category": "Meiriceá"
+      },
+      {
+        "title": "Bohemians lost the derby and the subsequent PR battle",
+        "category": "Sacar"
+      },
+      {
+        "title": "Player of the month honour for Armagh star Mackin",
+        "category": "Peil"
+      },
+      {
+        "title": "Keane describes United as a 'circus' after Martinez rant",
+        "category": "Sacar"
+      },
+      {
+        "title": "Lancaster voices maul concerns after scoring surge",
+        "category": "Rugbaí"
+      },
+      {
+        "title": "Wexford Festival Opera - watch Iris by Pietro Mascagni",
+        "category": "Cultúr"
+      },
+      {
+        "title": "Trans rights activists rush carpet at Harry Potter show",
+        "category": "Scannáin"
+      },
+      {
+        "title": "Things to do in Dublin this weekend (Oct 16-18)",
+        "category": "Saol"
+      },
+      {
+        "title": "Man shot dead by loyalists settles action against PSNI",
+        "category": "Tuaisceart Éireann"
+      },
+      {
+        "title": "O'Donovan in intensive care after taking ill on Tuesday",
+        "category": "Éire"
+      },
+      {
+        "title": "Minister 'shocked' at UK decision on Sally Rooney books",
+        "category": "Domhan"
+      },
+      {
+        "title": "Exports dip by 1.2% in August as trade figures normalise",
+        "category": "Gnó"
+      },
+      {
+        "title": "Police to re-open probe into handling of Linehan arrest",
+        "category": "Domhan"
+      },
+      {
+        "title": "Santry showcase puts two new rule tweaks in spotlight",
+        "category": "Peil"
+      }
+    ]
+  },
+  {
+    "date": "2026-10-15",
+    "generated": "2026-10-15T07:38:01.877Z",
+    "stories": [
+      {
+        "title": "Public sector union leaders to meet over pay deal row",
+        "category": "Éire"
+      },
+      {
+        "title": "People 'know' who carried out Waterford attack - gardaí",
+        "category": "Éire"
+      },
+      {
+        "title": "Talks with unions can 'absolutely' begin with pay, says Chambers",
+        "category": "Polaitíocht"
+      },
+      {
+        "title": "Anthropic pre-IPO meeting hears of surging revenue",
+        "category": "Gnó"
+      },
+      {
+        "title": "Trump says oil, gas exploration to begin in Greenland",
+        "category": "Meiriceá"
+      },
+      {
+        "title": "Murphy's star keeps rising as Aviva dream within grasp",
+        "category": "Sacar"
+      },
+      {
+        "title": "Two-time All-Ireland winner Morley calls time on Kerry",
+        "category": "Peil"
+      },
+      {
+        "title": "Ireland finish Kazakhstan rout to set up Poland showdown",
+        "category": "Sacar"
+      },
+      {
+        "title": "Lions women to start tour with Cardiff game versus France",
+        "category": "Rugbaí"
+      },
+      {
+        "title": "On the Air - the early days of arts programming on RTÉ",
+        "category": "Cultúr"
+      },
+      {
+        "title": "Guests revealed for 2 Johnnies Late Night Lock In",
+        "category": "Siamsaíocht"
+      },
+      {
+        "title": "Irish makeup artist Ben Sun on working the Fashion Month circuit",
+        "category": "Saol"
+      },
+      {
+        "title": "Son says four were killed over someone else's drug debt",
+        "category": "Coireacht"
+      },
+      {
+        "title": "Cases halted as Criminal Courts of Justice staff picket",
+        "category": "Éire"
+      },
+      {
+        "title": "O'Donovan brought to hospital after falling ill at event",
+        "category": "Polaitíocht"
+      },
+      {
+        "title": "NetZero eyes €400m revenue by 2030, workforce to double",
+        "category": "Gnó"
+      },
+      {
+        "title": "Russian strikes kill six, cut power in Ukraine",
+        "category": "An Úcráin"
+      },
+      {
+        "title": "Maresca insists City deserved something from PSG thriller",
+        "category": "Sacar"
+      },
+      {
+        "title": "Eight counties represented in Champion 15 hurling team",
+        "category": "CLG"
+      },
+      {
+        "title": "McCabe: 'If there's a game to come to, it's this one'",
+        "category": "Sacar"
+      },
+      {
+        "title": "Maul mania, Prendergast's form, and Champions Cup is back",
+        "category": "Rugbaí"
+      },
+      {
+        "title": "Something for the Weekend: Ezra Williams' cultural picks",
+        "category": "Cultúr"
+      },
+      {
+        "title": "Blondie to release first album in nine years",
+        "category": "Ceol"
+      },
+      {
+        "title": "I tried Sauna Aufguss - a steamy, semi-nude wellness experience",
+        "category": "Taisteal"
+      },
+      {
+        "title": "Universities warn funding gap leaves sector at cliff-edge",
+        "category": "Oideachas"
+      },
+      {
+        "title": "Why is the property market cooling down?",
+        "category": "Éire"
+      },
+      {
+        "title": "National strike action to go ahead despite Govt plea",
+        "category": "Éire"
+      },
+      {
+        "title": "Will lower Dublin Airport passenger charges make flying cheaper?",
+        "category": "Gnó"
+      },
+      {
+        "title": "Tributes paid to man killed by tiger at UK wildlife park",
+        "category": "Domhan"
+      },
+      {
+        "title": "McIlroy and McKibbin well placed on opening day in India",
+        "category": "Galf"
+      }
+    ]
+  },
+  {
+    "date": "2026-10-14",
+    "generated": "2026-10-14T07:36:39.830Z",
+    "stories": [
+      {
+        "title": "Widespread disruption as public sector strike begins",
+        "category": "Éire"
+      },
+      {
+        "title": "Man who killed 3 had schizophrenia relapse, court told",
+        "category": "Cúirt"
+      },
+      {
+        "title": "Govt accused of 'brinkmanship' over public sector strike",
+        "category": "Polaitíocht"
+      },
+      {
+        "title": "Dublin to host major AI summit amid safety concerns",
+        "category": "Gnó"
+      },
+      {
+        "title": "Democrats condemn federal search of Ilhan Omar home",
+        "category": "Domhan"
+      },
+      {
+        "title": "O'Sullivan pumped up for winter play-off bonanza",
+        "category": "Sacar"
+      },
+      {
+        "title": "Eight counties represented in Champion 15 hurling team",
+        "category": "CLG"
+      },
+      {
+        "title": "Team news: McCabe, O'Sullivan and Hopcroft start in Cork",
+        "category": "Sacar"
+      },
+      {
+        "title": "Issues remain up front as Ulster strive for consistency",
+        "category": "Rugbaí"
+      },
+      {
+        "title": "Something for the Weekend: Ezra Williams' cultural picks",
+        "category": "Cultúr"
+      },
+      {
+        "title": "Maura Higgins safely through on DWTS in the US",
+        "category": "Siamsaíocht"
+      },
+      {
+        "title": "Bláthnaid Ní Chofaigh: 'I don't plan to go anywhere'",
+        "category": "Saol"
+      },
+      {
+        "title": "Searches in Waterford after four killed in fire",
+        "category": "Éire"
+      },
+      {
+        "title": "O'Donovan brought to hospital after falling ill at event",
+        "category": "Polaitíocht"
+      },
+      {
+        "title": "Anonymous briefings a 'slap in the face' - O'Donovan",
+        "category": "Polaitíocht"
+      },
+      {
+        "title": "ASML won't be able to meet AI-driven demand in 2027, 2028",
+        "category": "Gnó"
+      },
+      {
+        "title": "Schools closed as French students stage protests",
+        "category": "Domhan"
+      },
+      {
+        "title": "Martinez launches astonishing attack on United hierarchy",
+        "category": "Sacar"
+      },
+      {
+        "title": "McManus: Leinster SHC reforms can give everyone a chance",
+        "category": "Iomáint"
+      },
+      {
+        "title": "Carragher avoids bankruptcy after settling tax bill",
+        "category": "Sacar"
+      },
+      {
+        "title": "World Cup-winning coach White takes reins at Fiji",
+        "category": "Rugbaí"
+      },
+      {
+        "title": "Basic Income for the Arts: first recipients to hear this week",
+        "category": "Cultúr"
+      },
+      {
+        "title": "Corrie star on baby storyline: 'My jaw was on the floor'",
+        "category": "Siamsaíocht"
+      },
+      {
+        "title": "What happens when we place too much responsibility on children?",
+        "category": "Saol"
+      },
+      {
+        "title": "Increase in industrial greenhouse gas emissions forecast",
+        "category": "Athrú Aeráide"
+      },
+      {
+        "title": "Fresh fears raised over prevalence of nitrous oxide use",
+        "category": "Sláinte"
+      },
+      {
+        "title": "Approval sought for defective block scheme at Cabinet",
+        "category": "Polaitíocht"
+      },
+      {
+        "title": "Exports to US, EU push China towards record trade surplus",
+        "category": "Gnó"
+      },
+      {
+        "title": "11 missing after two ships struck off Bulgaria",
+        "category": "Domhan"
+      },
+      {
+        "title": "No need for in-form Lonergan to jump too quickly - Treacy",
+        "category": "Sacar"
+      }
+    ]
+  },
+  {
+    "date": "2026-10-13",
+    "generated": "2026-10-13T07:38:49.731Z",
+    "stories": [
+      {
+        "title": "Fatalities reported at scene of fire in Waterford city",
+        "category": "Éire"
+      },
+      {
+        "title": "Man jailed for life for murder of Waterford woman in 2025",
+        "category": "Cúirt"
+      },
+      {
+        "title": "O'Neill survives confidence motion over Garvaghy protests",
+        "category": "Polaitíocht"
+      },
+      {
+        "title": "Will the Government's new investment account work for you?",
+        "category": "Gnó"
+      },
+      {
+        "title": "Riyadh airport closure extended after Houthi attacks",
+        "category": "An Meánoirthear"
+      },
+      {
+        "title": "Preview: A Páirc victory lap before a defining winter",
+        "category": "Sacar"
+      },
+      {
+        "title": "Loughlin proud as testing journey ultimately ends in joy",
+        "category": "Peil"
+      },
+      {
+        "title": "LOI preview: Hoops and Bohs collide in title showdown",
+        "category": "Sacar"
+      },
+      {
+        "title": "Cullen wants more from Leinster after 'disjointed' win",
+        "category": "Rugbaí"
+      },
+      {
+        "title": "The Best & Worst Irish sketches on SNL over the years",
+        "category": "Cultúr"
+      },
+      {
+        "title": "Selma Blair pleads not guilty to assault charges",
+        "category": "Meiriceá"
+      },
+      {
+        "title": "Bláthnaid Ní Chofaigh: 'I don't plan to go anywhere'",
+        "category": "Saol"
+      },
+      {
+        "title": "Govt to hear of strike impact on economy, smaller firms",
+        "category": "Éire"
+      },
+      {
+        "title": "Union leaders reject minister's plea to postpone strikes",
+        "category": "Éire"
+      },
+      {
+        "title": "Wednesday Dáil sitting cancelled over strike action",
+        "category": "Polaitíocht"
+      },
+      {
+        "title": "Greencore upgrades its full year profit guidance again",
+        "category": "Gnó"
+      },
+      {
+        "title": "Kyiv says Russia hit energy targets despite Trump truce",
+        "category": "An Úcráin"
+      },
+      {
+        "title": "Issues remain up front as Ulster strive for consistency",
+        "category": "Rugbaí"
+      },
+      {
+        "title": "Inagh-Kilnamona come good to be crowned Clare champions",
+        "category": "Iomáint"
+      },
+      {
+        "title": "Manchester City sweep past 10-man Liverpool at Anfield",
+        "category": "Sacar"
+      },
+      {
+        "title": "Leinster mark RDS return with comfortable Cardiff win",
+        "category": "Rugbaí"
+      },
+      {
+        "title": "Súil Amach: inside the new project putting Irish writing in focus",
+        "category": "Cultúr"
+      },
+      {
+        "title": "Tom Cruise's Digger tanks, leaving studio with $250m hole",
+        "category": "Scannáin"
+      },
+      {
+        "title": "Read an extract of Páraic Kerrigan's 'Pop Culchie'",
+        "category": "Saol"
+      },
+      {
+        "title": "Government to discuss health-led plan to tackle drug use",
+        "category": "Polaitíocht"
+      },
+      {
+        "title": "Woman jailed for breaching anonymity of Donaldson victims",
+        "category": "Cúirt"
+      },
+      {
+        "title": "Picket line dilemma forces cancellation of Dáil sitting",
+        "category": "Polaitíocht"
+      },
+      {
+        "title": "Bumble in advanced talks to go private - source",
+        "category": "Gnó"
+      },
+      {
+        "title": "Pupil wounds teachers with hunting rifle in France",
+        "category": "Domhan"
+      },
+      {
+        "title": "Hoops hold off Bohs to take command in title race",
+        "category": "Sacar"
+      }
+    ]
+  },
+  {
     "date": "2026-10-12",
     "generated": "2026-10-12T08:04:15.206Z",
     "stories": [
