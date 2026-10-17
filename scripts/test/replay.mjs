@@ -6,13 +6,14 @@
 //   node scripts/test/replay.mjs --from 2026-10-01
 //   node scripts/test/replay.mjs --archive <dir>
 //   node scripts/test/replay.mjs --senses <file>   as if those senses were approved
+//   node scripts/test/replay.mjs --no-extra        without scripts/extra-words.json
 //
 // No network: fetch is replaced before anything else runs (archive.mjs), the
 // MyMemory answers come from a table built from the archive's own markers,
 // and any other URL throws so a stray call fails the run.
 import { net, loadArchive, makeAnswers, archiveDir, LEVELS } from "./archive.mjs";
 import {
-  runBaseline, runLib, collect, tableRows, headlineRows, markdownTable, LEVEL_HEAD, inputsOf,
+  runBaseline, runLib, collect, tableRows, headlineRows, markdownTable, LEVEL_HEAD, inputsOf, withoutExtra, extraRows,
 } from "./runs.mjs";
 import * as words from "../lib/words.js";
 import { parse, quant as quantile, PAST_ACTIVE_LOOSE, passiveBefore, capitalModal } from "./metrics.mjs";
@@ -29,10 +30,12 @@ const archive = loadArchive({ dir: archiveDir(args), from: opt("--from", "2026-0
 const { stories, table, replayFiles } = archive;
 const answers = makeAnswers(table);
 const sensesFile = opt("--senses", null);
-const dict = sensesFile
+const loaded = sensesFile
   ? { ...loadDict(), senses: loadSenses(pathToFileURL(resolve(sensesFile))) }
   : loadDict();
+const dict = args.includes("--no-extra") ? withoutExtra(loaded) : loaded;
 if (sensesFile) console.log(`Senses as if approved: ${Object.keys(dict.senses).length} words from ${sensesFile}`);
+console.log(`Extra words: ${Object.keys(dict.extra).length}${args.includes("--no-extra") ? " (--no-extra)" : ""}`);
 
 let failed = false;
 const fail = msg => { failed = true; console.log(`FAIL ${msg}`); };
@@ -50,7 +53,8 @@ const beforeCalls = net.calls;
 net.calls = 0;
 const lib = await runLib(stories, answers.tableAnswer, { dict });
 const afterCalls = net.calls;
-const mBefore = collect(stories, before, lib.dict, archive);
+// Today's code has no extra list, so its machine Irish is never counted as extra.
+const mBefore = collect(stories, before, withoutExtra(lib.dict), archive);
 const mAfter = collect(stories, lib.out, lib.dict, archive);
 
 console.log(`\nArchive answers: MyMemory calls ${beforeCalls} before, ${afterCalls} after`);
@@ -67,6 +71,21 @@ console.log(markdownTable(["Metric", "before", "after"], headlineRows(mBefore, m
 const wrongLeft = [...LEVELS.flatMap(p => ["levels", "summaryLevels"].flatMap(f => [...mAfter[f][p].knownWrongPairs]))];
 if (wrongLeft.length) console.log(`\nKnown wrong pairs still present: ${[...new Set(wrongLeft.map(([k]) => k))].join(", ")}`);
 if (mAfter.headlines.nameExamples.length) console.log(`Name parts after: ${mAfter.headlines.nameExamples.join(", ")}`);
+
+// The extra list: today, the new rules without it, and with it (X1 to X3).
+const hasExtra = Object.keys(dict.extra).length > 0;
+if (hasExtra) {
+  const plain = await runLib(stories, answers.tableAnswer, { dict: withoutExtra(dict) });
+  const mPlain = collect(stories, plain.out, withoutExtra(dict), archive);
+  const runs3 = [{ m: mBefore, out: before }, { m: mPlain, out: plain.out }, { m: mAfter, out: lib.out }];
+  for (const [field, label] of [["levels", "story text"], ["summaryLevels", "app summaries"]]) {
+    console.log(`\nExtra words (${Object.keys(dict.extra).length}), ${label}\n`);
+    console.log(markdownTable(["Metric", "today", "without list", "with list"], extraRows(runs3, field)));
+  }
+  // Headlines stay hand-checked only, so the list must not change them.
+  const moved = plain.out.filter((r, i) => r.titleIr !== lib.out[i].titleIr).length;
+  if (moved) fail(`${moved} headlines changed with the extra list (headlines are hand-checked Irish only)`);
+}
 
 // Key numbers in a few lines (used in commit messages).
 {
@@ -114,12 +133,14 @@ if (mAfter.headlines.nameExamples.length) console.log(`Name parts after: ${mAfte
 }
 
 // L1: density within 15% of today at every level, article and summary.
+// Beginner may rise (the extra list gives it more dictionary nouns), but
+// may not fall more than 15%.
 const DENSITY_TOLERANCE = 0.15;
 for (const field of ["levels", "summaryLevels"]) {
   for (const pct of LEVELS) {
     const b = mBefore[field][pct], a = mAfter[field][pct];
     const ratio = (a.markers / a.words) / (b.markers / b.words);
-    if (Math.abs(ratio - 1) > DENSITY_TOLERANCE) {
+    if (pct === 10 ? ratio < 1 - DENSITY_TOLERANCE : Math.abs(ratio - 1) > DENSITY_TOLERANCE) {
       fail(`${field}[${pct}] density ${(100 * a.markers / a.words).toFixed(2)} per 100 words is ` +
         `${((ratio - 1) * 100).toFixed(1)}% from today's ${(100 * b.markers / b.words).toFixed(2)}`);
     }
@@ -137,7 +158,7 @@ if (rules) {
     }
     if (!rules[10].machine) {
       const a = mAfter[field][10];
-      if (a.verified !== a.markers) fail(`${field}[10]: ${a.markers - a.verified} Beginner markers not from the dictionary (W3)`);
+      if (a.verified + a.extra !== a.markers) fail(`${field}[10]: ${a.markers - a.verified - a.extra} Beginner markers not from the dictionary (W3)`);
       if (a.edWords) fail(`${field}[10]: ${a.edWords} -ed words at Beginner (W8)`);
     }
   }
@@ -176,7 +197,8 @@ if (rules) {
         const en = m.en.toLowerCase(), prev = m.prev.toLowerCase();
         // W8: the dictionary's noun Irish on a noun/verb word used as a verb
         // ("to [[pá|pay]] a", "will [[cluiche|match]]", "has [[réamhaisnéis|forecast]]").
-        const nounIrish = Object.hasOwn(lib.dict.overrides, en) && lib.dict.overrides[en] === m.ga && !words.DICT_VERBS.has(en);
+        const entry = words.dictWord(lib.dict, en);
+        const nounIrish = entry !== undefined && entry.irish === m.ga && !words.DICT_VERBS.has(en);
         // A capital May, Will or Can is a month or a name ("In May [[tuarascáil|report]]s").
         const cue = CUES.has(prev) && !capitalModal(m.prev);
         if (nounIrish && words.NOUN_VERB_WORDS.has(en) && (cue || (/^(has|have|had)$/.test(prev) && !/s$/.test(en)))) {

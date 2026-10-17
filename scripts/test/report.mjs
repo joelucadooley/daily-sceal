@@ -2,13 +2,15 @@
 // the markers highlighted, the plan E metrics tables, the defaults in use,
 // spot checks and same-event pairs. Offline, like the replay.
 //
-//   node scripts/test/report.mjs --out <file.html> [--from 2026-09-11] [--senses <file>]
+//   node scripts/test/report.mjs --out <file.html> [--from 2026-09-11] [--senses <file>] [--no-extra]
+//     [--review <file.html> --held <file.json>]   the extra words page for Joe;
+//     held is [[english, "answer / answer / answer"], ...], words left out
 import { net, loadArchive, makeAnswers, archiveDir, LEVELS, MARKER } from "./archive.mjs";
-import { runBaseline, runLib, collect, tableRows, headlineRows, LEVEL_HEAD, inputsOf } from "./runs.mjs";
+import { runBaseline, runLib, collect, tableRows, headlineRows, LEVEL_HEAD, inputsOf, withoutExtra, extraRows } from "./runs.mjs";
 import { KNOWN_WRONG, parse, PAST_ACTIVE_LOOSE, passiveBefore, capitalModal } from "./metrics.mjs";
 import * as words from "../lib/words.js";
 import { loadDict, loadSenses } from "../lib/dict.js";
-import { writeFileSync } from "fs";
+import { writeFileSync, readFileSync } from "fs";
 import { resolve } from "path";
 import { pathToFileURL } from "url";
 
@@ -26,13 +28,20 @@ const archive = loadArchive({ dir: archiveDir(args), from: opt("--from", "2026-0
 const { stories } = archive;
 const answers = makeAnswers(archive.table);
 const sensesFile = opt("--senses", null);
-const dict = sensesFile ? { ...loadDict(), senses: loadSenses(pathToFileURL(resolve(sensesFile))) } : loadDict();
+const loaded = sensesFile ? { ...loadDict(), senses: loadSenses(pathToFileURL(resolve(sensesFile))) } : loadDict();
+const dict = args.includes("--no-extra") ? withoutExtra(loaded) : loaded;
+const extraCount = Object.keys(dict.extra).length;
 
 const before = await runBaseline(stories, answers.tableAnswer);
 const lib = await runLib(stories, answers.tableAnswer, { dict });
 const after = lib.out;
-const mB = collect(stories, before, dict, archive);
+// Today's code has no extra list: measured without it, so its machine Irish
+// never counts as extra.
+const mB = collect(stories, before, withoutExtra(dict), archive);
 const mA = collect(stories, after, dict, archive);
+// The new rules without the extra list, for its own table.
+const plain = extraCount ? (await runLib(stories, answers.tableAnswer, { dict: withoutExtra(dict) })).out : null;
+const mP = plain ? collect(stories, plain, withoutExtra(dict), archive) : null;
 if (net.blocked.length) throw new Error(`network call attempted: ${net.blocked[0]}`);
 
 // ---- Story picks: the problem stories from the analysis, then one per feed ----
@@ -67,13 +76,16 @@ const wrongSet = new Set(KNOWN_WRONG.map(([e, g]) => `${e}|${g}`));
 const lowerOverrides = new Map(Object.entries(dict.overrides).map(([k, v]) => [k.toLowerCase(), v.toLowerCase()]));
 const placeIrish = new Set(Object.values(dict.places));
 const isVerified = (en, ga) => lowerOverrides.get(en.toLowerCase().split(/[\s-]+/).join(" ")) === ga.toLowerCase() || placeIrish.has(ga);
+const lowerExtra = new Map(Object.entries(dict.extra).map(([k, v]) => [k.toLowerCase(), v.toLowerCase()]));
+// Extra-list Irish, in output made with the list (today's code never has it).
+const isExtra = (en, ga) => !isVerified(en, ga) && lowerExtra.get(en.toLowerCase().split(/[\s-]+/).join(" ")) === ga.toLowerCase();
 
-function marked(text) {
+function marked(text, { extra = false } = {}) {
   let out = "", last = 0;
   for (const m of text.matchAll(MARKER)) {
     out += esc(text.slice(last, m.index));
     const [ga, en] = [m[1], m[2]];
-    const cls = wrongSet.has(`${en.toLowerCase()}|${ga.toLowerCase()}`) ? "m wrong" : isVerified(en, ga) ? "m" : "m machine";
+    const cls = wrongSet.has(`${en.toLowerCase()}|${ga.toLowerCase()}`) ? "m wrong" : isVerified(en, ga) ? "m" : extra && isExtra(en, ga) ? "m extra" : "m machine";
     out += `<mark class="${cls}"><b>${esc(ga)}</b><i>${esc(en)}</i></mark>`;
     last = m.index + m[0].length;
   }
@@ -98,7 +110,7 @@ const tally = (filter) => {
   return [...c].sort((a, b) => b[1] - a[1]);
 };
 const DET = words.DETERMINERS;
-const afterDet = tally(m => DET.has(m.prev.toLowerCase()) && !isVerified(m.en, m.ga));
+const afterDet = tally(m => DET.has(m.prev.toLowerCase()) && !isVerified(m.en, m.ga) && !isExtra(m.en, m.ga));
 const ingMarkers = tally(m => /ing$/i.test(m.en));
 const thinBeginner = stories.map((s, k) => k).filter(k => count(after[k].levels[10]) < 3)
   .map(k => ({ k, title: stories[k].story.title || "", day: stories[k].day, b: count(before[k].levels[10]), a: count(after[k].levels[10]), words: wc(k) }))
@@ -129,7 +141,8 @@ function reviewCounts(out) {
         if (words.FUNCTION_WORDS.has(lo) || /\p{N}/u.test(en) || (/['’]/.test(en) && !Object.hasOwn(dict.overrides, lo))) c.grammar++;
         if (/[\p{L}\p{N}]-$/u.test(before) || /^-[\p{L}\p{N}]/u.test(rest)) c.joined++;
         if (/s$/i.test(en) && /^['’]\s+\p{Ll}/u.test(rest) && !words.quoteOpen(appStrip(before).split(/[.!?]\s/).at(-1) + en)) c.possessive++;
-        const nounIrish = Object.hasOwn(dict.overrides, lo) && dict.overrides[lo] === ga && !words.DICT_VERBS.has(lo);
+        const entry = words.dictWord(dict, lo);
+        const nounIrish = entry !== undefined && entry.irish === ga && !words.DICT_VERBS.has(lo);
         if (nounIrish && words.NOUN_VERB_WORDS.has(lo) && ((CUES.has(prev) && !capitalModal(rawPrev)) || (/^(has|have|had)$/.test(prev) && !/s$/.test(lo)))) c.cueNoun++;
         if (/ed$/.test(lo) && PAST_ACTIVE_LOOSE.test(ga) && passiveBefore(appStrip(before))) c.beActive++;
         if (/léiríonn/.test(ga) && words.DETERMINERS.has(prev)) c.nounShow++;
@@ -184,16 +197,17 @@ const pctChange = (f, p) => {
   return `${(((a.markers / a.words) / (b.markers / b.words) - 1) * 100).toFixed(0)}%`;
 };
 
+const X = { extra: true };
 const storyCards = pct => picks.map(k => {
   const { story } = stories[k];
   const b = before[k], a = after[k];
   return `<article class="story">
   <p class="meta">${esc(stories[k].day)} · ${esc(story.feed)} · ${esc(story.section)}</p>
-  <div class="pair head"><div><span class="lab">Before</span><h3>${marked(b.titleIr)}</h3></div><div><span class="lab">After</span><h3>${marked(a.titleIr)}</h3></div></div>
+  <div class="pair head"><div><span class="lab">Before</span><h3>${marked(b.titleIr)}</h3></div><div><span class="lab">After</span><h3>${marked(a.titleIr, X)}</h3></div></div>
   <div class="pair"><div><span class="lab">Before · ${count(b.summaryLevels[pct])} in the app summary</span><p class="sum">${marked(b.summaryLevels[pct])}</p></div>
-  <div><span class="lab">After · ${count(a.summaryLevels[pct])} in the app summary</span><p class="sum">${marked(a.summaryLevels[pct])}</p></div></div>
+  <div><span class="lab">After · ${count(a.summaryLevels[pct])} in the app summary</span><p class="sum">${marked(a.summaryLevels[pct], X)}</p></div></div>
   <div class="pair"><div><span class="lab">Before · ${count(b.levels[pct])} in the story</span><p>${marked(b.levels[pct])}</p></div>
-  <div><span class="lab">After · ${count(a.levels[pct])} in the story</span><p>${marked(a.levels[pct])}</p></div></div>
+  <div><span class="lab">After · ${count(a.levels[pct])} in the story</span><p>${marked(a.levels[pct], X)}</p></div></div>
 </article>`;
 }).join("\n");
 
@@ -202,6 +216,7 @@ const defaults = [
   ["Q2 Foundation and Intermediate", "Foundation: machine nouns only for a gap of 12+ words with no dictionary word. Intermediate: machine after the dictionary", "MACHINE_AT[25] = \"gap\", GAP_REPAIR_FROM = 12, MACHINE_AT[50] = \"normal\""],
   ["Q3 Senses", "Mechanism built; scripts/senses.json ships empty", "scripts/senses.json = {}"],
   ["Q4 focail.json", "Unchanged: senses are not hand-checked in the app yet", "generate.js"],
+  ["Extra words", `${extraCount} words the translators agreed on, used at every level like your own words. Your overrides win a clash. Not in headlines, focail.json or verified.json`, "scripts/extra-words.json"],
   ["Q5 Ireland, Dublin, Cork, provinces", "Unchanged: English in stories, places in headlines", "NEVER_TRANSLATE"],
   ["Q6 Months", "Unchanged: off, in headlines too", "NEVER_TRANSLATE, MONTHS"],
   ["Q7 Government, Minister, Budget", "A capital mid-sentence is a name: English", "shouldTranslate"],
@@ -221,9 +236,9 @@ const tuning = [
 ];
 
 const css = `
-:root{--bg:#f4f1ec;--card:#fff;--ink:#0d2137;--muted:#6b7380;--line:#e2ddd4;--accent:#e8951e;--ok:#15803d;--bad:#b42318;--mark:#fdf0d8;--machine:#eef2f7}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0b1420;--card:#13202f;--ink:#e8edf3;--muted:#9aa5b4;--line:#243245;--accent:#f0a83a;--ok:#4ade80;--bad:#f87171;--mark:#3a2c12;--machine:#1d2a3a}}
-:root[data-theme="dark"]{--bg:#0b1420;--card:#13202f;--ink:#e8edf3;--muted:#9aa5b4;--line:#243245;--accent:#f0a83a;--ok:#4ade80;--bad:#f87171;--mark:#3a2c12;--machine:#1d2a3a}
+:root{--bg:#f4f1ec;--card:#fff;--ink:#0d2137;--muted:#6b7380;--line:#e2ddd4;--accent:#e8951e;--ok:#15803d;--bad:#b42318;--mark:#fdf0d8;--machine:#eef2f7;--extra:#dcf3e4}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0b1420;--card:#13202f;--ink:#e8edf3;--muted:#9aa5b4;--line:#243245;--accent:#f0a83a;--ok:#4ade80;--bad:#f87171;--mark:#3a2c12;--machine:#1d2a3a;--extra:#163826}}
+:root[data-theme="dark"]{--bg:#0b1420;--card:#13202f;--ink:#e8edf3;--muted:#9aa5b4;--line:#243245;--accent:#f0a83a;--ok:#4ade80;--bad:#f87171;--mark:#3a2c12;--machine:#1d2a3a;--extra:#163826}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
 main{max-width:1180px;margin:0 auto;padding:24px 16px 64px}h1{font-size:28px;margin:0 0 4px}h2{font-size:20px;margin:40px 0 12px}
 .sub{color:var(--muted);margin:0 0 24px}.tw{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:10px}
@@ -238,7 +253,7 @@ thead th{font-weight:600;color:var(--muted);white-space:nowrap}tbody th{font-wei
 .lab{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
 @media (max-width:760px){.pair{grid-template-columns:1fr}}
 mark.m{background:var(--mark);color:inherit;border-radius:4px;padding:0 3px}mark.m b{font-weight:600}mark.m i{font-style:normal;color:var(--muted);font-size:.78em;margin-left:3px}
-mark.machine{background:var(--machine);outline:1px dashed var(--muted)}mark.wrong{background:transparent;outline:2px solid var(--bad)}
+mark.machine{background:var(--machine);outline:1px dashed var(--muted)}mark.extra{background:var(--extra)}h3{font-size:16px;margin:20px 0 8px}mark.wrong{background:transparent;outline:2px solid var(--bad)}
 .legend{display:flex;flex-wrap:wrap;gap:14px;font-size:14px;color:var(--muted);margin:0 0 12px}
 ul.list{columns:2;font-size:14px;padding-left:18px}@media (max-width:760px){ul.list{columns:1}}
 .panel[hidden]{display:none}`;
@@ -247,21 +262,29 @@ const html = `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Word rules report</title><style>${css}</style></head><body><main>
 <h1>Word rules: before and after</h1>
-<p class="sub">${stories.length} archive stories, ${archive.replayFiles[0].slice(0, 10)} to ${archive.replayFiles.at(-1).slice(0, 10)}, run offline with MyMemory answers taken from the archive. Before is today's code; after is branch word-rules.${sensesFile ? ` Senses as if approved: ${Object.keys(dict.senses).length} words.` : " No senses approved yet."}</p>
+<p class="sub">${stories.length} archive stories, ${archive.replayFiles[0].slice(0, 10)} to ${archive.replayFiles.at(-1).slice(0, 10)}, run offline with MyMemory answers taken from the archive. Before is today's code; after is branch word-rules${extraCount ? ` with ${extraCount} extra words` : ""}.${sensesFile ? ` Senses as if approved: ${Object.keys(dict.senses).length} words.` : " No senses approved yet."}</p>
 
 <h2>Key numbers</h2>
 ${table(["", "Beginner", "Foundation", "Intermediate"], [
   ["Irish per 100 words, story", ...LEVELS.map(p => `${(100 * mB.levels[p].markers / mB.levels[p].words).toFixed(1)} → ${(100 * mA.levels[p].markers / mA.levels[p].words).toFixed(1)} (${pctChange("levels", p)})`)],
   ["Irish per 100 words, app summary", ...LEVELS.map(p => `${(100 * mB.summaryLevels[p].markers / mB.summaryLevels[p].words).toFixed(1)} → ${(100 * mA.summaryLevels[p].markers / mA.summaryLevels[p].words).toFixed(1)} (${pctChange("summaryLevels", p)})`)],
   ["Hand-checked share, story", ...LEVELS.map(p => `${Math.round(100 * mB.levels[p].verified / mB.levels[p].markers)}% → ${Math.round(100 * mA.levels[p].verified / mA.levels[p].markers)}%`)],
+  ["Extra list share, story", ...LEVELS.map(p => `${Math.round(100 * mA.levels[p].extra / mA.levels[p].markers)}%`)],
   ["Known wrong pairs, story", ...LEVELS.map(p => `${mB.levels[p].knownWrong} → ${mA.levels[p].knownWrong}`)],
   ["Markers too close, story", ...LEVELS.map(p => `${mB.levels[p].tooClose} → ${mA.levels[p].tooClose}`)],
 ])}
 
 <h2>Stories</h2>
-<div class="legend"><span><mark class="m"><b>Irish</b><i>English</i></mark> hand-checked</span><span><mark class="m machine"><b>Irish</b><i>English</i></mark> machine</span><span><mark class="m wrong"><b>Irish</b><i>English</i></mark> known wrong</span></div>
+<div class="legend"><span><mark class="m"><b>Irish</b><i>English</i></mark> hand-checked</span><span><mark class="m extra"><b>Irish</b><i>English</i></mark> extra list</span><span><mark class="m machine"><b>Irish</b><i>English</i></mark> machine</span><span><mark class="m wrong"><b>Irish</b><i>English</i></mark> known wrong</span></div>
 <div class="tabs" role="tablist">${LEVELS.map((p, i) => `<button role="tab" aria-selected="${i === 0}" data-p="${p}">${LEVEL_NAME[p]}</button>`).join("")}</div>
 ${LEVELS.map((p, i) => `<section class="panel" data-p="${p}"${i ? " hidden" : ""}>${storyCards(p)}</section>`).join("\n")}
+
+${mP ? `<h2>Extra words</h2>
+<p>${extraCount} words the translators agreed on, in <code>scripts/extra-words.json</code>. Today, the new rules without the list, and with it.</p>
+<h3>Story text</h3>
+${table(["", "Today", "Without list", "With list"], extraRows([{ m: mB, out: before }, { m: mP, out: plain }, { m: mA, out: after }], "levels"))}
+<h3>App summaries</h3>
+${table(["", "Today", "Without list", "With list"], extraRows([{ m: mB, out: before }, { m: mP, out: plain }, { m: mA, out: after }], "summaryLevels"))}` : ""}
 
 <h2>All metrics: story text</h2>
 ${table(LEVEL_HEAD, tableRows(mB, mA, "levels"))}
@@ -311,3 +334,41 @@ document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click
 `;
 writeFileSync(OUT, html);
 console.log(`Wrote ${OUT}: ${picks.length} stories, ${uniquePairs.length} same-event pairs`);
+
+// ---- Extra words page for Joe ----
+
+const REVIEW = opt("--review", null);
+if (REVIEW) {
+  // Stories (story text or app summary, any level) where each word carries
+  // its extra-list Irish.
+  const storiesWith = new Map(Object.keys(dict.extra).map(k => [k, 0]));
+  for (const r of after) {
+    const keys = new Set();
+    for (const f of ["levels", "summaryLevels"]) for (const p of LEVELS) {
+      for (const m of parse(r[f][p]).markers) if (isExtra(m.en, m.ga)) keys.add(m.en.toLowerCase().split(/[\s-]+/).join(" "));
+    }
+    for (const k of keys) if (storiesWith.has(k)) storiesWith.set(k, storiesWith.get(k) + 1);
+  }
+  const heldFile = opt("--held", null);
+  const held = heldFile ? JSON.parse(readFileSync(heldFile, "utf-8")) : [];
+  const unused = [...storiesWith.values()].filter(n => !n).length;
+  // One row per word; a word with a single note (not three answers) spans the row.
+  const heldRows = held.map(([en, answers]) => {
+    const parts = String(answers).split(" / ");
+    const cells = parts.length === 3 ? parts.map(x => `<td>${esc(x)}</td>`).join("") : `<td colspan="3">${esc(answers)}</td>`;
+    return `<tr><th>${esc(en)}</th>${cells}</tr>`;
+  }).join("");
+  const page = `<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Extra words review</title><style>${css}</style></head><body><main>
+<h1>Extra words</h1>
+<p class="sub">${extraCount} words the translators agreed on, in <code>scripts/extra-words.json</code>. They are used at every level like your own words, but never in headlines, the app's hand-checked list or Focal an lae. Your overrides win a clash. Stories: archive stories (${stories.length}, ${archive.replayFiles[0].slice(0, 10)} to ${archive.replayFiles.at(-1).slice(0, 10)}) where the word carries this Irish.${unused ? ` ${unused} words appear in none.` : ""}</p>
+${table(["English", "Irish", "Stories"], Object.entries(dict.extra).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)).map(([en, ga]) => [en, ga, String(storiesWith.get(en))]))}
+${held.length ? `<h2>Not included: needs a speaker to check</h2>
+<p>${held.length} words the translators did not all agree on. Each answer is Irish (part of speech, confidence).</p>
+<div class="tw"><table><thead><tr><th>English</th><th>Translator 1</th><th>Translator 2</th><th>Translator 3</th></tr></thead><tbody>${heldRows}</tbody></table></div>` : ""}
+</main></body></html>
+`;
+  writeFileSync(REVIEW, page);
+  console.log(`Wrote ${REVIEW}: ${extraCount} extra words, ${held.length} held back`);
+}

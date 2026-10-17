@@ -97,8 +97,13 @@ const quant = (arr, q) => {
 // texts: [{ text, pct, topic, eligible? }] where eligible (optional) is a
 // list of word positions [start, end] that the new rules could mark at this
 // level, used for the "gaps that contain an eligible word" figure.
+// Each marker counts once: `verified` (Joe's overrides, places, approved
+// senses), `extra` (the extra list, when dict.extra has it and Joe's lists
+// do not) or neither (machine). Measure output made without the extra list
+// with a dict whose extra is {}, so machine Irish is never counted as extra.
 export function measure(texts, { dict, senses = {} }) {
   const lowerOverrides = new Map(Object.entries(dict.overrides).map(([k, v]) => [k.toLowerCase(), v.toLowerCase()]));
+  const lowerExtra = new Map(Object.entries(dict.extra || {}).map(([k, v]) => [k.toLowerCase(), v.toLowerCase()]));
   const placeIrish = new Set(Object.values(dict.places));
   const senseIrish = new Map();
   for (const [en, e] of Object.entries(senses)) {
@@ -112,13 +117,14 @@ export function measure(texts, { dict, senses = {} }) {
     return lowerOverrides.get(e) === ga.toLowerCase() || placeIrish.has(ga) ||
       (senseIrish.get(e)?.has(ga.toLowerCase()) ?? false);
   };
+  const fromExtra = (en, ga) => lowerExtra.get(en.toLowerCase().replace(/[-\s]+/g, " ")) === ga.toLowerCase();
 
   const r = {
     texts: 0, words: 0, markers: 0, zero: 0, zeroWithEligible: 0,
     longest: [], longestEligible: [], overMaxNoEligible: 0,
     sentences6: 0, sentences6Empty: 0,
     tooClose: 0, oneApart: 0, repeats: 0, overCap: 0,
-    thirds: [0, 0, 0], verified: 0, knownWrong: 0, knownWrongPairs: new Map(),
+    thirds: [0, 0, 0], verified: 0, extra: 0, knownWrong: 0, knownWrongPairs: new Map(),
     edWords: 0, phrases: 0,
   };
   for (const { text, pct, topic, eligible } of texts) {
@@ -174,6 +180,7 @@ export function measure(texts, { dict, senses = {} }) {
       if (n > lim.repeatCap) r.overCap++;
       r.thirds[Math.min(2, Math.floor((3 * m.start) / Math.max(1, words)))]++;
       if (verified(m.en, m.ga)) r.verified++;
+      else if (fromExtra(m.en, m.ga)) r.extra++;
       const pair = `${key}|${m.ga.toLowerCase()}`;
       const wrong = KNOWN_WRONG_SET.has(pair) ||
         (DET_VERB_SET.has(pair) && DETERMINERS.has(m.prev.toLowerCase())) ||

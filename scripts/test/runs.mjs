@@ -6,7 +6,7 @@ import { loadDict } from "../lib/dict.js";
 import * as words from "../lib/words.js";
 import { createMyMemory } from "../lib/mymemory.js";
 import { firstSentences, stripMarkers } from "../summary.js";
-import { measure, measureHeadlines, quant } from "./metrics.mjs";
+import { measure, measureHeadlines, quant, parse } from "./metrics.mjs";
 
 const noSleep = async () => {};
 baseline.setSleep(noSleep);
@@ -44,6 +44,14 @@ export async function runBaseline(stories, answer) {
   }
   net.onAsk = null;
   return out;
+}
+
+// The same dictionary with no extra list: today's code, and the replay's
+// "without the list" run. Kept per dict so the phrase index is built once.
+const BARE = new WeakMap();
+export function withoutExtra(dict) {
+  if (!BARE.has(dict)) BARE.set(dict, { ...dict, extra: Object.create(null) });
+  return BARE.get(dict);
 }
 
 // After: scripts/lib through markStory, the same path processStory takes.
@@ -140,6 +148,7 @@ export function tableRows(before, after, field) {
   rows.push(["Repeats (over the cap)", ...cell(r => `${pc(r.repeats, r.markers)} (${r.overCap})`)]);
   rows.push(["Share in each third", ...cell(r => r.thirds.map(t => Math.round(100 * t / Math.max(1, r.markers))).join("/"))]);
   rows.push(["Verified share", ...cell(r => pc(r.verified, r.markers))]);
+  rows.push(["Extra list share", ...cell(r => pc(r.extra, r.markers))]);
   rows.push(["Known wrong pairs", ...cell(r => String(r.knownWrong))]);
   rows.push(["Texts with no marker", ...cell(r => `${r.zero}${r.longestEligible.length ? ` (${r.zeroWithEligible} with a dictionary word)` : ""}`)]);
   rows.push(["English -ed words marked", ...cell(r => String(r.edWords))]);
@@ -167,3 +176,40 @@ export function markdownTable(head, rows) {
 }
 
 export const LEVEL_HEAD = ["Metric", "10 before", "10 after", "25 before", "25 after", "50 before", "50 after"];
+
+// Beginner texts with fewer than 3 Irish words: all of them, and those whose
+// text is 60 words or more.
+export const THIN_UNDER = 3;
+export const THIN_LONG = 60;
+export function thinBeginner(out, field) {
+  let all = 0, long = 0;
+  for (const r of out) {
+    const { markers, words } = parse(r[field][10]);
+    if (markers.length >= THIN_UNDER) continue;
+    all++;
+    if (words >= THIN_LONG) long++;
+  }
+  return { all, long };
+}
+
+// The extra list's own table: for each level, today's code, the new rules
+// without the list and with it. runs: [{ label, m, out }] in that order.
+export function extraRows(runs, field) {
+  const NAME = { 10: "Beginner", 25: "Foundation", 50: "Intermediate" };
+  const today = runs[0].m[field];
+  const density = r => 100 * r.markers / r.words;
+  const rows = [];
+  for (const p of LEVELS) {
+    const cells = fn => runs.map(x => fn(x.m[field][p], x));
+    rows.push([`${NAME[p]}: Irish per 100 words`, ...cells(r => f1(density(r)))]);
+    rows.push([`${NAME[p]}: change from today`, ...cells(r => `${(100 * (density(r) / density(today[p]) - 1)).toFixed(1)}%`)]);
+    if (p === 10) {
+      rows.push([`${NAME[p]}: texts with fewer than ${THIN_UNDER} Irish words`, ...cells((r, x) => String(thinBeginner(x.out, field).all))]);
+      rows.push([`${NAME[p]}: of those, ${THIN_LONG}+ words long`, ...cells((r, x) => String(thinBeginner(x.out, field).long))]);
+    }
+    rows.push([`${NAME[p]}: longest gap, median / p90`, ...cells(r => `${quant(r.longest, 0.5)} / ${quant(r.longest, 0.9)}`)]);
+    rows.push([`${NAME[p]}: Irish from Joe's dictionary / extra list / machine`, ...cells(r =>
+      `${pc(r.verified, r.markers)} / ${pc(r.extra, r.markers)} / ${pc(r.markers - r.verified - r.extra, r.markers)}`)]);
+  }
+  return rows;
+}
