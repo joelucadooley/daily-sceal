@@ -9,6 +9,7 @@ import { firstSentences, stripMarkers } from "./summary.js";
 import { loadDict } from "./lib/dict.js";
 import { markStory, storyContext } from "./lib/words.js";
 import { createMyMemory } from "./lib/mymemory.js";
+import { pickStories, MIN_ARTICLE_WORDS } from "./lib/pick.js";
 // Stories actually processed. Every one of these costs a page scrape plus
 // three levels of MyMemory calls, so this is the expensive number. Feeds are
 // read far more widely than this and then filtered down to it.
@@ -142,7 +143,7 @@ async function fetchFeed(feed) {
   }
 }
 
-async function fetchStories() {
+async function fetchItems() {
   const feeds = activeFeeds();
   console.log(`Fetching ${feeds.length} RTÉ feed(s): ${feeds.map(f => f.id).join(", ")}`);
 
@@ -152,7 +153,13 @@ async function fetchStories() {
     console.log(`  ${feed.id}: ${items.length} items`);
     all.push(...items);
   }
+  return all;
+}
 
+// Every story worth considering today, best first within each feed. Only
+// STORY_COUNT of these are used; the rest stand by in case a page turns out
+// to have no article text.
+function buildPool(all) {
   if (!all.length) throw new Error("No stories from any feed");
 
   const unique = dedupe(all);
@@ -165,20 +172,40 @@ async function fetchStories() {
   if (pool !== usable) {
     console.warn(`Only ${usable.length} passed the quality filter, using all ${unique.length}`);
   }
-
-  const chosen = balance(pool, STORY_COUNT);
-  const spread = {};
-  chosen.forEach(s => { spread[s.feed] = (spread[s.feed] || 0) + 1; });
-  console.log(`Selected ${chosen.length}:`, spread);
-
-  // Re-id sequentially so the app's React keys stay stable and predictable
-  return chosen.map((s, i) => ({ ...s, id: `story-${i}` }));
+  return pool;
 }
 
+// Read pages in the balanced order and keep the first STORY_COUNT with real
+// article text (scripts/lib/pick.js). Live pages, recaps and one-sentence
+// pages are skipped and logged, and the next story in the order takes their
+// place.
+async function chooseStories(pool, scrape) {
+  console.log(`\nReading article pages (skipping any under ${MIN_ARTICLE_WORDS} words)...`);
+  const { stories, skipped, scrapes } = await pickStories(pool, {
+    total: STORY_COUNT,
+    balance,
+    scrape,
+    log: msg => console.log(msg),
+  });
+  const spread = {};
+  stories.forEach(s => { spread[s.feed] = (spread[s.feed] || 0) + 1; });
+  console.log(`Selected ${stories.length} after reading ${scrapes} pages, ${skipped.length} skipped:`, spread);
+
+  // Re-id sequentially so the app's React keys stay stable and predictable
+  return stories.map((s, i) => ({ ...s, id: `story-${i}` }));
+}
+
+// `fullText` is the article already read by chooseStories. Without it (a
+// story passed in directly) the page is read here, as before.
 async function processStory(story, index) {
+  const { fullText: readText, ...rest } = story;
+  story = rest;
   console.log(`\nProcessing story ${index + 1}: ${story.title}`);
-  console.log(`  Scraping full article...`);
-  const fullText = await scrapeArticle(story.link);
+  let fullText = readText;
+  if (fullText == null) {
+    console.log(`  Scraping full article...`);
+    fullText = await scrapeArticle(story.link);
+  }
   const baseText = fullText || story.summary;
   console.log(`  Using ${fullText ? "full article" : "summary"} (${baseText.length} chars)`);
 
@@ -195,95 +222,116 @@ async function processStory(story, index) {
   return { ...story, summary: baseText, rssSummary, levels, summaryLevels, titleIr };
 }
 
+// The whole day: read feeds, choose and read pages, mark the stories, write
+// the files. Throws on failure so the caller decides what happens. The tests
+// pass their own feed items, page reader and story marker; the daily run
+// uses the real ones.
+async function run({
+  loadItems = fetchItems,
+  scrape = scrapeArticle,
+  process: markOne = processStory,
+} = {}) {
+  const stories = await chooseStories(buildPool(await loadItems()), scrape);
+  console.log(`Fetched ${stories.length} stories`);
+  // Checked again after marking below. Checking here as well saves a full
+  // round of MyMemory calls on a day that cannot be published anyway.
+  if (stories.length < MIN_STORIES) {
+    throw new Error(
+      `Only ${stories.length} stories with article text (minimum ${MIN_STORIES}). ` +
+      `Refusing to publish; yesterday's file stays live.`
+    );
+  }
+  const processed = [];
+  for (let i = 0; i < stories.length; i++) {
+    processed.push(await markOne(stories[i], i));
+  }
+  console.log(`\n${myMemory.summary()}`);
+  const output = {
+    date: new Date().toISOString().slice(0, 10),
+    generated: new Date().toISOString(),
+    stories: processed,
+  };
+  mkdirSync(OUT_DIR, { recursive: true });
+  if (output.stories.length < MIN_STORIES) {
+    throw new Error(
+      `Only ${output.stories.length} stories survived (minimum ${MIN_STORIES}). ` +
+      `Refusing to publish; yesterday's file stays live.`
+    );
+  }
+
+  writeFileSync(`${OUT_DIR}/today.json`, JSON.stringify(output, null, 2));
+  console.log(`\n✓ Written ${OUT_DIR}/today.json with ${processed.length} stories`);
+
+  // Publish the list of verified (override) English keys so the export page
+  // can mark which weekly-recap words come from the trusted dictionary.
+  try {
+    writeFileSync(`${OUT_DIR}/verified.json`, JSON.stringify(Object.keys(OVERRIDES), null, 2));
+  } catch (e) {
+    console.warn("Could not write verified.json:", e.message);
+  }
+
+  // Publish the verified dictionary itself (Irish and English pairs) for the
+  // iOS app: it decides which words count as verified for flashcards and
+  // gap fill, and the focal of the day widget only ever picks from `words`.
+  // Place names are listed separately so they count as verified in the
+  // reader but never become the focal of the day.
+  try {
+    const placeKeys = new Set(Object.keys(PLACES));
+    const focail = {
+      generated: new Date().toISOString(),
+      words: Object.entries(OVERRIDES)
+        .filter(([en]) => !placeKeys.has(en))
+        .map(([en, ga]) => ({ ga, en })),
+      places: Object.entries(PLACES).map(([en, ga]) => ({ ga, en })),
+    };
+    writeFileSync(`${OUT_DIR}/focail.json`, JSON.stringify(focail, null, 2));
+    console.log(`✓ Written ${OUT_DIR}/focail.json (${focail.words.length} words, ${focail.places.length} places)`);
+  } catch (e) {
+    console.warn("Could not write focail.json:", e.message);
+  }
+
+  // Publish place names so the cover-headline tool can translate them correctly.
+  try {
+    writeFileSync(`${OUT_DIR}/places.json`, JSON.stringify(PLACES, null, 2));
+  } catch (e) {
+    console.warn("Could not write places.json:", e.message);
+  }
+
+  // Archive — save a dated copy and update the index.
+  // Wrapped separately so any archive problem can never break today.json or the site.
+  try {
+    mkdirSync(`${OUT_DIR}/archive`, { recursive: true });
+    writeFileSync(`${OUT_DIR}/archive/${output.date}.json`, JSON.stringify(output, null, 2));
+
+    const indexPath = `${OUT_DIR}/archive/index.json`;
+    let index = [];
+    try { index = JSON.parse(readFileSync(indexPath, "utf-8")); } catch { index = []; }
+    if (!Array.isArray(index)) index = [];
+    // Remove any existing entry for this date (handles re-runs), then add newest first
+    index = index.filter(e => e.date !== output.date);
+    index.unshift({
+      date: output.date,
+      generated: output.generated,
+      stories: output.stories.map(s => ({ title: s.title, category: s.categoryIr })),
+    });
+    writeFileSync(indexPath, JSON.stringify(index, null, 2));
+    console.log(`✓ Archived ${output.date} (${index.length} days in archive)`);
+  } catch (archiveErr) {
+    console.warn(`Archive step failed (site unaffected): ${archiveErr.message}`);
+  }
+  return output;
+}
+
 async function main() {
   try {
-    const stories = await fetchStories();
-    console.log(`Fetched ${stories.length} stories`);
-    const processed = [];
-    for (let i = 0; i < stories.length; i++) {
-      processed.push(await processStory(stories[i], i));
-    }
-    console.log(`\n${myMemory.summary()}`);
-    const output = {
-      date: new Date().toISOString().slice(0, 10),
-      generated: new Date().toISOString(),
-      stories: processed,
-    };
-    mkdirSync(OUT_DIR, { recursive: true });
-    if (output.stories.length < MIN_STORIES) {
-      throw new Error(
-        `Only ${output.stories.length} stories survived (minimum ${MIN_STORIES}). ` +
-        `Refusing to publish; yesterday's file stays live.`
-      );
-    }
-
-    writeFileSync(`${OUT_DIR}/today.json`, JSON.stringify(output, null, 2));
-    console.log(`\n✓ Written ${OUT_DIR}/today.json with ${processed.length} stories`);
-
-    // Publish the list of verified (override) English keys so the export page
-    // can mark which weekly-recap words come from the trusted dictionary.
-    try {
-      writeFileSync(`${OUT_DIR}/verified.json`, JSON.stringify(Object.keys(OVERRIDES), null, 2));
-    } catch (e) {
-      console.warn("Could not write verified.json:", e.message);
-    }
-
-    // Publish the verified dictionary itself (Irish and English pairs) for the
-    // iOS app: it decides which words count as verified for flashcards and
-    // gap fill, and the focal of the day widget only ever picks from `words`.
-    // Place names are listed separately so they count as verified in the
-    // reader but never become the focal of the day.
-    try {
-      const placeKeys = new Set(Object.keys(PLACES));
-      const focail = {
-        generated: new Date().toISOString(),
-        words: Object.entries(OVERRIDES)
-          .filter(([en]) => !placeKeys.has(en))
-          .map(([en, ga]) => ({ ga, en })),
-        places: Object.entries(PLACES).map(([en, ga]) => ({ ga, en })),
-      };
-      writeFileSync(`${OUT_DIR}/focail.json`, JSON.stringify(focail, null, 2));
-      console.log(`✓ Written ${OUT_DIR}/focail.json (${focail.words.length} words, ${focail.places.length} places)`);
-    } catch (e) {
-      console.warn("Could not write focail.json:", e.message);
-    }
-
-    // Publish place names so the cover-headline tool can translate them correctly.
-    try {
-      writeFileSync(`${OUT_DIR}/places.json`, JSON.stringify(PLACES, null, 2));
-    } catch (e) {
-      console.warn("Could not write places.json:", e.message);
-    }
-
-    // Archive — save a dated copy and update the index.
-    // Wrapped separately so any archive problem can never break today.json or the site.
-    try {
-      mkdirSync(`${OUT_DIR}/archive`, { recursive: true });
-      writeFileSync(`${OUT_DIR}/archive/${output.date}.json`, JSON.stringify(output, null, 2));
-
-      const indexPath = `${OUT_DIR}/archive/index.json`;
-      let index = [];
-      try { index = JSON.parse(readFileSync(indexPath, "utf-8")); } catch { index = []; }
-      if (!Array.isArray(index)) index = [];
-      // Remove any existing entry for this date (handles re-runs), then add newest first
-      index = index.filter(e => e.date !== output.date);
-      index.unshift({
-        date: output.date,
-        generated: output.generated,
-        stories: output.stories.map(s => ({ title: s.title, category: s.categoryIr })),
-      });
-      writeFileSync(indexPath, JSON.stringify(index, null, 2));
-      console.log(`✓ Archived ${output.date} (${index.length} days in archive)`);
-    } catch (archiveErr) {
-      console.warn(`Archive step failed (site unaffected): ${archiveErr.message}`);
-    }
+    await run();
   } catch (err) {
     console.error("Generation failed:", err);
     process.exit(1);
   }
 }
 
-export { processStory, main };
+export { processStory, scrapeArticle, run, main, STORY_COUNT, MIN_STORIES };
 
 // Run only when started directly (node scripts/generate.js), so the tests can
 // import this file without fetching feeds or writing anything.
