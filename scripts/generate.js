@@ -6,7 +6,7 @@ import {
 } from "./feeds.js";
 import { catInfo } from "./categories.js";
 import { firstSentences, stripMarkers } from "./summary.js";
-import { loadDict } from "./lib/dict.js";
+import { loadDict, verifiedKeys, focailLists } from "./lib/dict.js";
 import { markStory, storyContext } from "./lib/words.js";
 import { createMyMemory } from "./lib/mymemory.js";
 import { pickStories, MIN_ARTICLE_WORDS } from "./lib/pick.js";
@@ -41,6 +41,7 @@ const PLACES = DICT.places;
 console.log(`Loaded ${Object.keys(OVERRIDES).length} translation overrides`);
 console.log(`Loaded ${Object.keys(PLACES).length} place names`);
 console.log(`Loaded ${Object.keys(DICT.senses).length} approved senses`);
+console.log(`Loaded ${Object.keys(DICT.extra).length} extra words (not hand-checked)`);
 
 const myMemory = createMyMemory();
 const wordDeps = {
@@ -264,8 +265,9 @@ async function run({
 
   // Publish the list of verified (override) English keys so the export page
   // can mark which weekly-recap words come from the trusted dictionary.
+  // Extra words are not hand-checked, so they are never in this list.
   try {
-    writeFileSync(`${OUT_DIR}/verified.json`, JSON.stringify(Object.keys(OVERRIDES), null, 2));
+    writeFileSync(`${OUT_DIR}/verified.json`, JSON.stringify(verifiedKeys(DICT), null, 2));
   } catch (e) {
     console.warn("Could not write verified.json:", e.message);
   }
@@ -274,16 +276,9 @@ async function run({
   // iOS app: it decides which words count as verified for flashcards and
   // gap fill, and the focal of the day widget only ever picks from `words`.
   // Place names are listed separately so they count as verified in the
-  // reader but never become the focal of the day.
+  // reader but never become the focal of the day. Extra words stay out.
   try {
-    const placeKeys = new Set(Object.keys(PLACES));
-    const focail = {
-      generated: new Date().toISOString(),
-      words: Object.entries(OVERRIDES)
-        .filter(([en]) => !placeKeys.has(en))
-        .map(([en, ga]) => ({ ga, en })),
-      places: Object.entries(PLACES).map(([en, ga]) => ({ ga, en })),
-    };
+    const focail = { generated: new Date().toISOString(), ...focailLists(DICT) };
     writeFileSync(`${OUT_DIR}/focail.json`, JSON.stringify(focail, null, 2));
     console.log(`✓ Written ${OUT_DIR}/focail.json (${focail.words.length} words, ${focail.places.length} places)`);
   } catch (e) {

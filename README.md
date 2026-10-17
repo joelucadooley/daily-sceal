@@ -65,7 +65,8 @@ daily-sceal/
 │   └── main.jsx         # Entry point
 ├── scripts/
 │   ├── generate.js      # Daily story generation script
-│   └── overrides.json   # Curated english -> Irish dictionary, checked before MyMemory
+│   ├── overrides.json   # Curated english -> Irish dictionary, checked before MyMemory
+│   └── extra-words.json # Translator-agreed extra words; overrides win, never in focail.json
 ├── public/
 │   ├── og-image.png     # Social preview image
 │   └── data/

@@ -3,8 +3,8 @@
 //
 //   node scripts/test/cases.mjs
 import { net } from "./archive.mjs";
-import { loadDict, loadSenses } from "../lib/dict.js";
-import { writeFileSync, mkdtempSync } from "fs";
+import { loadDict, loadSenses, loadExtra, verifiedKeys, focailLists } from "../lib/dict.js";
+import { writeFileSync, mkdtempSync, readFileSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 import { pathToFileURL } from "url";
@@ -307,7 +307,8 @@ await test("backfill: a rejected machine answer is replaced by another word near
 
 await test("Foundation uses machine Irish only where the dictionary leaves a gap", async () => {
   const asked = [];
-  const d = { dict, lookup: async w => { asked.push(w.toLowerCase()); return MACHINE[w.toLowerCase()] ?? w; } };
+  // Without the extra list, which now covers visit, result and pitch here.
+  const d = { dict: { ...dict, extra: {} }, lookup: async w => { asked.push(w.toLowerCase()); return MACHINE[w.toLowerCase()] ?? w; } };
   // Dictionary words all through: no machine call needed.
   await words.buildLevel(LONG_TEXT, 25, d, { ctx: NEWS });
   const dense = asked.length;
@@ -726,6 +727,83 @@ await test("G23: MyMemory stops being asked after the time budget, and the run c
   const d = { dict, lookup: mm.lookup, onRejected: w => mm.noteRejected(w) };
   const out = await words.buildLevel(LONG_TEXT, 50, d, { ctx: NEWS });
   assert(markers(out).length > 0, out);
+});
+
+// ---- Extra words (X1 to X3) ----
+
+await test("X1: extra-words.json loads; missing is {}, bad entries are skipped with a warning", async () => {
+  assert(Object.keys(dict.extra).length > 100 && dict.extra.tournament === "comórtas", "shipped list");
+  const dir = mkdtempSync(join(tmpdir(), "extra-"));
+  const warned = [];
+  const warn = m => warned.push(m);
+  assert(Object.keys(loadExtra(pathToFileURL(join(dir, "none.json")), warn)).length === 0 && !warned.length, "missing file");
+  writeFileSync(join(dir, "broken.json"), "{ not json");
+  assert(Object.keys(loadExtra(pathToFileURL(join(dir, "broken.json")), warn)).length === 0 && warned.length === 1, "broken file");
+  writeFileSync(join(dir, "mixed.json"), JSON.stringify({ " Kettle ": "citeal", empty: "  ", number: 4, list: ["a"], pipe: "a|b" }));
+  const mixed = loadExtra(pathToFileURL(join(dir, "mixed.json")), warn);
+  assert(JSON.stringify({ ...mixed }) === '{"kettle":"citeal"}', JSON.stringify({ ...mixed }));
+  assert(warned.length === 5, warned.join(" / "));
+  assert(words.dictionaryFor("constructor", {}, { ...dict, extra: mixed }) === undefined, "no prototype");
+});
+
+await test("X1: on a clash Joe's overrides.json wins over the extra list", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "extra-"));
+  writeFileSync(join(dir, "clash.json"), JSON.stringify({ agreement: "socrú", council: "comhairle contae", kettle: "citeal" }));
+  const d = { ...dict, extra: loadExtra(pathToFileURL(join(dir, "clash.json")), () => {}) };
+  const hit = words.dictionaryFor("agreement", { ctx: NEWS }, d);
+  assert(hit.irish === dict.overrides.agreement && hit.source === "dict", JSON.stringify(hit));
+  assert(words.dictionaryFor("kettle", { ctx: NEWS }, d).source === "extra", "extra only");
+  const text = "The council said the agreement would be signed next week, and the kettle in the hall was new.";
+  for (const p of [10, 25, 50]) {
+    const out = await words.buildLevel(text, p, { dict: d, lookup }, { ctx: NEWS });
+    assert(!/socrú|comhairle contae/.test(out), out);
+  }
+  const out = await words.buildLevel("Both sides said the agreement would be signed next week.", 10, { dict: d, lookup }, { ctx: NEWS });
+  assert(out.includes(`[[${dict.overrides.agreement}|agreement]]`), out);
+});
+
+await test("X1: an extra word is used at Beginner, with the same noun, spacing and repeat rules", async () => {
+  const text = "The tournament began on a cold morning beside the river, and the tournament drew a large crowd of local people.";
+  const asked = [];
+  const d = { dict, lookup: async w => { asked.push(w); return w; } };
+  const out = await words.buildLevel(text, 10, d, { ctx: SPORT });
+  const ms = markers(out);
+  assert(ms.filter(m => m.en === "tournament" && m.ga === "comórtas").length === 1, out);   // repeat cap 1
+  assert(!asked.length, `machine asked at Beginner: ${asked}`);
+  const plain = await words.buildLevel(text, 10, { dict: { ...dict, extra: {} }, lookup }, { ctx: SPORT });
+  assert(!/comórtas/.test(plain), plain);
+  // Noun only: "will visit" and "to change" are verbs; "the visit" is a noun.
+  for (const t of ["The minister will visit the town and wants to change the plan for the new road.",
+    "They will visit later, and want to change nothing.", "Officials hope to visit soon.", "He points out the obvious."]) {
+    for (const p of [10, 25, 50]) {
+      const v = await words.buildLevel(t, p, d, { ctx: NEWS });
+      assert(!/\|(visit|change|points)\]\]/.test(v), `${p}: ${v}`);
+    }
+  }
+  const noun = await words.buildLevel("They praised the visit, which lasted two days.", 10, d, { ctx: NEWS });
+  assert(noun.includes("[[cuairt|visit]]"), noun);
+  // Spacing: no two markers closer than Beginner's minimum.
+  const gaps = parseMarked(out).markers;
+  for (let k = 1; k < gaps.length; k++) assert(gaps[k].start - gaps[k - 1].end - 1 >= words.MIN_BETWEEN[10], out);
+  // Headlines stay hand-checked only.
+  assert(!/comórtas/.test(words.markHeadline("Tournament draws large crowd", dict, SPORT)), "headline");
+});
+
+await test("X2: extra words never reach focail.json or verified.json", async () => {
+  const verified = new Set(verifiedKeys(dict));
+  const focail = focailLists(dict);
+  const focailEn = new Set([...focail.words, ...focail.places].map(w => w.en));
+  const focailGa = new Set(focail.words.map(w => w.ga));
+  for (const [en, ga] of Object.entries(dict.extra)) {
+    if (Object.hasOwn(dict.overrides, en)) continue;   // Joe's own word, not the extra one
+    assert(!verified.has(en), `verified.json has ${en}`);
+    assert(!focailEn.has(en), `focail.json has ${en}`);
+  }
+  assert(verified.size === Object.keys(dict.overrides).length, "verified.json is overrides only");
+  assert(focail.words.every(w => dict.overrides[w.en] === w.ga) && focailGa.size > 0, "focail words are overrides only");
+  // generate.js publishes through these two helpers and nothing else.
+  const gen = readFileSync(new URL("../generate.js", import.meta.url), "utf-8");
+  assert(/verified\.json`, JSON\.stringify\(verifiedKeys\(DICT\)/.test(gen) && /\.\.\.focailLists\(DICT\)/.test(gen), "generate.js");
 });
 
 if (net.blocked.length) { failed++; console.log(`FAIL network calls: ${net.blocked[0]}`); }

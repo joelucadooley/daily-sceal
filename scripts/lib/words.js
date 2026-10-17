@@ -1,5 +1,5 @@
 // Word selection and marking. No network and no file access: the dictionary
-// comes in as `dict` ({ overrides, places, senses }) and MyMemory comes in as
+// comes in as `dict` ({ overrides, places, senses, extra }) and MyMemory comes in as
 // `lookup(word)`, so the same code runs in the daily job and in the tests.
 import { splitSentences } from "../summary.js";
 
@@ -170,6 +170,19 @@ export function own(table, key) {
   return table && Object.hasOwn(table, key) ? table[key] : undefined;
 }
 
+// Joe's overrides first, then the extra list (rule X1): { irish, source }
+// with source "dict" or "extra", or undefined. Overrides always win a clash.
+// headline: true leaves the extra list out (headlines use hand-checked Irish only).
+export function dictWord(dict, key, { headline = false } = {}) {
+  const joe = own(dict.overrides, key);
+  if (joe !== undefined) return { irish: joe, source: "dict" };
+  const extra = headline ? undefined : own(dict.extra, key);
+  if (extra !== undefined) return { irish: extra, source: "extra" };
+  return undefined;
+}
+// Overrides or extra list: both are dictionary words to every rule below.
+export const fromDictionary = source => source === "dict" || source === "extra";
+
 export function placeFor(word, next = "", dict) {
   const key = word.toLowerCase();
   if (own(dict.places, key) === undefined) return undefined;
@@ -212,18 +225,16 @@ export function senseFor(key, ctx = {}, prev = "", dict, { next = "", det, end }
 // ---- Lookup ----
 
 // Trusted Irish for a word, without MyMemory (rule S2): the place, then the
-// approved sense for this story, then overrides. Returns { irish, source }
-// with source "place", "sense" or "dict"; { irish: null, source: "sense" }
-// when a sense says to leave it in English; undefined when the dictionary
-// has nothing.
-export function dictionaryFor(word, { next = "", prev = "", ctx = {}, det, end } = {}, dict) {
+// approved sense for this story, then overrides, then the extra list.
+// Returns { irish, source } with source "place", "sense", "dict" or "extra";
+// { irish: null, source: "sense" } when a sense says to leave it in English;
+// undefined when the dictionary has nothing.
+export function dictionaryFor(word, { next = "", prev = "", ctx = {}, det, end, headline = false } = {}, dict) {
   const place = placeFor(word, next, dict);
   if (place !== undefined) return { irish: place, source: "place" };
   const sense = senseFor(word, ctx, prev, dict, { next, det, end });
   if (sense !== undefined) return { irish: sense, source: "sense" };
-  const key = word.toLowerCase();
-  if (own(dict.overrides, key) !== undefined) return { irish: own(dict.overrides, key), source: "dict" };
-  return undefined;
+  return dictWord(dict, word.toLowerCase(), { headline });
 }
 
 // ---- Candidates ----
@@ -269,7 +280,7 @@ export function shouldTranslate(tok, pct, next = "", dict, { prev = "", ctx = {}
   // Any digit: 21st, 45pm, 75million, 1980s, and escaped junk like u003EWill (W6).
   if (/\p{N}/u.test(tok)) return false;
   if (lower === "won" && AMOUNT.test(prev)) return false;
-  if (CONTRACTION.test(tok) && own(dict.overrides, lower) === undefined) return false;
+  if (CONTRACTION.test(tok) && dictWord(dict, lower) === undefined) return false;
   if (pct < GRAMMAR_WORDS_FROM && GRAMMAR_WORDS.has(lower)) return false;
   // Place names are proper nouns but we DO want to translate them (from PLACES)
   // when placeFor accepts them here: a capital where the word is risky, and not
@@ -282,7 +293,7 @@ export function shouldTranslate(tok, pct, next = "", dict, { prev = "", ctx = {}
 
   // Rule W4: the length limits are for machine words only. Short dictionary
   // nouns (pay, tax, war, man, car, job, law, sea) count at every level.
-  const inDictionary = own(dict.overrides, lower) !== undefined || typeof sense === "string";
+  const inDictionary = dictWord(dict, lower) !== undefined || typeof sense === "string";
   if (pct <= 25) {
     // Beginner and Foundation: content words only, no short words
     if (FUNCTION_WORDS.has(lower)) return false;
@@ -344,6 +355,13 @@ const NOUN_VERB_BASE = [
   "control", "travel", "change", "need", "use", "move", "face", "end", "call", "hold",
   "pay", "witness", "fire", "flood", "forecast", "murder", "bank", "match", "pressure",
   "experience", "shop", "sentence", "talk", "claim", "cut", "warn", "fear", "deal", "charge",
+  // From extra-words.json (noun Irish too): the same rule holds them to nouns
+  // ("will visit", "to search", "points out", "stars in").
+  "visit", "search", "transfer", "release", "measure", "break", "sign", "damage", "impact",
+  "assault", "extract", "picture", "process", "contract", "reference", "document", "pitch",
+  "range", "source", "trip", "pace", "corner", "package", "pair", "effect", "force", "rule",
+  "point", "share", "star", "result", "commission", "bill", "message", "programme", "structure",
+  "place", "challenge",
 ];
 // With their -s forms (plans, talks, attacks): "team plans Israel match",
 // "Casey Walsh talks Tall Tales". "meeting" is a verb after "to" or a be-form.
@@ -628,14 +646,14 @@ export function rankUnit(unit, tokens, pct, dict, ctx = {}) {
   let tier, verb;
   if (hit) {
     if (hit.irish === null) return null;
-    verb = hit.source !== "place" && isVerbLike(key, hit.irish, { englishList: hit.source === "dict" });
-    if (SKIP_ROOT_FORMS && hit.source === "dict" && ROOT_FORMS.has(key)) return null;   // question 9
+    verb = hit.source !== "place" && isVerbLike(key, hit.irish, { englishList: fromDictionary(hit.source) });
+    if (SKIP_ROOT_FORMS && fromDictionary(hit.source) && ROOT_FORMS.has(key)) return null;   // question 9
     if (hit.source !== "place" && !unit.phrase) {
       // W9: "the show", "the launch show", "a show." are nouns; present-tense
       // Irish (léiríonn) is also wrong after "to" or a modal ("to show").
       if (verb && (afterDet || (!/(ed|s)$/.test(key) && (set.detNear || (!verbCue && set.nounEnd))))) return null;
       if (verb && (set.afterModal || prev === "to" || prev === "not") && /(íonn|aíonn|eann|ann)$/.test(hit.irish)) return null;
-      if (hit.source === "dict" && !nounFits(key, verb, set)) return null;              // W8: "to help", "will match"
+      if (fromDictionary(hit.source) && !nounFits(key, verb, set)) return null;         // W8: "to help", "will match"
       // G3: the Irish verb form must match the English. After a be-form or
       // before "by" an -ed word is passive ("was announced", "published by"),
       // so past active Irish (d'fhógair) is wrong; after a subject it is
@@ -678,7 +696,7 @@ export function tierAllowed(tier, pct, { gapRepair = false } = {}) {
 
 // ---- Phrases (rule W5) ----
 
-// Multi-word keys of the dictionary (overrides and places; senses later),
+// Multi-word keys of the dictionary (senses, overrides, extra list, places),
 // indexed by their first word, longest first. Keys match case-insensitively
 // across single spaces or hyphens, so "cost of living", "Cost of Living" and
 // "year-on-year" all find their entry.
@@ -690,7 +708,8 @@ export function phraseIndex(dict) {
   if (idx) return idx;
   idx = new Map();
   const keys = new Set([
-    ...Object.keys(dict.senses || {}), ...Object.keys(dict.overrides), ...Object.keys(dict.places),
+    ...Object.keys(dict.senses || {}), ...Object.keys(dict.overrides), ...Object.keys(dict.extra || {}),
+    ...Object.keys(dict.places),
   ]);
   for (const key of keys) {
     const words = splitKey(key);
@@ -731,7 +750,7 @@ export function atSentenceStart(tokens, i) {
 // English" (a senses null).
 //   body: true for story text, where NEVER_TRANSLATE place words stay
 //   English as before (question 5); false for headlines.
-export function findPhrases(tokens, dict, ctx = {}, { body = true } = {}) {
+export function findPhrases(tokens, dict, ctx = {}, { body = true, headline = false } = {}) {
   const idx = phraseIndex(dict);
   const found = [];
   for (let i = 0; i < tokens.length; i++) {
@@ -744,7 +763,7 @@ export function findPhrases(tokens, dict, ctx = {}, { body = true } = {}) {
       const text = tokens.slice(i, j + 1).join("");
       const next = nextWord(tokens, j);
       const prev = prevWord(tokens, i);
-      const hit = phraseIrish(entry.key, { ctx, prev, next, body, dict });
+      const hit = phraseIrish(entry.key, { ctx, prev, next, body, dict, headline });
       if (hit === undefined) continue;
       // A capital inside the phrase, or at its start mid-sentence, means a
       // name ("Mental Health Ireland") unless the entry itself is a name.
@@ -758,9 +777,9 @@ export function findPhrases(tokens, dict, ctx = {}, { body = true } = {}) {
   return found;
 }
 
-// Irish for a phrase key: place, then approved sense, then overrides.
-// undefined when it should not be used here.
-function phraseIrish(key, { ctx, prev, next, body, dict }) {
+// Irish for a phrase key: place, then approved sense, then overrides, then
+// the extra list (not in headlines). undefined when it should not be used here.
+function phraseIrish(key, { ctx, prev, next, body, dict, headline }) {
   const lower = key.toLowerCase();
   if (own(dict.places, lower) !== undefined) {
     const first = splitKey(lower)[0];
@@ -769,8 +788,7 @@ function phraseIrish(key, { ctx, prev, next, body, dict }) {
   }
   const sense = senseFor(lower, ctx, prev, dict, { next });
   if (sense !== undefined) return { irish: sense, source: "sense" };
-  if (own(dict.overrides, lower) !== undefined) return { irish: own(dict.overrides, lower), source: "dict" };
-  return undefined;
+  return dictWord(dict, lower, { headline });
 }
 
 // ---- Units ----
@@ -1126,7 +1144,8 @@ function headlineStart(tokens, i) {
 }
 
 // Every headline unit that may carry Irish: dictionary phrases, place
-// names and dictionary nouns (senses first), never MyMemory (H1, H3).
+// names and dictionary nouns (senses first), never MyMemory (H1, H3) and
+// never the extra list, which Joe has not checked (X1).
 function headlineCandidates(title, dict, ctx = {}) {
   const tokens = tokenize(title);
   const wordPos = new Map();
@@ -1134,7 +1153,7 @@ function headlineCandidates(title, dict, ctx = {}) {
   tokens.forEach((tok, i) => { if (isWordToken(tok)) wordPos.set(i, n++); });
   const out = [];
   const covered = new Set();
-  for (const p of findPhrases(tokens, dict, ctx, { body: false })) {
+  for (const p of findPhrases(tokens, dict, ctx, { body: false, headline: true })) {
     for (let k = p.i; k <= p.j; k++) covered.add(k);
     if (!p.irish) continue;
     if (inBrackets(tokens, p.i, p.j) || inCompound(tokens, p.i, p.j)) continue;
@@ -1161,10 +1180,10 @@ function headlineCandidates(title, dict, ctx = {}) {
     if (tok.length < HEADLINE_MIN_LENGTH || MONTHS.has(lower)) return;
     if (FUNCTION_WORDS.has(lower) || PARTICLES.has(lower) || NUMBER_WORDS.has(lower) ||
       GRAMMAR_WORDS.has(lower) || POSSESSIVE.test(tok)) return;
-    if (CONTRACTION.test(tok) && own(dict.overrides, lower) === undefined) return;
+    if (CONTRACTION.test(tok) && dictWord(dict, lower, { headline: true }) === undefined) return;
     if (lower === "won" && AMOUNT.test(prev)) return;
     const ws = wordSetting(tokens, i, i, lower);
-    const hit = dictionaryFor(tok, { next, prev, ctx, det: ws.detNear, end: ws.senseEnd }, dict);
+    const hit = dictionaryFor(tok, { next, prev, ctx, det: ws.detNear, end: ws.senseEnd, headline: true }, dict);
     if (!hit || hit.irish === null) return;
     if (SKIP_ROOT_FORMS && hit.source === "dict" && ROOT_FORMS.has(lower)) return;
     if (isVerbLike(lower, hit.irish, { englishList: hit.source === "dict" })) return;   // nouns only (H3)
