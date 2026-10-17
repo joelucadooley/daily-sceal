@@ -785,8 +785,15 @@ await test("X1: an extra word is used at Beginner, with the same noun, spacing a
   // Spacing: no two markers closer than Beginner's minimum.
   const gaps = parseMarked(out).markers;
   for (let k = 1; k < gaps.length; k++) assert(gaps[k].start - gaps[k - 1].end - 1 >= words.MIN_BETWEEN[10], out);
-  // Headlines stay hand-checked only.
-  assert(!/comórtas/.test(words.markHeadline("Tournament draws large crowd", dict, SPORT)), "headline");
+  // Headlines stay hand-checked only: the same with or without the extra
+  // list, whether the extra word comes first (capitalised) or later.
+  const noExtra = { ...dict, extra: {} };
+  for (const h of ["Tournament draws large crowd", "Large crowd at tournament in Cork",
+    "Crowd gathers as the tournament begins"]) {
+    const head = words.markHeadline(h, dict, SPORT);
+    assert(!/comórtas/i.test(head) && !/\|tournament\]\]/i.test(head), `headline: ${head}`);
+    assert(head === words.markHeadline(h, noExtra, SPORT), `headline changed by the extra list: ${head}`);
+  }
 });
 
 await test("X2: extra words never reach focail.json or verified.json", async () => {

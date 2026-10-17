@@ -9,7 +9,7 @@ import { firstSentences, stripMarkers } from "./summary.js";
 import { loadDict, verifiedKeys, focailLists } from "./lib/dict.js";
 import { markStory, storyContext } from "./lib/words.js";
 import { createMyMemory } from "./lib/mymemory.js";
-import { pickStories, MIN_ARTICLE_WORDS } from "./lib/pick.js";
+import { pickStories, articleFromHtml, MIN_ARTICLE_WORDS } from "./lib/pick.js";
 // Stories actually processed. Every one of these costs a page scrape plus
 // three levels of MyMemory calls, so this is the expensive number. Feeds are
 // read far more widely than this and then filtered down to it.
@@ -57,39 +57,34 @@ function msAgo(d) {
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-async function scrapeArticle(url) {
+// Read one article page: { text, words } (articleFromHtml in lib/pick.js),
+// or null when the page cannot be read. `text` is what is published; `words`
+// is what decides whether the story is too thin to use.
+async function readArticle(url) {
   try {
     const res = await fetch(url, {
       signal: AbortSignal.timeout(10000),
       headers: { "User-Agent": "Mozilla/5.0 (compatible; DailySceal/1.0)" }
     });
     if (!res.ok) return null;
-    const html = await res.text();
-    const paragraphs = [];
-    const pRegex = /<p[^>]*>(.*?)<\/p>/gs;
-    let match;
-    while ((match = pRegex.exec(html)) !== null) {
-      const text = match[1]
-        .replace(/<[^>]+>/g, "")
-        .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
-        .replace(/&nbsp;/g, " ").replace(/&#\d+;/g, "").replace(/&[a-z]+;/g, "")
-        .trim();
-      if (text.length > 60 && !text.includes("RTÉ") && !text.includes("cookie") && !text.includes("javascript")) {
-        paragraphs.push(text);
-      }
-    }
     // Six paragraphs rather than four. Longer stories read better on a wide
     // screen, but every extra paragraph costs MyMemory calls across all three
     // levels and all thirty stories, so this is not a free number to raise.
-    const article = paragraphs.slice(0, PARAGRAPH_LIMIT).join(" ");
-    if (paragraphs.length) {
-      console.log(`    ${paragraphs.length} usable paragraphs found, using ${Math.min(paragraphs.length, PARAGRAPH_LIMIT)}`);
+    const { text, paragraphs, words } = articleFromHtml(await res.text(), { limit: PARAGRAPH_LIMIT });
+    if (paragraphs) {
+      console.log(`    ${paragraphs} usable paragraphs found, using ${Math.min(paragraphs, PARAGRAPH_LIMIT)} (${words} words of reporting)`);
     }
-    return article.length > 100 ? article : null;
+    return { text, words };
   } catch (e) {
     console.warn(`  Could not scrape ${url}: ${e.message}`);
     return null;
   }
+}
+
+// The article text alone, or null.
+async function scrapeArticle(url) {
+  const got = await readArticle(url);
+  return got ? got.text : null;
 }
 
 // Read one feed. A dead or slow feed logs a warning and returns nothing rather
@@ -229,7 +224,7 @@ async function processStory(story, index) {
 // uses the real ones.
 async function run({
   loadItems = fetchItems,
-  scrape = scrapeArticle,
+  scrape = readArticle,
   process: markOne = processStory,
 } = {}) {
   const stories = await chooseStories(buildPool(await loadItems()), scrape);
@@ -326,7 +321,7 @@ async function main() {
   }
 }
 
-export { processStory, scrapeArticle, run, main, STORY_COUNT, MIN_STORIES };
+export { processStory, scrapeArticle, readArticle, run, main, STORY_COUNT, MIN_STORIES };
 
 // Run only when started directly (node scripts/generate.js), so the tests can
 // import this file without fetching feeds or writing anything.

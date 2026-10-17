@@ -13,7 +13,7 @@ delete process.env.FEEDS;
 const OUT = mkdtempSync(join(tmpdir(), "sceal-pick-"));
 process.env.OUT_DIR = OUT;
 
-const { thinPattern, pickStories, wordCount, MIN_ARTICLE_WORDS, EXTRA_SCRAPES } = await import("../lib/pick.js");
+const { thinPattern, pickStories, wordCount, articleFromHtml, MIN_ARTICLE_WORDS, EXTRA_SCRAPES } = await import("../lib/pick.js");
 const { balance } = await import("../feeds.js");
 const gen = await import("../generate.js");
 const { run, STORY_COUNT, MIN_STORIES } = gen;
@@ -54,6 +54,39 @@ const thinPage = n => "<html><body>" +
   `<p>Follow all the action as it happens here today in story ${n} with our team.</p>` +
   `<p>Keep up to date with the latest developments as they come in.</p></body></html>`;
 
+// Shaped like "RTÉ to screen 2027 Ryder Cup highlights" (2026-09-10), in our
+// own words: six paragraphs of reporting, four of them naming RTÉ, then a
+// programme listing, a cookie notice and the copyright line. The two that do
+// not name RTÉ come to 44 words, so the article text alone is under the line.
+const RYDER = {
+  title: "RTÉ to screen 2027 Ryder Cup highlights",
+  reporting: [
+    "RTÉ has won the rights to show highlights of next year's Ryder Cup at Adare Manor and has signed a new deal to show the Irish Open for several more years.",
+    "In 2025, Rory McIlroy and Shane Lowry were among the leading players as Europe held the Ryder Cup in New York.",
+    "The rematch in Co Limerick next year should be a great event, with the best players in the world meeting over three days.",
+    "Viewers will see the highlights free to air, and RTÉ will also hold the radio rights for both the Ryder Cup and the Irish Open.",
+    "The RTÉ Head of Sport said the broadcaster was pleased to renew its agreement for the Irish Open, given the drama and the strong field the event now draws.",
+    "He added that showing highlights of the Ryder Cup as well means RTÉ can give Irish audiences more access to great sporting moments.",
+  ],
+  rest: [
+    "Watch the Irish Open from Thursday to Sunday on RTÉ2 and RTÉ Player",
+    "We need your consent to load this rte-player content. We use rte-player to manage extra content that can set cookies on your device.",
+    "© RTÉ 2026. RTÉ.ie is the website of Raidió Teilifís Éireann, Ireland's National Public Service Media. RTÉ is not responsible for the content of external internet sites.",
+  ],
+};
+const ryderPage = () => "<html><body>" +
+  [...RYDER.reporting, ...RYDER.rest].map(p => `<p class="body">${p}</p>`).join("\n") + "</body></html>";
+// A soap preview: a short standfirst and three programme listings, all
+// naming RTÉ One or the RTÉ Player. Still a thin story.
+const SOAP_TITLE = "Fair City on Sunday: 'She is trampling all over you, son'";
+const soapPage = () => "<html><body>" + [
+  "Pete warns Doug that he is being played for a fool in Sunday's Fair City on RTÉ One and the RTÉ Player.",
+  "Doug is not ready to listen, and the row in the kitchen soon turns into something far worse for the whole family.",
+  "Fans can watch what happens next on Sunday on RTÉ One and the RTÉ Player at 8:30pm.",
+  "Fair City airs on RTÉ One and the RTÉ Player on Sundays, Tuesdays, Thursdays, and Fridays.",
+  "© RTÉ 2026. RTÉ.ie is the website of Raidió Teilifís Éireann, Ireland's National Public Service Media.",
+].map(p => `<p>${p}</p>`).join("\n") + "</body></html>";
+
 // ---- Fake feed items, shaped like fetchFeed's output ----
 
 const FEEDS = ["news", "ireland", "politics", "business", "world", "sport", "gaa",
@@ -61,7 +94,8 @@ const FEEDS = ["news", "ireland", "politics", "business", "world", "sport", "gaa
 const SECTION = { sport: "sport", gaa: "sport", soccer: "sport", rugby: "sport", world: "domhan", news: "eire", ireland: "eire" };
 
 // `kinds` maps "feed-index" to how that item's page looks: "thin", "missing"
-// (404), or a title to use (for the title rules). Everything else is good.
+// (404), or { title, html } (either one) for the title rules and pages of
+// their own. Everything else is good.
 function day(perFeed, kinds = {}) {
   pages.clear();
   const items = [];
@@ -78,7 +112,8 @@ function day(perFeed, kinds = {}) {
         category: feed, categoryIr: feed, section: SECTION[feed] || "eile",
         published: "2026-10-17T08:00:00.000Z", timeAgo: "1h ago",
       });
-      pages.set(link, kind === "thin" ? thinPage(key) : kind === "missing" ? null : goodPage(key));
+      pages.set(link, kind === "thin" ? thinPage(key) : kind === "missing" ? null
+        : kind && kind.html ? kind.html : goodPage(key));
     }
   }
   return items;
@@ -96,13 +131,13 @@ const spreadOf = list => {
 const sameSpread = (a, b) => JSON.stringify(Object.entries(a).sort()) === JSON.stringify(Object.entries(b).sort());
 
 // Quiet the run's own logging; keep the skip lines for the assertions.
-async function quietRun(items) {
+async function quietRun(items, markOne = fakeMark) {
   const lines = [];
   const { log, warn } = console;
   console.log = (...a) => lines.push(a.join(" "));
   console.warn = (...a) => lines.push(a.join(" "));
   try {
-    const out = await run({ loadItems: async () => items, process: fakeMark });
+    const out = await run({ loadItems: async () => items, process: markOne });
     return { out, lines };
   } catch (err) {
     return { err, lines };
@@ -146,6 +181,30 @@ await test("word count", () => {
   assert(wordCount("  one two\nthree  ") === 3, "counts words across spaces and lines");
 });
 
+await test("a page about RTÉ itself is measured on all its reporting, not on its text alone", () => {
+  const a = articleFromHtml(ryderPage());
+  const plain = RYDER.reporting.filter(p => !p.includes("RTÉ"));
+  assert(a.text === plain.join(" "), `published text changed: ${a.text}`);
+  assert(wordCount(a.text) < MIN_ARTICLE_WORDS, `fixture text should be under the line: ${wordCount(a.text)}`);
+  const reporting = RYDER.reporting.reduce((n, p) => n + wordCount(p), 0);
+  assert(a.words === reporting, `counted ${a.words}, expected the ${reporting} words of reporting only`);
+  assert(a.paragraphs === 2, `paragraphs ${a.paragraphs}`);
+  // Listings, the copyright line and cookie notices never count.
+  const soap = articleFromHtml(soapPage());
+  assert(soap.words === wordCount("Doug is not ready to listen, and the row in the kitchen soon turns into something far worse for the whole family."),
+    `soap preview counted ${soap.words}`);
+  for (const line of ["Fair City airs on RTÉ One and the RTÉ Player on Sundays, Tuesdays, Thursdays, and Fridays.",
+    "The 2FM Official Chart Show, hosted by our presenter, is live every Friday from 7pm on RTÉ's 2FM.",
+    "Listen to the full interview with the minister on RTÉ Radio 1 this evening from six o'clock.",
+    RYDER.rest[0], RYDER.rest[1], RYDER.rest[2]]) {
+    assert(articleFromHtml(`<p>${line}</p>`).words === 0, `counted: ${line}`);
+  }
+  for (const line of ["Speaking on RTÉ's Morning Ireland programme, the parish priest said hearts were broken.",
+    "\"The numbers are incredibly small,\" the doctor told RTÉ News on Wednesday afternoon."]) {
+    assert(articleFromHtml(`<p>${line}</p>`).words === wordCount(line), `not counted: ${line}`);
+  }
+});
+
 // ---- 2. Thin stories are skipped and replaced from the same feed ----
 
 await test("thin stories are skipped, replaced, and the day stays at 30 with today's spread", async () => {
@@ -187,6 +246,22 @@ await test("a day with no thin stories is exactly today's selection", async () =
   const { out, err } = await quietRun(items);
   assert(!err, `run failed: ${err && err.message}`);
   assert(JSON.stringify(out.stories.map(s => s.title)) === JSON.stringify(today), "selection or order changed");
+});
+
+await test("a short report about RTÉ is kept and a soap preview is still skipped", async () => {
+  const kinds = {
+    "sport-0": { title: RYDER.title, html: ryderPage() },
+    "ents-0": { title: SOAP_TITLE, html: soapPage() },
+  };
+  const items = day(6, kinds);
+  const { out, err, lines } = await quietRun(items);
+  assert(!err, `run failed: ${err && err.message}`);
+  assert(out.stories.length === STORY_COUNT, `expected ${STORY_COUNT}, got ${out.stories.length}`);
+  const ryder = out.stories.find(s => s.title === RYDER.title);
+  assert(ryder, `dropped: ${lines.filter(l => l.includes("Skipped (")).join(" / ")}`);
+  assert(ryder.summary === RYDER.reporting.filter(p => !p.includes("RTÉ")).join(" "), `text changed: ${ryder.summary}`);
+  assert(!out.stories.some(s => s.title === SOAP_TITLE), "soap preview published");
+  assert(lines.some(l => /Skipped \(under 45 words, 22 words\): Fair City on Sunday/.test(l)), "soap preview not logged");
 });
 
 await test("a feed that runs out of good stories is topped up from the others", async () => {
@@ -235,8 +310,12 @@ await test(`fewer than ${MIN_STORIES} good stories publishes nothing`, async () 
   });
   const items = day(2, kinds);
   rmSync(join(OUT, "today.json"), { force: true });
-  const { err } = await quietRun(items);
+  let marked = 0;
+  const { err } = await quietRun(items, async (story, i) => { marked++; return fakeMark(story, i); });
   assert(err && err.message.includes(`minimum ${MIN_STORIES}`), `expected a refusal, got ${err ? err.message : "a published day"}`);
+  // Refused before marking: no story is marked, so no MyMemory calls.
+  assert(marked === 0, `${marked} stories marked on a day that cannot publish`);
+  assert(err.message.includes("stories with article text"), `refused late: ${err.message}`);
   assert(!existsSync(join(OUT, "today.json")), "today.json was written");
 });
 
