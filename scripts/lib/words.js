@@ -553,15 +553,24 @@ export function wordSetting(tokens, i, j, key) {
   // it is a subject pronoun ("parties that support Mr Putin", "a clip that
   // stays with me"); after a reporting verb it opens a clause whose first
   // word is a noun ("noted that profits in", "decided that unions would").
+  // A sentence that opens "That" + a word with no -s or -ed uses it as a
+  // determiner ("That show now feels"): a relative "that" needs a noun
+  // before it, and the pronoun takes a verb with -s ("That shows how").
+  let thatOpens = false;
+  if (prev === "that" && !/(s|ed)$/.test(key) && !pastForm) {
+    let b = i - 1;
+    while (b >= 0 && !isWordToken(tokens[b])) b--;
+    thatOpens = b >= 0 && tokens[b] === "That";
+  }
   let thatVerb = false;
-  if (prev === "that" && next && (/(s|ed)$/.test(key) || NOUN_VERB_WORDS.has(key))) {
+  if (prev === "that" && !thatOpens && next && (/(s|ed)$/.test(key) || NOUN_VERB_WORDS.has(key))) {
     let b = i - 1;
     while (b >= 0 && !isWordToken(tokens[b])) b--;
     const beforeThat = prevWord(tokens, b).toLowerCase();
     const clause = /(ed|ing)$/.test(beforeThat) || CLAUSE_VERBS.has(beforeThat);
     thatVerb = !nounEnd || (LINKS.has(nextLower) && !clause);
   }
-  const afterDet = DETERMINERS.has(prev) && (prev !== "that" || (nounEnd && !pastForm && !thatVerb));
+  const afterDet = DETERMINERS.has(prev) && (prev !== "that" || thatOpens || (nounEnd && !pastForm && !thatVerb));
   let detNear = afterDet;
   for (let k = i - 1, words = 0; !detNear && k >= 0 && words < 3; k--) {
     if (/^\s+$/.test(tokens[k])) continue;

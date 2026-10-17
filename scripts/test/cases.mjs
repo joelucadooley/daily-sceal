@@ -574,7 +574,8 @@ await test("G11: show in noun position never gets léiríonn, even two words aft
   for (const t of ["Fans gathered ahead of the launch show in the city on Friday night.",
     "This expansive show highlights the work of many artists from the country.",
     "It was the second season of the BBC show and the best TV show of the year.",
-    "Crowds came to the Fashion Week show. Then she did not show it to anyone at the event."]) {
+    "Crowds came to the Fashion Week show. Then she did not show it to anyone at the event.",
+    "She had a career with the fashion house. That show now feels particularly significant, as it was her last."]) {
     for (const out of await all(t, EILE)) assert(!/léiríonn/.test(out), out);
   }
   const d = withSenses({ show: { noun: "seó", default: null } });
