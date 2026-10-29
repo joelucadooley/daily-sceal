@@ -55,7 +55,7 @@ export const RTE_FEEDS = [
 
 
 /** How many items to read from each feed before filtering. */
-export const FETCH_PER_FEED = 25;
+export const FETCH_PER_FEED = 100;   // the whole feed: RTÉ's order is not date order
 
 /** Minimum RSS description length. RSS summaries are short, so keep this low;
  *  the full article gets scraped later anyway. Raise it if too much junk gets
@@ -117,46 +117,102 @@ export function dedupe(stories) {
   return out;
 }
 
+/** A story at most this old counts as today's news (hours before the run). */
+export const FRESH_HOURS = 24;
+
 /**
- * Round-robin across feeds, respecting each feed's `max`, so the final list is
- * a spread rather than whatever the busiest section happened to publish.
+ * Places per site tab in a day of 30, about what the feeds' caps gave before
+ * (two weeks to 2026-10-29: Éire 7, Domhan 4.4, Spórt 9, Eile 9.5). Scaled
+ * for any other total.
  */
-export function balance(stories, total) {
+export const SECTION_SHARE = { eire: 7, domhan: 5, sport: 9, eile: 9 };
+
+const ageHours = (s, now) => {
+  const t = Date.parse(s.published);
+  return Number.isNaN(t) ? 0 : (now - t) / 36e5;   // no date: treat as fresh
+};
+
+/**
+ * The day's selection: each tab gets its share, from today's news first.
+ *
+ * RTÉ's feeds are in its own editorial order, not date order, and a quiet
+ * feed (GAA in the off season) can be days old all the way down. For each
+ * tab (the story's own section, as on the site), in turn:
+ *   1. round-robin across the feeds with stories for it, each up to its
+ *      `max`, taking only stories from the last FRESH_HOURS, in RTÉ's order;
+ *   2. then any feed's fresh stories past its `max` (a quiet GAA week gives
+ *      its places to /sport and /sport/soccer).
+ * Then, for a tab still short, older stories newest first; then fresh
+ * stories from any tab; then anything. The list comes back in round-robin
+ * order across feeds, as before, so the day still opens on /news.
+ */
+export function balance(stories, total, { now = Date.now() } = {}) {
+  const fresh = s => ageHours(s, now) <= FRESH_HOURS;
+  const sectionOf = s => s.section || feedById(s.feed)?.section || "eile";
+  const order = activeFeeds().map((f) => f.id);
+  const cap = id => feedById(id)?.max ?? Infinity;
+
+  // Each feed's stories, fresh first in RTÉ's order, then older by age.
   const byFeed = new Map();
   for (const s of stories) {
     if (!byFeed.has(s.feed)) byFeed.set(s.feed, []);
     byFeed.get(s.feed).push(s);
   }
-  const order = activeFeeds().map((f) => f.id).filter((id) => byFeed.has(id));
-  const taken = new Map(order.map((id) => [id, 0]));
-  const out = [];
-  let round = 0;
-  let guard = 0;
-
-  while (out.length < total && guard++ < 500) {
-    let addedThisRound = false;
-    for (const id of order) {
-      if (out.length >= total) break;
-      const list = byFeed.get(id);
-      const cap = feedById(id)?.max ?? Infinity;
-      if (taken.get(id) >= cap) continue;
-      const item = list[round];
-      if (!item) continue;
-      out.push(item);
-      taken.set(id, taken.get(id) + 1);
-      addedThisRound = true;
-    }
-    if (!addedThisRound) break;
-    round++;
+  for (const [id, list] of byFeed) {
+    const older = list.filter(s => !fresh(s)).sort((a, b) => ageHours(a, now) - ageHours(b, now));
+    byFeed.set(id, [...list.filter(fresh), ...older]);
+    if (!order.includes(id)) order.push(id);
   }
+  const feeds = order.filter(id => byFeed.has(id));
 
-  // If caps left us short of the budget, top up with whatever is left over
-  if (out.length < total) {
-    const chosen = new Set(out);
-    for (const s of stories) {
-      if (out.length >= total) break;
-      if (!chosen.has(s)) out.push(s);
+  // Shares scaled to `total`, rounding so they add up.
+  const shares = {};
+  const sum = Object.values(SECTION_SHARE).reduce((a, b) => a + b, 0);
+  let left = total;
+  const secs = Object.keys(SECTION_SHARE);
+  secs.forEach((sec, i) => {
+    shares[sec] = i === secs.length - 1 ? left : Math.round(SECTION_SHARE[sec] * total / sum);
+    left -= shares[sec];
+  });
+
+  const chosen = new Set();
+  const taken = new Map(feeds.map(id => [id, 0]));
+  const inSection = new Map();
+  const add = s => {
+    chosen.add(s);
+    taken.set(s.feed, taken.get(s.feed) + 1);
+    inSection.set(sectionOf(s), (inSection.get(sectionOf(s)) || 0) + 1);
+  };
+  const full = () => chosen.size >= total;
+  const roundRobin = (ok, room) => {
+    let added = true;
+    while (!full() && added) {
+      added = false;
+      for (const id of feeds) {
+        if (full()) break;
+        if (!room(id)) continue;
+        const next = byFeed.get(id).find(s => !chosen.has(s) && ok(s));
+        if (next) { add(next); added = true; }
+      }
     }
+  };
+  const under = sec => (inSection.get(sec) || 0) < (shares[sec] ?? 0);
+
+  for (const sec of secs) {
+    const mine = s => sectionOf(s) === sec && under(sec);
+    roundRobin(s => fresh(s) && mine(s), id => taken.get(id) < cap(id));      // 1
+    roundRobin(s => fresh(s) && mine(s), () => true);                          // 2
   }
+  for (const sec of secs) {
+    roundRobin(s => sectionOf(s) === sec && under(sec), id => taken.get(id) < cap(id));
+  }
+  roundRobin(fresh, () => true);
+  roundRobin(() => true, () => true);
+
+  // Back into round-robin order across feeds, as the day used to come out.
+  const rank = new Map();
+  for (const id of feeds) byFeed.get(id).filter(s => chosen.has(s)).forEach((s, i) => rank.set(s, i));
+  const out = [...chosen].sort((a, b) =>
+    rank.get(a) - rank.get(b) || feeds.indexOf(a.feed) - feeds.indexOf(b.feed));
   return out;
 }

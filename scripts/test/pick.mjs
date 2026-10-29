@@ -319,6 +319,46 @@ await test(`fewer than ${MIN_STORIES} good stories publishes nothing`, async () 
   assert(!existsSync(join(OUT, "today.json")), "today.json was written");
 });
 
+// ---- Freshness: today's news first, each tab its share ----
+
+const NOW = Date.parse("2026-10-29T08:30:00Z");
+const story = (feed, i, hoursAgo, section) => ({
+  id: `${feed}-${i}`, feed, section, title: `${feed} story ${i} with a long enough title`,
+  summary: SENTENCE + ".", link: `https://example.ie/${feed}/${i}`,
+  published: new Date(NOW - hoursAgo * 36e5).toISOString(),
+});
+
+await test("a quiet feed's places go to fresh stories in the same tab", async () => {
+  // GAA: 2 fresh then old; /sport and soccer full of fresh stories.
+  const items = [
+    ...Array.from({ length: 10 }, (_, i) => story("gaa", i, i < 2 ? 3 : 70 + i, "sport")),
+    ...Array.from({ length: 20 }, (_, i) => story("sport", i, 1 + i, "sport")),
+    ...Array.from({ length: 20 }, (_, i) => story("soccer", i, 2 + i, "sport")),
+    ...Array.from({ length: 20 }, (_, i) => story("news", i, 1 + i, "eire")),
+    ...Array.from({ length: 20 }, (_, i) => story("world", i, 1 + i, "domhan")),
+    ...Array.from({ length: 20 }, (_, i) => story("culture", i, 1 + i, "eile")),
+  ];
+  const out = balance(items, 30, { now: NOW });
+  const sport = out.filter(s => s.section === "sport");
+  assert(out.length === 30, `${out.length} chosen`);
+  assert(sport.length === 9, `sport has ${sport.length}, wants 9`);
+  assert(sport.every(s => NOW - Date.parse(s.published) <= 24 * 36e5), "an old sport story was chosen over fresh ones");
+  assert(sport.filter(s => s.feed === "gaa").length === 2, "GAA's two fresh stories were not kept");
+});
+
+await test("older stories fill a tab only when it has nothing fresh", async () => {
+  const items = [
+    ...Array.from({ length: 10 }, (_, i) => story("world", i, 40 + i, "domhan")),
+    ...Array.from({ length: 40 }, (_, i) => story("news", i, 1 + i / 4, "eire")),
+    ...Array.from({ length: 20 }, (_, i) => story("sport", i, 1 + i, "sport")),
+    ...Array.from({ length: 20 }, (_, i) => story("culture", i, 1 + i, "eile")),
+  ];
+  const out = balance(items, 30, { now: NOW });
+  const world = out.filter(s => s.section === "domhan").map(s => (NOW - Date.parse(s.published)) / 36e5);
+  assert(world.length === 5, `domhan has ${world.length}`);
+  assert(JSON.stringify(world.sort((a, b) => a - b)) === JSON.stringify([40, 41, 42, 43, 44]), `not the newest old ones: ${world}`);
+});
+
 assert(net.calls === 0, "MyMemory was called");
 const stray = net.blocked.filter(u => !u.includes("/fake/"));
 if (stray.length) { failed++; console.log(`FAIL network calls attempted: ${stray.join(", ")}`); }
