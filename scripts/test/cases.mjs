@@ -104,8 +104,15 @@ await test("a phrase that is a name keeps its capitals; a capitalised ordinary p
 // The dictionary with some senses approved, as Joe would tick them.
 const withSenses = senses => ({ ...deps, dict: { ...dict, senses } });
 
-await test("senses.json ships empty and loads as {}", async () => {
-  assert(JSON.stringify(dict.senses) === "{}", JSON.stringify(dict.senses));
+await test("senses.json holds only entries Joe approved, and each loads", async () => {
+  const raw = JSON.parse(readFileSync(new URL("../senses.json", import.meta.url), "utf-8"));
+  assert(JSON.stringify(Object.keys(dict.senses).sort()) === JSON.stringify(Object.keys(raw).sort()), JSON.stringify(dict.senses));
+});
+
+await test("race meeting is one marker, rásaí, in text and headlines", async () => {
+  const out = await words.buildLevel("The jockey rode two winners at the race meeting in Listowel on Sunday afternoon.", 10, deps, { ctx: SPORT });
+  assert(out.includes("[[rásaí|race meeting]]"), out);
+  assert(words.markHeadline("Race meeting called off", dict, SPORT).includes("[[Rásaí|Race meeting]]"), "headline");
 });
 
 await test("loadSenses: a missing file is {}, a bad entry is skipped", async () => {

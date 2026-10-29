@@ -1,1 +1,4 @@
-{}
+{
+  "race meeting": { "default": "rásaí" },
+  "race meetings": { "default": "rásaí" }
+}
