@@ -1,4 +1,116 @@
 {
-  "race meeting": { "default": "rásaí" },
-  "race meetings": { "default": "rásaí" }
+  "can": {
+    "default": null
+  },
+  "case": {
+    "default": null,
+    "domhan": "cás",
+    "eire": "cás"
+  },
+  "comes": {
+    "default": null
+  },
+  "current": {
+    "default": null
+  },
+  "down": {
+    "default": null
+  },
+  "draw": {
+    "default": null
+  },
+  "end": {
+    "default": null,
+    "noun": "deireadh"
+  },
+  "final": {
+    "default": null,
+    "sport": "cluiche ceannais"
+  },
+  "fine": {
+    "default": null,
+    "noun": "fíneáil"
+  },
+  "former": {
+    "default": null
+  },
+  "help": {
+    "default": null,
+    "noun": "cabhair"
+  },
+  "home": {
+    "default": null
+  },
+  "made": {
+    "default": null
+  },
+  "match": {
+    "default": null,
+    "sport": "cluiche"
+  },
+  "means": {
+    "default": null
+  },
+  "minutes": {
+    "default": null,
+    "sport": "nóiméad"
+  },
+  "party": {
+    "default": null,
+    "domhan": "páirtí",
+    "eire": "páirtí"
+  },
+  "pitch": {
+    "sport": "páirc"
+  },
+  "points": {
+    "default": null,
+    "gaa": "cúilíní",
+    "sport": "pointí"
+  },
+  "race": {
+    "default": null,
+    "sport": "rás"
+  },
+  "race meeting": {
+    "default": "rásaí"
+  },
+  "race meetings": {
+    "default": "rásaí"
+  },
+  "record": {
+    "default": null
+  },
+  "return": {
+    "default": null,
+    "noun": "filleadh"
+  },
+  "season": {
+    "default": "séasúr",
+    "sport": "séasúr"
+  },
+  "seat": {
+    "default": "suíochán"
+  },
+  "set": {
+    "default": null
+  },
+  "show": {
+    "default": null,
+    "noun": "seó"
+  },
+  "state": {
+    "default": null,
+    "domhan": "stát",
+    "eire": "stát"
+  },
+  "take": {
+    "default": null
+  },
+  "time": {
+    "default": null
+  },
+  "title": {
+    "sport": "craobh"
+  }
 }

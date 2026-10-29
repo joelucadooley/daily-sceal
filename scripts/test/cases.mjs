@@ -109,6 +109,15 @@ await test("senses.json holds only entries Joe approved, and each loads", async 
   assert(JSON.stringify(Object.keys(dict.senses).sort()) === JSON.stringify(Object.keys(raw).sort()), JSON.stringify(dict.senses));
 });
 
+await test("a section sense never lands on a verb: 'can match' in sport stays English", async () => {
+  for (const pct of [10, 25, 50]) {
+    const out = await words.buildLevel("Ireland can match anyone on their day, and the first match of the series is on Friday at home.", pct, deps, { ctx: SPORT });
+    assert(!/\|match\]\] anyone/.test(out), out);
+  }
+  const outs = await Promise.all([10, 25, 50].map(p => words.buildLevel("The first match of the series is on Friday evening at the ground in Dublin.", p, deps, { ctx: SPORT })));
+  assert(outs.some(o => o.includes("[[cluiche|match]]")), outs.join("\n"));
+});
+
 await test("race meeting is one marker, rásaí, in text and headlines", async () => {
   const out = await words.buildLevel("The jockey rode two winners at the race meeting in Listowel on Sunday afternoon.", 10, deps, { ctx: SPORT });
   assert(out.includes("[[rásaí|race meeting]]"), out);
@@ -217,10 +226,10 @@ await test("at Beginner no -ed words, even from the dictionary", async () => {
   assert(!markers(out).some(x => /ed$/.test(x.en)), out);
 });
 
-await test("a noun gets a noun: 'the show' and 'their return' stay English without a sense", async () => {
+await test("a noun gets a noun: 'the show' and 'their return' never get verb Irish", async () => {
   for (const out of await all("The show opened to good reviews and fans cheered their return to the stage after the break.", EILE)) {
-    assert(!/\|show\]\]/.test(out), out);
-    assert(!/\|return\]\]/.test(out), out);
+    assert(!/(léiríonn|fill)\|(show|return)\]\]/.test(out), out);
+    assert(!/\|return\]\]/.test(out) || out.includes("[[filleadh|return]]"), out);
   }
 });
 

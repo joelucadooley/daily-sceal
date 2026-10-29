@@ -662,7 +662,8 @@ export function rankUnit(unit, tokens, pct, dict, ctx = {}) {
       // Irish (léiríonn) is also wrong after "to" or a modal ("to show").
       if (verb && (afterDet || (!/(ed|s)$/.test(key) && (set.detNear || (!verbCue && set.nounEnd))))) return null;
       if (verb && (set.afterModal || prev === "to" || prev === "not") && /(íonn|aíonn|eann|ann)$/.test(hit.irish)) return null;
-      if (fromDictionary(hit.source) && !nounFits(key, verb, set)) return null;         // W8: "to help", "will match"
+      // A section sense is noun Irish too: "can match" in a sport story is a verb.
+      if ((fromDictionary(hit.source) || hit.source === "sense") && !nounFits(key, verb, set)) return null; // W8: "to help", "will match"
       // G3: the Irish verb form must match the English. After a be-form or
       // before "by" an -ed word is passive ("was announced", "published by"),
       // so past active Irish (d'fhógair) is wrong; after a subject it is
