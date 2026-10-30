@@ -92,6 +92,8 @@ export const RTE_CAT = {
   "artificial intelligence": ["Intleacht Shaorga", "eile"],
   "culture":            ["Cultúr", "eile"],
   "entertainment":      ["Siamsaíocht", "eile"],
+  // The /news feed tags TV stories this way too, and they were landing in Éire.
+  "television":         ["Teilifís", "eile"],
   "music":              ["Ceol", "eile"],
   "movies":             ["Scannáin", "eile"],
   "film":               ["Scannáin", "eile"],
@@ -142,4 +144,64 @@ export function catInfo(raw) {
   if (RTE_CAT[k]) return RTE_CAT[k];
   for (const key of CAT_KEYS) if (CAT_RES.get(key).test(k)) return RTE_CAT[key];
   return null;
+}
+
+/**
+ * The folders of an RTÉ link, lower case, stopping at the date or the story:
+ * https://www.rte.ie/news/us/2026/1030/1597299-trump/ gives ["news", "us"].
+ */
+export function linkFolders(link) {
+  let parts;
+  try {
+    parts = new URL(link).pathname.split("/").filter(Boolean);
+  } catch {
+    return [];
+  }
+  const folders = [];
+  for (const p of parts) {
+    if (/^\d/.test(p)) break;
+    folders.push(p.toLowerCase());
+  }
+  return folders;
+}
+
+// The top folder of a link, for a story whose tags and subfolder say nothing.
+// News and Brainstorm are left out on purpose: /news/2026/... on its own could
+// be anywhere, and Brainstorm covers every subject.
+const LINK_PILLARS = {
+  sport:         ["Spórt", "sport"],
+  entertainment: ["Siamsaíocht", "eile"],
+  lifestyle:     ["Saol", "eile"],
+  culture:       ["Cultúr", "eile"],
+};
+
+/**
+ * Resolve an RTÉ link to [irishLabel, sectionId] from its folders, or null.
+ * /news/us/... is Meiriceá, /entertainment/television/... is Teilifís,
+ * /lifestyle/living/... is Saol. A bare /news/2026/... gives null.
+ */
+export function linkInfo(link) {
+  const folders = linkFolders(link);
+  for (const f of folders.slice(1).reverse()) {
+    const info = catInfo(f.replace(/-/g, " "));
+    if (info) return info;
+  }
+  return LINK_PILLARS[folders[0]] || null;
+}
+
+/**
+ * Where a story belongs, from all its tags in order and then its link.
+ * Returns { info: [irishLabel, sectionId], tag }, where `tag` is the tag that
+ * decided (null when the link did), or null to let the feed decide.
+ *
+ * RTÉ often puts a programme tag first ("Analysis and Comment") and the
+ * subject after it (US, World), so every tag is tried, not just the first.
+ */
+export function resolveCat(tags, link) {
+  for (const tag of tags || []) {
+    const info = catInfo(tag);
+    if (info) return { info, tag };
+  }
+  const info = link ? linkInfo(link) : null;
+  return info ? { info, tag: null } : null;
 }

@@ -108,9 +108,10 @@ export function articleFromHtml(html, { limit = 6 } = {}) {
  *
  *   pool     every usable story, best first within each feed
  *   balance  (stories, total) -> the day's selection (feeds.js balance)
- *   scrape   async (url) -> article text, or null, or { text, words }
+ *   scrape   async (url) -> article text, or null, or { text, words, tags }
  *            (readArticle in generate.js), where `words` is what is
- *            measured; a plain string is measured on its own words
+ *            measured; a plain string is measured on its own words.
+ *            `tags`, when given, come back on the story as `pageTags`
  *
  * The selection is always balance() over the pool minus the stories already
  * skipped, so a skipped story is replaced exactly as if it had never been in
@@ -129,6 +130,9 @@ export async function pickStories(pool, {
   const skipped = new Set();
   const skippedList = [];
   const texts = new Map();
+  // The page's own tags, where the scraper read them (readArticle), so the
+  // daily run can place a story its feed tag said nothing about.
+  const tags = new Map();
   const budget = total + extra;
   let scrapes = 0;
   let outOfBudget = false;
@@ -168,11 +172,18 @@ export async function pickStories(pool, {
         continue;
       }
       texts.set(story, text);
+      if (got != null && typeof got === "object" && Array.isArray(got.tags) && got.tags.length) {
+        tags.set(story, got.tags);
+      }
     }
     if (outOfBudget || !changed) break;
   }
 
   if (outOfBudget) log(`  Stopped after ${scrapes} pages (limit ${budget})`);
-  const stories = chosen.filter(s => texts.has(s)).map(s => ({ ...s, fullText: texts.get(s) }));
+  const stories = chosen.filter(s => texts.has(s)).map(s => ({
+    ...s,
+    fullText: texts.get(s),
+    ...(tags.has(s) ? { pageTags: tags.get(s) } : {}),
+  }));
   return { stories, skipped: skippedList, scrapes };
 }

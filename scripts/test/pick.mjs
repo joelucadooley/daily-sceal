@@ -359,6 +359,34 @@ await test("older stories fill a tab only when it has nothing fresh", async () =
   assert(JSON.stringify(world.sort((a, b) => a - b)) === JSON.stringify([40, 41, 42, 43, 44]), `not the newest old ones: ${world}`);
 });
 
+// ---- The page's own tags place a story its feed tag said nothing about ----
+
+await test("a story the feed placed takes its tab from the page's tags", async () => {
+  const items = day(3);
+  // Shaped like the Iowa midterms piece (2026-10-30): Top stories, tagged only
+  // "Analysis and Comment", so the feed put it in Éire.
+  const iowa = items.find(s => s.id === "news-0");
+  Object.assign(iowa, { category: "Analysis and Comment", categoryIr: "Nuacht", section: "eire", fromFeed: true });
+  pages.set(iowa.link, goodPage("news-0").replace("<html>",
+    '<html><head><meta name="categories" content="News, Analysis and Comment, US, World, Iowa">' +
+    '<meta property="article:tag" content="News, Analysis and Comment, US, World, Iowa"></head>'));
+  // A feed-placed story whose page has no useful tags keeps the feed's tab.
+  const other = items.find(s => s.id === "news-1");
+  Object.assign(other, { category: "Prime Time", section: "eire", fromFeed: true });
+  // A story whose own tag decided is never moved by its page.
+  const tagged = items.find(s => s.id === "ireland-0");
+  pages.set(tagged.link, goodPage("ireland-0").replace("<html>", '<html><head><meta name="categories" content="World"></head>'));
+
+  const { out, err } = await quietRun(items);
+  assert(!err, err && err.message);
+  const by = id => out.stories.find(s => s.link === items.find(i => i.id === id).link);
+  const a = by("news-0");
+  assert(a && a.section === "domhan" && a.category === "US" && a.categoryIr === "Meiriceá", `Iowa: ${JSON.stringify(a && [a.section, a.category, a.categoryIr])}`);
+  assert(by("news-1").section === "eire", "a page with no useful tags moved the story");
+  assert(by("ireland-0").section === "eire", "a story whose tag decided was moved by its page");
+  assert(out.stories.every(s => !("fromFeed" in s) && !("pageTags" in s)), "working fields left in today.json");
+});
+
 assert(net.calls === 0, "MyMemory was called");
 const stray = net.blocked.filter(u => !u.includes("/fake/"));
 if (stray.length) { failed++; console.log(`FAIL network calls attempted: ${stray.join(", ")}`); }

@@ -4,12 +4,13 @@ import {
   activeFeeds, feedUrl, FETCH_PER_FEED,
   isUsable, dedupe, balance,
 } from "./feeds.js";
-import { catInfo } from "./categories.js";
+import { resolveCat } from "./categories.js";
 import { firstSentences, stripMarkers } from "./summary.js";
 import { loadDict, verifiedKeys, focailLists } from "./lib/dict.js";
 import { markStory, storyContext } from "./lib/words.js";
 import { createMyMemory } from "./lib/mymemory.js";
 import { pickStories, articleFromHtml, MIN_ARTICLE_WORDS } from "./lib/pick.js";
+import { pageInfo } from "./lib/page.js";
 // Stories actually processed. Every one of these costs a page scrape plus
 // three levels of MyMemory calls, so this is the expensive number. Feeds are
 // read far more widely than this and then filtered down to it.
@@ -58,8 +59,9 @@ function msAgo(d) {
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 // Read one article page: { text, words } (articleFromHtml in lib/pick.js),
-// or null when the page cannot be read. `text` is what is published; `words`
-// is what decides whether the story is too thin to use.
+// plus what the page's meta tags say (title, description, published, tags;
+// lib/page.js), or null when the page cannot be read. `text` is what is
+// published; `words` is what decides whether the story is too thin to use.
 async function readArticle(url) {
   try {
     const res = await fetch(url, {
@@ -67,14 +69,15 @@ async function readArticle(url) {
       headers: { "User-Agent": "Mozilla/5.0 (compatible; DailySceal/1.0)" }
     });
     if (!res.ok) return null;
+    const html = await res.text();
     // Six paragraphs rather than four. Longer stories read better on a wide
     // screen, but every extra paragraph costs MyMemory calls across all three
     // levels and all thirty stories, so this is not a free number to raise.
-    const { text, paragraphs, words } = articleFromHtml(await res.text(), { limit: PARAGRAPH_LIMIT });
+    const { text, paragraphs, words } = articleFromHtml(html, { limit: PARAGRAPH_LIMIT });
     if (paragraphs) {
       console.log(`    ${paragraphs} usable paragraphs found, using ${Math.min(paragraphs, PARAGRAPH_LIMIT)} (${words} words of reporting)`);
     }
-    return { text, words };
+    return { text, words, ...pageInfo(html) };
   } catch (e) {
     console.warn(`  Could not scrape ${url}: ${e.message}`);
     return null;
@@ -103,16 +106,23 @@ async function fetchFeed(feed) {
     const items = Array.from(xml.getElementsByTagName("item")).slice(0, FETCH_PER_FEED);
     return items.map((item, i) => {
       const g = tag => item.getElementsByTagName(tag)[0]?.textContent || "";
-      const rssCat = g("category").trim();
+      const cats = Array.from(item.getElementsByTagName("category"))
+        .map(c => (c.textContent || "").trim())
+        .filter(Boolean);
+      const rssCat = cats[0] || "";
+      const link = g("link").trim();
       const d = g("pubDate") ? new Date(g("pubDate")) : new Date();
-      // The item's own <category> is more specific than the feed it came from
-      // (the /news feed tags things Ireland, Europe, Middle East, Football and
-      // so on), so it decides both the gold label and the tab. catInfo returns
-      // null for programme tags like "Analysis and Comment" and for anything
-      // unrecognised, and only then does the feed decide.
-      const info = catInfo(rssCat);
-      const categoryIr = info ? info[0] : feed.catIr;
-      const section = info ? info[1] : feed.section;
+      // The item's own <category> tags are more specific than the feed it came
+      // from (the /news feed tags things Ireland, Europe, Middle East, Football
+      // and so on), so they decide both the gold label and the tab. Every tag
+      // is tried, then the link's folders (/news/us/, /entertainment/). Only
+      // when none of those says anything does the story get the feed's
+      // section, and then the page's own tags get a say once it is read
+      // (chooseStories): the Iowa midterms piece came in on Top stories tagged
+      // only "Analysis and Comment", and Top stories defaults to Éire.
+      const got = resolveCat(cats, link);
+      const categoryIr = got ? got.info[0] : feed.catIr;
+      const section = got ? got.info[1] : feed.section;
       return {
         id: `${feed.id}-${i}`,
         title: g("title").trim(),
@@ -122,8 +132,9 @@ async function fetchFeed(feed) {
         // so it is kept even though `summary` is overwritten with the full
         // text further down.
         rssSummary: firstSentences(g("description").replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim()),
-        link: g("link").trim(),
-        category: rssCat || feed.label,
+        link,
+        // The tag that decided, so the site's own catInfo agrees with it.
+        category: (got && got.tag) || rssCat || feed.label,
         categoryIr,
         feed: feed.id,
         // Toolbar section on the site, resolved above from the item's own
@@ -131,6 +142,8 @@ async function fetchFeed(feed) {
         section,
         published: d.toISOString(),
         timeAgo: msAgo(d), // kept for backwards-compatibility; app recomputes live from `published`
+        // Only while choosing: the feed decided, so the page's tags may still.
+        ...(got ? {} : { fromFeed: true }),
       };
     }).filter(s => s.title.length > 5);
   } catch (e) {
@@ -188,7 +201,18 @@ async function chooseStories(pool, scrape) {
   console.log(`Selected ${stories.length} after reading ${scrapes} pages, ${skipped.length} skipped:`, spread);
 
   // Re-id sequentially so the app's React keys stay stable and predictable
-  return stories.map((s, i) => ({ ...s, id: `story-${i}` }));
+  return stories.map((s, i) => ({ ...placeByPage(s), id: `story-${i}` }));
+}
+
+// A story the feed placed (no tag or folder said where) takes its section from
+// the page's own tags when one of them resolves. Drops the working fields.
+function placeByPage(story) {
+  const { fromFeed, pageTags, ...s } = story;
+  if (!fromFeed || !pageTags) return s;
+  const got = resolveCat(pageTags, null);
+  if (!got) return s;
+  console.log(`  Placed by its page tags (${got.tag}): ${s.title} -> ${got.info[1]}`);
+  return { ...s, category: got.tag, categoryIr: got.info[0], section: got.info[1] };
 }
 
 // `fullText` is the article already read by chooseStories. Without it (a
@@ -321,7 +345,7 @@ async function main() {
   }
 }
 
-export { processStory, scrapeArticle, readArticle, run, main, STORY_COUNT, MIN_STORIES };
+export { processStory, scrapeArticle, readArticle, run, main, msAgo, STORY_COUNT, MIN_STORIES, OUT_DIR };
 
 // Run only when started directly (node scripts/generate.js), so the tests can
 // import this file without fetching feeds or writing anything.
