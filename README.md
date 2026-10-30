@@ -25,6 +25,10 @@ The run is started by a scheduled job at [cron-job.org](https://cron-job.org) th
 `daily.yml`'s dispatches endpoint. GitHub's own scheduler queued the job for several hours,
 so there is deliberately no `cron:` in the workflow.
 
+To add a story the morning run did not pick (an older feature, say), run **Add a story**
+from the Actions tab or the GitHub app and paste the RTÉ link. It reads and marks that one
+page the same way and adds it to the end of today's stories, leaving the rest alone.
+
 Every user gets the same pre-generated content. No AI calls per user, no ongoing cost.
 
 ## Levels
@@ -65,6 +69,7 @@ daily-sceal/
 │   └── main.jsx         # Entry point
 ├── scripts/
 │   ├── generate.js      # Daily story generation script
+│   ├── add-story.js     # Adds one RTÉ link to today's stories (Add a story workflow)
 │   ├── overrides.json   # Curated english -> Irish dictionary, checked before MyMemory
 │   └── extra-words.json # Translator-agreed extra words; overrides win, never in focail.json
 ├── public/
@@ -75,6 +80,7 @@ daily-sceal/
 ├── .github/
 │   └── workflows/
 │       ├── daily.yml    # Runs generate.js; triggered 08:30 from cron-job.org
+│       ├── add-story.yml # Runs add-story.js with a link, from the Actions tab
 │       └── deploy.yml   # Deploys to GitHub Pages on every push
 ├── index.html
 ├── vite.config.js
