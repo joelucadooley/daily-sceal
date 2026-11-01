@@ -1,15 +1,11 @@
 [
   {
     "date": "2026-11-01",
-    "generated": "2026-11-01T08:37:48.931Z",
+    "generated": "2026-11-01T22:50:17.172Z",
     "stories": [
       {
-        "title": "US has to 'take care' of one or two Iran targets - Trump",
-        "category": "An Meánoirthear"
-      },
-      {
-        "title": "Login issues for some Revolut users resolved",
-        "category": "Gnó"
+        "title": "Man charged with murder after stabbing at IPAS centre",
+        "category": "Éire"
       },
       {
         "title": "EY Ireland's annual revenue grows by 4.4% to €880m",
@@ -20,15 +16,15 @@
         "category": "Comhshaol"
       },
       {
-        "title": "Sharks stun off-colour Munster in damp Thomond affair",
-        "category": "Rugbaí"
+        "title": "Arteta has the band back together after Fleetwood whack",
+        "category": "Sacar"
       },
       {
         "title": "Untangling the Hallowe'en story - we didn't really invent it",
         "category": "Cultúr"
       },
       {
-        "title": "Blair 'so sorry' in first comments since flight incident",
+        "title": "Ash shirt collaboration attracts fans around the world",
         "category": "Siamsaíocht"
       },
       {
@@ -36,11 +32,23 @@
         "category": "Saol"
       },
       {
-        "title": "Dublin Fire Brigade reports busiest Halloween in a decade",
+        "title": "President leads tributes to 'wonderful' Ciara Mageean",
         "category": "Éire"
       },
       {
-        "title": "Man United crisis deepens as Chelsea win with ease",
+        "title": "Mulcahy: We're representing Cork - we're disappointed",
+        "category": "Iomáint"
+      },
+      {
+        "title": "Klum transforms into bloodied hand for Halloween bash",
+        "category": "Siamsaíocht"
+      },
+      {
+        "title": "Mageean's warmth and determination was beloved by nation",
+        "category": "Lúthchleasaíocht"
+      },
+      {
+        "title": "Defensive masterclass at Anfield sends Arsenal back top",
         "category": "Sacar"
       },
       {
@@ -48,80 +56,72 @@
         "category": "Ceol"
       },
       {
+        "title": "Longest truce of Ukraine war ends in Kherson",
+        "category": "An Úcráin"
+      },
+      {
+        "title": "Euro round-up: Real win fourth straight; Juve down Napoli",
+        "category": "Sacar"
+      },
+      {
+        "title": "Harry Styles dresses as 'pizza rat' for final NY show",
+        "category": "Ceol"
+      },
+      {
+        "title": "US judge dismisses Trump lawsuit over Epstein letter",
+        "category": "Meiriceá"
+      },
+      {
+        "title": "NFL: Detroit end Minnesota Vikings' unbeaten start",
+        "category": "Spórt"
+      },
+      {
+        "title": "Child in critical condition after two-car crash in Armagh",
+        "category": "Ulaidh"
+      },
+      {
+        "title": "WSL round-up: Hayes header turns Palace tie for Brighton",
+        "category": "Sacar"
+      },
+      {
+        "title": "Overnight incidents in Dublin's Cherry Orchard condemned",
+        "category": "Baile Átha Cliath"
+      },
+      {
+        "title": "Con O'Callaghan two-pointer sends Cuala to quarter-finals",
+        "category": "Peil"
+      },
+      {
         "title": "Israel's election revealed a divided country",
         "category": "Domhan"
       },
       {
-        "title": "Ballydoyle's Benvenuto Cellini lands Breeders' Cup Turf",
-        "category": "Rásaíocht"
-      },
-      {
-        "title": "Clampdown on illegal parking in Dublin to be increased",
-        "category": "Éire"
-      },
-      {
-        "title": "Ocon denies disagreement with Haas became physical",
-        "category": "Spórt"
-      },
-      {
-        "title": "Alaska, California ballot fights heat up in US midterms",
-        "category": "Meiriceá"
-      },
-      {
-        "title": "Power eyeing up Ryder Cup tilt after injury nightmare",
+        "title": "Galway's Nolan secures DP World Tour card in Mallorca",
         "category": "Galf"
       },
       {
-        "title": "What next for Serbia's election winners?",
-        "category": "An Eoraip"
+        "title": "Rise in non-Irish citizens in homeless accommodation",
+        "category": "Polaitíocht"
       },
       {
-        "title": "European round-up: Parrott starts in Betis victory",
-        "category": "Sacar"
+        "title": "October worst on record for overcrowding, says INMO",
+        "category": "Sláinte"
       },
       {
         "title": "FBI says North Korea behind $6bn crypto theft",
         "category": "Teicneolaíocht"
       },
       {
-        "title": "Carrick insists he will be in charge for visit of Roma",
-        "category": "Sacar"
+        "title": "Trump says US still has 'one or two targets' in Iran",
+        "category": "An Meánoirthear"
+      },
+      {
+        "title": "Alaska, California ballot fights heat up in US midterms",
+        "category": "Meiriceá"
       },
       {
         "title": "Rubio to meet Brazil foreign minister amid Bolsonaro row",
         "category": "Domhan"
-      },
-      {
-        "title": "Revenge sweet for Brighton as City undone at the Etihad",
-        "category": "Sacar"
-      },
-      {
-        "title": "Shops looted as protests in Germany escalate",
-        "category": "Domhan"
-      },
-      {
-        "title": "Man charged with attempted murder of doctor in Dublin",
-        "category": "Éire"
-      },
-      {
-        "title": "Investigation after man held in garda station dies",
-        "category": "Éire"
-      },
-      {
-        "title": "Firearm aimed at gardaí during attempted arrest in Dublin",
-        "category": "Éire"
-      },
-      {
-        "title": "Evacuees from Russian-occupied Oleshky arrive in Ukraine",
-        "category": "An Úcráin"
-      },
-      {
-        "title": "Parsons hat-trick propels Ireland to series win in SA",
-        "category": "Rugbaí"
-      },
-      {
-        "title": "Ranganathan, Croft relieved Celebrity Traitors win is out",
-        "category": "Teilifís"
       }
     ]
   },
