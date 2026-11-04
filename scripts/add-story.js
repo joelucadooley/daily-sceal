@@ -15,6 +15,7 @@ import { feedById } from "./feeds.js";
 import { resolveCat, linkFolders } from "./categories.js";
 import { firstSentences } from "./summary.js";
 import { MIN_ARTICLE_WORDS } from "./lib/pick.js";
+import { storyProblems } from "./lib/day.js";
 
 // The feed a link would have come in on, for its defaults (gold label and tab
 // when no tag decides) and for the word senses of its part of the paper.
@@ -97,7 +98,11 @@ async function main() {
     const done = await processStory(story, today.stories.length);
     const beginner = (done.levels && done.levels["10"]) || "";
     if (!beginner.includes("[[")) throw new Error(`No Irish was marked in ${link}; not adding it.`);
-    today.stories.push({ ...done, id: `story-${today.stories.length}` });
+    const marked = { ...done, id: `story-${today.stories.length}` };
+    // The same check the daily run makes before writing (lib/day.js).
+    const problems = storyProblems(marked);
+    if (problems.length) throw new Error(`Not adding ${link}: ${problems.slice(0, 3).join("; ")}`);
+    today.stories.push(marked);
     added++;
   }
 

@@ -23,12 +23,24 @@ const bare = obj => Object.assign(Object.create(null), obj);
 
 // Overrides are the backbone of every level. A missing or empty file would
 // quietly publish a day of machine-only Irish, so it stops the run instead.
-export function loadOverrides(url = OVERRIDES_URL) {
+export function loadOverrides(url = OVERRIDES_URL, warn = msg => console.warn(msg)) {
   const overrides = readJson(url);
   if (!overrides || typeof overrides !== "object" || !Object.keys(overrides).length) {
     throw new Error(`No overrides loaded from ${url.pathname}`);
   }
-  return bare(overrides);
+  // An entry with no Irish, or with a [ ] or | in it, would print a broken
+  // [[irish|english]] marker and a focail.json the apps cannot read. It is
+  // skipped with a warning; the file itself is left as it is.
+  const out = bare({});
+  for (const [en, ga] of Object.entries(overrides)) {
+    if (typeof ga !== "string" || !ga.trim() || /[[\]|]/.test(ga) || !en.trim() || /[[\]|]/.test(en)) {
+      warn(`overrides.json: skipped "${en}" (empty Irish or English, or a bracket or |)`);
+      continue;
+    }
+    out[en] = ga;
+  }
+  if (!Object.keys(out).length) throw new Error(`No usable overrides in ${url.pathname}`);
+  return out;
 }
 
 // Places stay optional, as before: without them place names are left in English.

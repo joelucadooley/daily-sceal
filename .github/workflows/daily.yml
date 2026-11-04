@@ -11,6 +11,13 @@ on:
         required: false
         default: ''
 
+# One run at a time: a second start (cron-job.org firing twice, or a manual
+# run during the morning one) waits for the first rather than racing it to
+# push today.json.
+concurrency:
+  group: daily-stories
+  cancel-in-progress: false
+
 jobs:
   generate:
     runs-on: ubuntu-latest
@@ -104,7 +111,7 @@ jobs:
               ``,
               `[View the failed run](${runUrl})`,
               ``,
-              `Common causes: an RTÉ feed moved or 404s (run \`node scripts/check-feeds.mjs\`),`,
+              `Common causes: an RTÉ feed moved or 404s (the run log lists each feed's item count),`,
               `MyMemory hit its daily quota, or fewer than 8 stories survived filtering.`,
               ``,
               `Re-run manually from the Actions tab once fixed.`,

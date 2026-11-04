@@ -6,15 +6,29 @@
 // whose page also carries US and World). add-story.js uses all of it for a
 // story that comes from a link rather than a feed.
 
-const ENTITIES = { amp: "&", quot: '"', apos: "'", lt: "<", gt: ">", nbsp: " " };
+const ENTITIES = {
+  amp: "&", quot: '"', apos: "'", lt: "<", gt: ">", nbsp: " ",
+  rsquo: "’", lsquo: "‘", rdquo: "”", ldquo: "“", ndash: "–", mdash: "—", hellip: "…", euro: "€", pound: "£",
+};
 
-function decode(s) {
+/** HTML entities to characters: &amp; &#39; &#x27; &rsquo; and so on. */
+// Fadas, by name: &Eacute;ire, Sin&eacute;ad. Case matters for these.
+Object.assign(ENTITIES, {
+  aacute: "á", eacute: "é", iacute: "í", oacute: "ó", uacute: "ú",
+  Aacute: "Á", Eacute: "É", Iacute: "Í", Oacute: "Ó", Uacute: "Ú",
+});
+
+export function decode(s) {
   return String(s).replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (m, e) => {
     if (e[0] === "#") {
       const n = e[1].toLowerCase() === "x" ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10);
-      return Number.isFinite(n) ? String.fromCodePoint(n) : m;
+      // Out of range (&#99999999;) would throw and lose the whole page.
+      return Number.isFinite(n) && n > 0 && n <= 0x10FFFF ? String.fromCodePoint(n) : m;
     }
-    return ENTITIES[e.toLowerCase()] ?? m;
+    // Own keys only: &constructor; is not Object.prototype.constructor.
+    if (Object.hasOwn(ENTITIES, e)) return ENTITIES[e];
+    const lower = e.toLowerCase();
+    return Object.hasOwn(ENTITIES, lower) && !lower.endsWith("acute") ? ENTITIES[lower] : m;
   });
 }
 
