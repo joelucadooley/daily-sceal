@@ -7,7 +7,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "generate": "node scripts/generate.js",
-    "test": "node scripts/test/cases.mjs && node scripts/test/pick.mjs && node scripts/test/sections.mjs && node scripts/test/replay.mjs",
+    "test": "node scripts/test/cases.mjs && node scripts/test/pick.mjs && node scripts/test/sections.mjs && node scripts/test/pipeline.mjs && node scripts/test/replay.mjs",
+    "pipeline": "node scripts/test/pipeline.mjs",
     "pick": "node scripts/test/pick.mjs",
     "cases": "node scripts/test/cases.mjs",
     "replay": "node scripts/test/replay.mjs",
@@ -20,7 +21,7 @@
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "^4.2.0",
-    "vite": "^5.0.0"
+    "@vitejs/plugin-react": "^4.7.0",
+    "vite": "^7.3.7"
   }
 }

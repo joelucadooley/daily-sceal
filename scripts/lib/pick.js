@@ -20,6 +20,7 @@
 // RTÉ Player at 8.30pm") and the copyright line are still left out of the
 // count, so the soap previews and the Rose of Tralee listing stay under the
 // line, as they were. The published text is unchanged.
+import { decode } from "./page.js";
 
 /** Fewer words of reporting than this (articleFromHtml) and the story is skipped. */
 export const MIN_ARTICLE_WORDS = 45;
@@ -68,11 +69,11 @@ const BOILERPLATE = /RTÉ\.ie is the website of|^©\s*RTÉ/;
 // itself ("RTÉ has secured ... rights", "told RTÉ News") is not one.
 const LISTING = /RTÉ\s*(One|2|Player|Radio|Listen|jr|Lyric|News channel)\b|\b2FM\b/i;
 
+// Entities are decoded (&#8217; is an apostrophe, &#x27; too); any left that
+// decode does not know are dropped, as before.
 function cleanParagraph(html) {
-  return html
-    .replace(/<[^>]+>/g, "")
-    .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
-    .replace(/&nbsp;/g, " ").replace(/&#\d+;/g, "").replace(/&[a-z]+;/g, "")
+  return decode(html.replace(/<[^>]+>/g, ""))
+    .replace(/&#x?[0-9a-f]+;/gi, "").replace(/&[a-z]+;/gi, "")
     .trim();
 }
 

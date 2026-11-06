@@ -119,9 +119,12 @@ function day(perFeed, kinds = {}) {
   return items;
 }
 
+// The shape markStory gives (every level, the summary levels and the
+// headline), so the check before writing (lib/day.js) passes it.
 const fakeMark = async (story, i) => {
   const { fullText, ...rest } = story;
-  return { ...rest, summary: fullText, levels: { 10: fullText } };
+  const all = text => ({ 10: text, 25: text, 50: text });
+  return { ...rest, summary: fullText, levels: all(fullText), summaryLevels: all(rest.rssSummary), titleIr: rest.title };
 };
 const spreadOf = list => {
   const out = {};

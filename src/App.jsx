@@ -5,6 +5,8 @@ import { catInfo } from "../scripts/categories.js";
 // The county list the generator already maintains. Vite bundles JSON directly,
 // so no extra fetch, and it works for backfilled archive stories too.
 import places from "../scripts/places.json";
+// Marker parsing, Focal an lae and fetch time limits, tested in Node.
+import { parseText, focalFor, timeoutSignal } from "./helpers.js";
 
 const C = {
   navy: "#0d2137",
@@ -231,7 +233,7 @@ async function backfillThinSections(todayStories) {
     const key = dt.toISOString().slice(0, 10);
     let data;
     try {
-      const r = await fetch(`${base}data/archive/${key}.json`, { signal: AbortSignal.timeout(5000) });
+      const r = await fetch(`${base}data/archive/${key}.json`, { signal: timeoutSignal(5000) });
       if (!r.ok) continue;
       data = await r.json();
     } catch { continue; }
@@ -370,31 +372,6 @@ const storyTimeAgo = s => {
   return s.timeAgo || "";
 };
 
-// Makes an "a" or "an" sitting directly before a marker agree with the Irish
-// word that will be shown there: "an" before a vowel, "a" before a consonant.
-// The source text is written for the English word ("an e-scooter"), which
-// reads wrongly once the marker shows Irish ("an scútar").
-function fixArticle(before, irish) {
-  const m = before.match(/(^|[\s("“‘'-])(an?)(\s+)$/i);
-  if (!m) return before;
-  const vowel = /^[aeiouáéíóú]/i.test(irish.trim());
-  let art = vowel ? "an" : "a";
-  if (m[2][0] !== m[2][0].toLowerCase()) art = art[0].toUpperCase() + art.slice(1);
-  return before.slice(0, before.length - m[2].length - m[3].length) + art + m[3];
-}
-
-function parseText(text) {
-  const parts = [], re = /\[\[([^\|]+)\|([^\]]+)\]\]/g;
-  let last = 0, m;
-  while ((m = re.exec(text)) !== null) {
-    if (m.index > last) parts.push({ t: "en", v: fixArticle(text.slice(last, m.index), m[1]) });
-    parts.push({ t: "ir", irish: m[1], english: m[2] });
-    last = m.index + m[0].length;
-  }
-  if (last < text.length) parts.push({ t: "en", v: text.slice(last) });
-  return parts;
-}
-
 /**
  * Group parsed parts into wrap units for canvas layout.
  *
@@ -428,31 +405,13 @@ function measureUnit(ctx, unit) {
   return unit.segs.reduce((acc, s) => acc + ctx.measureText(s.text).width, 0);
 }
 
-// Focal an lae: the same word the app, its widget and the noon reminder show
-// that day. Same pool, same order and the same FNV-1a hash of the local date
-// as Focail.focal(for:) in the iOS app, so every place agrees.
-function focalFor(focail, date = new Date()) {
-  const pool = (focail?.words || [])
-    .filter(w => !w.en.includes(" ") && [...w.ga].length <= 18 && w.en.length >= 3)
-    .sort((a, b) => (a.en < b.en ? -1 : a.en > b.en ? 1 : 0));
-  if (!pool.length) return null;
-  const pad = n => String(n).padStart(2, "0");
-  const key = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-  let h = 14695981039346656037n;
-  for (const b of new TextEncoder().encode(key)) {
-    h ^= BigInt(b);
-    h = (h * 1099511628211n) & 0xFFFFFFFFFFFFFFFFn;
-  }
-  return pool[Number(h % BigInt(pool.length))];
-}
-
 /** The day's word under the lead story on Inniu. */
 function FocalCard() {
   const [word, setWord] = useState(null);
   useEffect(() => {
     (async () => {
       try {
-        const r = await fetch(`${import.meta.env.BASE_URL}data/focail.json`, { cache: "no-cache", signal: AbortSignal.timeout(5000) });
+        const r = await fetch(`${import.meta.env.BASE_URL}data/focail.json`, { cache: "no-cache", signal: timeoutSignal(5000) });
         if (r.ok) setWord(focalFor(await r.json()));
       } catch {}
     })();
@@ -479,7 +438,9 @@ async function fetchTodayContent() {
   // and fresh data the moment the morning run has been.
   const r = await fetch(`${import.meta.env.BASE_URL}data/today.json`, {
     cache: "no-cache",
-    signal: AbortSignal.timeout(5000),
+    // Long enough for a slow phone connection: when it runs out the page
+    // shows no stories at all.
+    signal: timeoutSignal(15000),
   });
   if (!r.ok) throw new Error("not found");
   return await r.json();
@@ -580,18 +541,18 @@ async function fetchWeekWords(days = 7) {
   let verified = new Set();
   let places = new Set();
   try {
-    const vr = await fetch(`${base}data/verified.json`, { cache: "no-cache", signal: AbortSignal.timeout(5000) });
+    const vr = await fetch(`${base}data/verified.json`, { cache: "no-cache", signal: timeoutSignal(5000) });
     if (vr.ok) (await vr.json()).forEach(s => verified.add(s.toLowerCase()));
   } catch {}
   try {
-    const pr = await fetch(`${base}data/places.json`, { cache: "no-cache", signal: AbortSignal.timeout(5000) });
+    const pr = await fetch(`${base}data/places.json`, { cache: "no-cache", signal: timeoutSignal(5000) });
     if (pr.ok) Object.keys(await pr.json()).forEach(s => places.add(s.toLowerCase()));
   } catch {}
 
   // Committed history first, then this browser's records on top of it.
   let posted = {};
   try {
-    const rr = await fetch(`${base}data/posted.json`, { cache: "no-cache", signal: AbortSignal.timeout(5000) });
+    const rr = await fetch(`${base}data/posted.json`, { cache: "no-cache", signal: timeoutSignal(5000) });
     if (rr.ok) posted = await rr.json();
   } catch {}
   posted = { ...posted, ...loadPostedLocal() };
@@ -618,7 +579,7 @@ async function scanArchiveWords(days, verified, base) {
     dt.setDate(today.getDate() - d);
     const key = dt.toISOString().slice(0, 10);
     try {
-      const r = await fetch(`${base}data/archive/${key}.json`, { signal: AbortSignal.timeout(5000) });
+      const r = await fetch(`${base}data/archive/${key}.json`, { signal: timeoutSignal(5000) });
       if (!r.ok) continue;
       const data = await r.json();
       (data.stories || []).forEach(story => {
@@ -663,6 +624,16 @@ function Spinner() {
   );
 }
 
+// Enter or Space on something that acts as a button but is not a <button>
+// (kept as spans and divs so the layout stays exactly as it is).
+const onActivate = fn => e => {
+  if (e.key === "Enter" || e.key === " ") {
+    e.preventDefault();
+    e.stopPropagation();
+    fn();
+  }
+};
+
 function WordChip({ part, active, onToggle }) {
   const [hover, setHover] = useState(false);
   // Only real mice hover. A tap on a touchscreen fires a mouse event too, and
@@ -671,6 +642,9 @@ function WordChip({ part, active, onToggle }) {
   return (
     <span style={{ position: "relative", display: "inline" }}>
       <span onClick={e => { e.stopPropagation(); onToggle(); }}
+        role="button" tabIndex={0} aria-expanded={show}
+        aria-label={`${part.irish}: ${part.english}`}
+        onKeyDown={onActivate(onToggle)}
         onPointerEnter={e => { if (e.pointerType === "mouse") setHover(true); }}
         onPointerLeave={() => setHover(false)}
         style={{
@@ -725,7 +699,7 @@ function SectionBar({ sections, active, onSelect }) {
         {sections.map(sec => {
           const on = active === sec.id;
           return (
-            <button key={sec.id} onClick={() => onSelect(sec.id)}
+            <button key={sec.id} onClick={() => onSelect(sec.id)} aria-pressed={on}
               style={{
                 // Natural width, not equal shares: equal shares ellipsise the
                 // longer labels on a narrow phone.
@@ -770,6 +744,7 @@ function trimToSentence(text, max) {
 function StoryRow({ story, index, onClick, showSummary = true, noBorder = false, fullSummary = false, lead = false }) {
   return (
     <div className="ds-story" onClick={() => onClick(story)}
+      role="link" tabIndex={0} onKeyDown={onActivate(() => onClick(story))}
       style={{
         padding: "20px 0",
         borderBottom: noBorder ? "none" : `1px solid ${C.border}`,
@@ -1365,7 +1340,7 @@ function ReadingView({ story, onBack }) {
   const [shareLoading, setShareLoading] = useState(false);
   const level = getLevel(pct);
   const locked = pct >= 75;
-  const parts = parseText(story.levels[pct] || story.summary);
+  const parts = parseText((story.levels || {})[pct] || story.summary || "");
   const irishCount = parts.filter(p => p.t === "ir").length;
 
   async function generateShareImage() {
@@ -1438,6 +1413,8 @@ function ReadingView({ story, onBack }) {
         </div>
         <div style={{ position: "relative", marginBottom: 10, display: "flex", alignItems: "center" }}>
           <input type="range" min={0} max={4} step={1}
+            aria-label="Irish level"
+            aria-valuetext={pct === 100 ? "As Gaeilge" : pct === 75 ? "Advanced" : level.label}
             value={pct === 100 ? 4 : pct === 75 ? 3 : SNAP_LEVELS.indexOf(pct)}
             onChange={e => {
               const val = +e.target.value;
@@ -1498,7 +1475,7 @@ function ReadingView({ story, onBack }) {
           <div style={{ background: C.card, borderRadius: 10, border: `1px solid ${C.border}`, overflow: "hidden" }}>
             <div style={{ padding: "16px 20px 0", filter: "blur(4px)", userSelect: "none", pointerEvents: "none", opacity: 0.5, maxHeight: "4.5rem", overflow: "hidden" }}>
               <div style={{ fontSize: "clamp(1rem,2.3vw,1.06rem)", lineHeight: 2, color: C.text, fontFamily: "Georgia, serif" }}>
-                {parseText(story.levels[50] || story.summary).map((p, i) =>
+                {parseText((story.levels || {})[50] || story.summary || "").map((p, i) =>
                   p.t === "en" ? <span key={i}>{p.v}</span> :
                     <span key={i} style={{ color: C.blue, fontWeight: 600 }}>{p.irish}</span>
                 )}
@@ -1517,7 +1494,7 @@ function ReadingView({ story, onBack }) {
             </div>
             <div style={{ padding: "16px 20px", filter: "blur(4px)", userSelect: "none", pointerEvents: "none", opacity: 0.5, maxHeight: "6rem", overflow: "hidden" }}>
               <div style={{ fontSize: "clamp(1rem,2.3vw,1.06rem)", lineHeight: 2, color: C.text, fontFamily: "Georgia, serif" }}>
-                {parseText(story.levels[50] || story.summary).map((p, i) =>
+                {parseText((story.levels || {})[50] || story.summary || "").map((p, i) =>
                   p.t === "en" ? <span key={i}>{p.v}</span> :
                     <span key={i} style={{ color: C.blue, fontWeight: 600 }}>{p.irish}</span>
                 )}
@@ -1599,6 +1576,8 @@ function WordPanel({ words }) {
         <div style={{ maxHeight: "52vh", overflowY: "auto" }}>
           {words.map((w, i) => (
             <div key={w.irish + i} onClick={() => setShown(o => ({ ...o, [i]: !o[i] }))}
+              role="button" tabIndex={0} aria-expanded={isOpen(i)}
+              onKeyDown={onActivate(() => setShown(o => ({ ...o, [i]: !o[i] })))}
               style={{
                 padding: "10px 16px",
                 borderBottom: i === words.length - 1 ? "none" : `1px solid ${C.border}`,
@@ -1736,11 +1715,11 @@ function ExportView({ stories }) {
     (async () => {
       const set = new Set();
       try {
-        const vr = await fetch(`${base}data/verified.json`, { cache: "no-cache", signal: AbortSignal.timeout(5000) });
+        const vr = await fetch(`${base}data/verified.json`, { cache: "no-cache", signal: timeoutSignal(5000) });
         if (vr.ok) (await vr.json()).forEach(s => set.add(s.toLowerCase()));
       } catch {}
       try {
-        const pr = await fetch(`${base}data/places.json`, { cache: "no-cache", signal: AbortSignal.timeout(5000) });
+        const pr = await fetch(`${base}data/places.json`, { cache: "no-cache", signal: timeoutSignal(5000) });
         if (pr.ok) Object.keys(await pr.json()).forEach(s => set.add(s.toLowerCase()));
       } catch {}
       setVerifiedEng(set);
@@ -1914,7 +1893,7 @@ function ExportView({ stories }) {
     const story = stories[storyIdx];
     if (!story) return;
     setLoaded(true);
-    const text = story.levels[pct] || story.summary;
+    const text = (story.levels || {})[pct] || story.summary || "";
     setCardText(text);
     setCards([]);
     // Derive the caption line from this story's own markers rather than the
@@ -2060,7 +2039,7 @@ function ExportView({ stories }) {
     const title = story.title;
     let places = {};
     try {
-      const pr = await fetch(`${import.meta.env.BASE_URL}data/places.json`, { cache: "no-cache", signal: AbortSignal.timeout(5000) });
+      const pr = await fetch(`${import.meta.env.BASE_URL}data/places.json`, { cache: "no-cache", signal: timeoutSignal(5000) });
       if (pr.ok) places = await pr.json();
     } catch {}
 
@@ -2501,6 +2480,8 @@ export default function DailySceal() {
         .sceal-range { background: linear-gradient(to right, ${C.border} 0%, ${C.border} 80%, #ede8e0 80%, #f0ede8 100%) !important; }
         .sceal-sections::-webkit-scrollbar { display: none; }
         button:active { opacity: 0.7; }
+        /* Keyboard focus shows; a tap or click on a story or word does not. */
+        [role="link"]:focus:not(:focus-visible), [role="button"]:focus:not(:focus-visible) { outline: none; }
         a:hover { opacity: 0.75; }
 
         /* ------------------------------------------------------------------
@@ -2629,7 +2610,8 @@ export default function DailySceal() {
       {/* Header */}
       <header style={{ background: C.navy, borderBottom: `3px solid ${C.amber}` }}>
         <div className="ds-shell ds-head-pad" style={{ padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div onClick={() => { setSection("inniu"); setView("feed"); }} style={{ cursor: "pointer" }}>
+          <div onClick={() => { setSection("inniu"); setView("feed"); }} style={{ cursor: "pointer" }}
+            role="link" tabIndex={0} onKeyDown={onActivate(() => { setSection("inniu"); setView("feed"); })}>
             <div style={{ fontSize: "clamp(1.2rem,3.5vw,1.5rem)", fontWeight: 700, color: "#fff", fontFamily: "Georgia, serif", letterSpacing: "-0.01em", lineHeight: 1 }}>
               Daily <span style={{ color: C.amber }}>Scéal</span>
             </div>
@@ -2678,7 +2660,7 @@ export default function DailySceal() {
               style={{ background: "none", border: "none", padding: "11px 0 9px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 3, position: "relative" }}
             >
               {active && <span style={{ position: "absolute", top: 0, left: "20%", right: "20%", height: 2, background: C.navy, borderRadius: "0 0 2px 2px" }} />}
-              <span style={{ fontSize: "1.1rem" }}>{tab.icon}</span>
+              <span aria-hidden="true" style={{ fontSize: "1.1rem" }}>{tab.icon}</span>
               <span style={{ fontFamily: "system-ui, sans-serif", fontSize: "0.6rem", fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: active ? C.navy : C.faint, transition: "color 0.15s" }}>{tab.label}</span>
             </button>
             );
