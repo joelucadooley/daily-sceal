@@ -11,6 +11,8 @@ import { markStory, storyContext } from "./lib/words.js";
 import { createMyMemory } from "./lib/mymemory.js";
 import { pickStories, articleFromHtml, MIN_ARTICLE_WORDS } from "./lib/pick.js";
 import { pageInfo } from "./lib/page.js";
+import { storyFromItem, msAgo } from "./lib/feeditem.js";
+import { checkStories } from "./lib/day.js";
 // Stories actually processed. Every one of these costs a page scrape plus
 // three levels of MyMemory calls, so this is the expensive number. Feeds are
 // read far more widely than this and then filtered down to it.
@@ -50,11 +52,6 @@ const wordDeps = {
   lookup: myMemory.lookup,
   onRejected: word => myMemory.noteRejected(word),
 };
-
-function msAgo(d) {
-  const m = Math.floor((Date.now() - d) / 60000);
-  return m < 60 ? `${m}m ago` : m < 1440 ? `${Math.floor(m / 60)}h ago` : `${Math.floor(m / 1440)}d ago`;
-}
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
@@ -104,48 +101,24 @@ async function fetchFeed(feed) {
     }
     const xml = new DOMParser().parseFromString(await res.text(), "text/xml");
     const items = Array.from(xml.getElementsByTagName("item")).slice(0, FETCH_PER_FEED);
+    const now = new Date();
+    // Each item is built on its own (lib/feeditem.js), so one odd item (a
+    // date that cannot be read, no link) is dropped without losing the feed.
     return items.map((item, i) => {
       const g = tag => item.getElementsByTagName(tag)[0]?.textContent || "";
-      const cats = Array.from(item.getElementsByTagName("category"))
-        .map(c => (c.textContent || "").trim())
-        .filter(Boolean);
-      const rssCat = cats[0] || "";
-      const link = g("link").trim();
-      const d = g("pubDate") ? new Date(g("pubDate")) : new Date();
-      // The item's own <category> tags are more specific than the feed it came
-      // from (the /news feed tags things Ireland, Europe, Middle East, Football
-      // and so on), so they decide both the gold label and the tab. Every tag
-      // is tried, then the link's folders (/news/us/, /entertainment/). Only
-      // when none of those says anything does the story get the feed's
-      // section, and then the page's own tags get a say once it is read
-      // (chooseStories): the Iowa midterms piece came in on Top stories tagged
-      // only "Analysis and Comment", and Top stories defaults to Éire.
-      const got = resolveCat(cats, link);
-      const categoryIr = got ? got.info[0] : feed.catIr;
-      const section = got ? got.info[1] : feed.section;
-      return {
-        id: `${feed.id}-${i}`,
-        title: g("title").trim(),
-        summary: g("description").replace(/<[^>]+>/g, "").trim().slice(0, 300),
-        // The RSS description on its own, cut at a sentence boundary. The iOS
-        // app shows only this (plus a link to RTÉ), never the scraped article,
-        // so it is kept even though `summary` is overwritten with the full
-        // text further down.
-        rssSummary: firstSentences(g("description").replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim()),
-        link,
-        // The tag that decided, so the site's own catInfo agrees with it.
-        category: (got && got.tag) || rssCat || feed.label,
-        categoryIr,
-        feed: feed.id,
-        // Toolbar section on the site, resolved above from the item's own
-        // category where possible, else from the feed.
-        section,
-        published: d.toISOString(),
-        timeAgo: msAgo(d), // kept for backwards-compatibility; app recomputes live from `published`
-        // Only while choosing: the feed decided, so the page's tags may still.
-        ...(got ? {} : { fromFeed: true }),
-      };
-    }).filter(s => s.title.length > 5);
+      try {
+        return storyFromItem({
+          title: g("title"),
+          description: g("description"),
+          link: g("link"),
+          pubDate: g("pubDate"),
+          categories: Array.from(item.getElementsByTagName("category")).map(c => c.textContent || ""),
+        }, feed, i, now);
+      } catch (e) {
+        console.warn(`  ${feed.id}: item ${i} skipped (${e.message})`);
+        return null;
+      }
+    }).filter(Boolean);
   } catch (e) {
     console.warn(`  ${feed.id}: ${e.message}, skipped`);
     return [];
@@ -266,10 +239,16 @@ async function run({
     processed.push(await markOne(stories[i], i));
   }
   console.log(`\n${myMemory.summary()}`);
+  // A story with a field missing or a broken marker could stop the apps
+  // reading the whole file, so it is left out of the day (lib/day.js).
+  const checked = checkStories(processed);
+  for (const d of checked.dropped) {
+    console.warn(`  Left out (${d.problems.slice(0, 3).join("; ")}): ${d.title}`);
+  }
   const output = {
     date: new Date().toISOString().slice(0, 10),
     generated: new Date().toISOString(),
-    stories: processed,
+    stories: checked.stories,
   };
   mkdirSync(OUT_DIR, { recursive: true });
   if (output.stories.length < MIN_STORIES) {
@@ -280,7 +259,7 @@ async function run({
   }
 
   writeFileSync(`${OUT_DIR}/today.json`, JSON.stringify(output, null, 2));
-  console.log(`\n✓ Written ${OUT_DIR}/today.json with ${processed.length} stories`);
+  console.log(`\n✓ Written ${OUT_DIR}/today.json with ${output.stories.length} stories`);
 
   // Publish the list of verified (override) English keys so the export page
   // can mark which weekly-recap words come from the trusted dictionary.
