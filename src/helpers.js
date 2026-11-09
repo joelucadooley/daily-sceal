@@ -44,7 +44,20 @@ export function focalFor(focail, date = new Date()) {
   if (!pool.length) return null;
   const pad = n => String(n).padStart(2, "0");
   const key = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-  return pool[Number(fnv1a64(key) % BigInt(pool.length))];
+  const start = Number(fnv1a64(key) % BigInt(pool.length));
+  // A grim word gives way to the next one, so every other day keeps its word.
+  for (let i = 0; i < pool.length; i++) {
+    const w = pool[(start + i) % pool.length];
+    if (!isGrimWord(w.en)) return w;
+  }
+  return pool[start];
+}
+
+// The same list as Sensitive.word in the iPhone app (Shared/Story.swift) and
+// the Android app (Model.kt): change all three together.
+const GRIM = /\b(murder\w*|manslaughter|homicide\w*|kill(s|ed|er|ers|ing|ings)?|rap(e|es|ed|ist|ists)|sexual\w*|sex (offen\w*|abuse\w*|attack\w*|crime\w*|assault\w*)|abus(e|es|ed|er|ers|ive)|paedophil\w*|pedophil\w*|child porn\w*|grooming|stab(s|bed|bing|bings)?|shot dead|shootings?|gunm[ae]n|assault\w*|massacre\w*|genocide|atrocit\w*|suicid\w*|self-harm|dead|deadly|deaths?|die(s|d)?|dying|fatal\w*|corpses?|human remains|inquests?|funerals?|terror\w*|bomb\w*|hostages?|wars?|missiles?|air ?strikes?|kidnap\w*|abduct\w*|traffick\w*|violen(t|ce)|harass\w*|arson|drown\w*|cancer\w*|victims?|prison\w*|jailed|sentenced|convicted|jury|trial told|court hears|missing (woman|man|girl|boy|teen\w*|child|person)|epstein|nikita hand|guilty|crash(es|ed)?|collisions?|seriously injured|injured in|hijack\w*|attackers?|(man|woman|boy|girl|teen\w*|child)['’]s body|bod(y|ies) (found|discovered|recovered))\b/i;
+function isGrimWord(english) {
+  return ["attack", "disease"].includes(english.toLowerCase()) || GRIM.test(english);
 }
 
 export function fnv1a64(text) {
