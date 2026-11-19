@@ -6,7 +6,7 @@ import { mkdtempSync, mkdirSync, writeFileSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 import { makeGame, split, choose, isSad, listed, storyPieces, QUESTIONS } from "../game.js";
-import { shareText, beforeGap } from "../../src/gameText.js";
+import { shareText, beforeGap, praise } from "../../src/gameText.js";
 
 let failed = 0, passed = 0;
 async function test(name, fn) {
@@ -108,6 +108,11 @@ await test("the story: headline and text to the last gap, gaps as question numbe
 
 await test("share text: score, a shamrock or cross each, the link", () => {
   assert.equal(shareText([true, true, false, true, true]), "Bearnaí 4/5\n☘️☘️❌☘️☘️\ndailysceal.com/#bearnai");
+});
+
+await test("praise: the Irish word over the score", () => {
+  assert.deepEqual([5, 4, 3, 2, 1, 0].map(n => praise(n, 5)), ["Foirfe!", "Ar fheabhas!", "Go maith!", "Ní holc!", "Lean ort!", "Lean ort!"]);
+  assert.equal(praise(8, 10), "Ar fheabhas!");
 });
 
 await test("a or an before the gap: a(n) until answered, then agreeing", () => {

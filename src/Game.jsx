@@ -5,11 +5,11 @@
 
 import { useState, useEffect, useRef } from "react";
 import { timeoutSignal } from "./helpers.js";
-import { shareText, beforeGap } from "./gameText.js";
+import { shareText, beforeGap, praise } from "./gameText.js";
 
 const C = {
   navy: "#0d2137", border: "#e8e2d9", text: "#111111", muted: "#6b6460", faint: "#a8a29a",
-  blue: "#2563eb", green: "#15803d", red: "#b91c1c",
+  blue: "#2563eb", green: "#15803d", red: "#b91c1c", gold: "#d97706",
 };
 const SANS = "system-ui, sans-serif";
 const SERIF = "Georgia, serif";
@@ -38,11 +38,12 @@ const CSS = `
 .bn-tile.wrong { background: ${C.red}; border-color: ${C.red}; box-shadow: 0 3px 0 #8c1515; color: #fff; -webkit-text-fill-color: #fff; }
 .bn-tile.dim { opacity: .38; }
 .bn-tile[aria-disabled="true"] { cursor: default; }
+.bn-prompt { animation: bnIn .25s ease both; }
 .bn-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .bn-tile { min-width: 0; overflow-wrap: anywhere; }
-@media (max-height: 520px) { .bn-tiles { gap: 8px; } .bn-tile { min-height: 42px; font-size: .9rem; } }
+@media (max-height: 520px) { .bn-prompt { margin-bottom: 6px !important; } .bn-tiles { gap: 8px; } .bn-tile { min-height: 42px; font-size: .9rem; } }
 @media (max-height: 520px) and (min-width: 540px) { .bn-tiles { grid-template-columns: repeat(4, 1fr); } }
-@media (prefers-reduced-motion: reduce) { .bn-slot, .bn-tile { animation: none !important; transition: none; } }
+@media (prefers-reduced-motion: reduce) { .bn-slot, .bn-tile, .bn-prompt { animation: none !important; transition: none; } }
 `;
 
 function loadPicks(date) {
@@ -70,13 +71,14 @@ function storyOf(game) {
   return { paragraphs: game.questions.map((q, i) => [q.before, i, q.after]), headline: false };
 }
 
-export default function GameView() {
+export default function GameView({ onStories }) {
   const [game, setGame] = useState(null);
   const [failed, setFailed] = useState(false);
   const [picks, setPicks] = useState([]);
   const [index, setIndex] = useState(0);
   const [shared, setShared] = useState(null); // null, "copied" or "manual"
   const [navH, setNavH] = useState(64);
+  const [trayH, setTrayH] = useState(170);
   const trayRef = useRef(null);
   const resultRef = useRef(null);
   const moved = useRef(false);
@@ -106,6 +108,15 @@ export default function GameView() {
 
   const qs = game ? game.questions : [];
   const answered = picks.length > index;
+
+  // The tiles are fixed above the tab bar; the page leaves room under the story for them.
+  useEffect(() => {
+    const el = trayRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(() => setTrayH(el.offsetHeight));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [game, index >= qs.length]);
 
   // After a pick, a short pause on the result, then on to the next gap.
   useEffect(() => {
@@ -212,12 +223,19 @@ export default function GameView() {
         {answered && !done ? (results[index] ? "Right" : `Not quite: ${q.irish}`) : ""}
       </div>
 
+      {/* Room under the story so its end can scroll up above the tiles. */}
+      {!done && <div style={{ height: trayH }} />}
+
       {!done && (
         <div ref={trayRef} style={{
-          position: "sticky", bottom: navH, zIndex: 5, margin: "14px -16px 0", padding: "12px 16px 14px",
-          background: "rgba(255,255,255,0.94)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
+          position: "fixed", left: 0, right: 0, bottom: navH, zIndex: 5, padding: "10px 16px 14px",
+          background: "rgba(255,255,255,0.96)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
           borderTop: `1px solid ${C.border}`,
         }}>
+          <div style={{ maxWidth: 560, margin: "0 auto" }}>
+          <p key={`p${index}`} className="bn-prompt" style={{ fontFamily: SANS, fontSize: "0.9rem", color: C.muted, textAlign: "center", margin: "0 0 10px" }}>
+            Pick the Irish for <strong style={{ color: C.blue }}>{q.en || q.english}</strong>
+          </p>
           <div key={index} className="bn-tiles">
             {q.options.map((opt, k) => {
               const right = answered && opt === q.irish;
@@ -231,11 +249,15 @@ export default function GameView() {
               );
             })}
           </div>
+          </div>
         </div>
       )}
 
       {done && (
         <div ref={resultRef} style={{ textAlign: "center", marginTop: 22 }}>
+          <div style={{ fontFamily: SERIF, fontSize: "1.45rem", fontWeight: 700, color: C.gold }}>
+            {praise(results.filter(Boolean).length, qs.length)}
+          </div>
           <div style={{ fontFamily: SERIF, fontSize: "2rem", fontWeight: 700, color: C.navy }}>
             {results.filter(Boolean).length} out of {qs.length}
           </div>
@@ -249,6 +271,15 @@ export default function GameView() {
           <div aria-live="polite" style={{ fontFamily: SANS, fontSize: "0.85rem", color: C.green, minHeight: 22, marginTop: 8 }}>
             {shared === "copied" ? "Copied ✓" : ""}
           </div>
+          {onStories && (
+            <p style={{ fontFamily: SANS, fontSize: "0.85rem", color: C.muted, margin: "0 0 18px" }}>
+              Tomorrow's words are in{" "}
+              <button type="button" onClick={onStories} style={{
+                background: "none", border: "none", padding: 0, font: "inherit", color: "inherit", WebkitTextFillColor: C.muted,
+                textDecoration: "underline", textUnderlineOffset: 3, cursor: "pointer",
+              }}>today's stories</button>.
+            </p>
+          )}
           {shared === "manual" && (
             <textarea readOnly value={shareText(results)} rows={3} onFocus={e => e.target.select()} aria-label="Score to copy"
               style={{ width: "100%", fontFamily: SANS, fontSize: "0.95rem", padding: 10, borderRadius: 8, border: `1px solid ${C.border}`, marginBottom: 10, resize: "none", boxSizing: "border-box" }} />

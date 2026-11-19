@@ -2659,7 +2659,7 @@ export default function DailySceal() {
               <ReadingView story={activeStory} onBack={() => setView("feed")} />
             </div>
           )}
-          {!isExport && view === "game" && <GameView />}
+          {!isExport && view === "game" && <GameView onStories={() => { setSection("inniu"); setView("feed"); window.scrollTo(0, 0); }} />}
           {!isExport && view === "about" && (
             <div style={{ paddingTop: 28 }}>
               <AboutView />

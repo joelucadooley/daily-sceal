@@ -8,6 +8,12 @@ export function shareText(results) {
   return `Bearnaí ${right}/${results.length}\n${results.map(r => (r ? "☘️" : "❌")).join("")}\n${GAME_LINK}`;
 }
 
+/** The Irish word in gold over the score. */
+export function praise(right, total) {
+  const f = total ? right / total : 0;
+  return f === 1 ? "Foirfe!" : f >= 0.8 ? "Ar fheabhas!" : f >= 0.6 ? "Go maith!" : f >= 0.4 ? "Ní holc!" : "Lean ort!";
+}
+
 const ARTICLE = /(^|[\s("“‘'-])(an?)(\s+)$/i;
 const VOWEL = /^[aeiouáéíóú]/i;
 
