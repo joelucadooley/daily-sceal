@@ -108,6 +108,25 @@ export function wrongOptions(answer, pool, rnd) {
   return out;
 }
 
+const OPENER = /^[\s"'‘“(…]*$/;
+
+/**
+ * The word as a word list shows it. A capital that is only there because the
+ * word starts the sentence comes off ("Gamers" → "gamers"), unless the
+ * dictionary has it with a capital or it is a name ("Sinn Féin").
+ */
+export function listed(m, pool) {
+  if (!OPENER.test(plain(m.sentence.slice(0, m.at)))) return { ga: m.irish, en: m.english };
+  const fix = (s, key) => {
+    const known = pool.find(w => w[key].toLowerCase() === s.toLowerCase());
+    if (known) return known[key];
+    const [first, ...rest] = s.split(" ");
+    if (!/^\p{Lu}\p{Ll}/u.test(first) || rest.some(w => /^\p{Lu}/u.test(w))) return s;
+    return first.charAt(0).toLowerCase() + s.slice(1);
+  };
+  return { ga: fix(m.irish, "ga"), en: fix(m.english, "en") };
+}
+
 /** The game from one story, or null when it has too few usable words. */
 export function buildGame({ date, from, source, story, usable, pool }) {
   const markers = markersIn(story.headline, story.text).filter(usable);
@@ -122,7 +141,7 @@ export function buildGame({ date, from, source, story, usable, pool }) {
     // Every option takes the answer's capital, so a capital can't give it away.
     const cap = /^\p{Lu}/u.test(m.irish);
     const wrongCased = wrong.map(w => (cap ? w.charAt(0).toUpperCase() + w.slice(1) : w));
-    return { ...split(m.sentence, m.at), irish: m.irish, english: m.english, options: shuffle([...wrongCased, m.irish], rnd) };
+    return { ...split(m.sentence, m.at), irish: m.irish, english: m.english, ...listed(m, pool), options: shuffle([...wrongCased, m.irish], rnd) };
   });
   if (questions.some(q => q.options.length !== 4)) return null;
   return { v: 1, date, from, source, title: story.title, link: story.link, questions };

@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import { mkdtempSync, mkdirSync, writeFileSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
-import { makeGame, split, choose, isSad, QUESTIONS } from "../game.js";
+import { makeGame, split, choose, isSad, listed, QUESTIONS } from "../game.js";
 import { shareText, beforeGap } from "../../src/gameText.js";
 
 let failed = 0, passed = 0;
@@ -82,6 +82,16 @@ await test("choose: one per sentence first, then the rest", () => {
   const m = (irish, si, at = 0) => ({ irish, english: irish + "-en", si, at, sentence: "" });
   assert.deepEqual(choose([m("a", 0), m("b", 0, 5), m("c", 1), m("d", 2), m("e", 3), m("f", 4)], 5).map(x => x.irish), ["a", "c", "d", "e", "f"]);
   assert.deepEqual(choose([m("a", 0), m("b", 0, 5), m("c", 1)], 3).map(x => x.irish), ["a", "b", "c"]);
+});
+
+await test("word list form: a sentence-start capital comes off, names keep theirs", () => {
+  const m = (sentence, irish, english) => ({ sentence, irish, english, at: sentence.indexOf("[[") });
+  assert.deepEqual(listed(m("[[Imreoirí cluichí|Gamers]] wait", "Imreoirí cluichí", "Gamers"), []), { ga: "imreoirí cluichí", en: "gamers" });
+  assert.deepEqual(listed(m("“[[Bád|Boat]] gone”", "Bád", "Boat"), []), { ga: "bád", en: "boat" });
+  assert.deepEqual(listed(m("[[Sinn Féin|Sinn Féin]] won", "Sinn Féin", "Sinn Féin"), []), { ga: "Sinn Féin", en: "Sinn Féin" });
+  assert.deepEqual(listed(m("[[AE|EU]] rules", "AE", "EU"), []), { ga: "AE", en: "EU" });
+  assert.deepEqual(listed(m("[[Rialtas|Government]] acts", "Rialtas", "Government"), [{ ga: "Rialtas", en: "Government" }]), { ga: "Rialtas", en: "Government" });
+  assert.deepEqual(listed(m("The [[Rialtas|Government]] acts", "Rialtas", "Government"), []), { ga: "Rialtas", en: "Government" });
 });
 
 await test("share text: score, a shamrock or cross each, the link", () => {

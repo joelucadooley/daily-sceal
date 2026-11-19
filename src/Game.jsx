@@ -134,8 +134,8 @@ export default function GameView() {
             {qs.map((q, i) => (
               <div key={i} style={{ display: "flex", alignItems: "baseline", gap: 10, padding: "12px 16px", borderTop: i ? `1px solid ${C.border}` : "none" }}>
                 <span aria-label={results[i] ? "right" : "wrong"} style={{ flex: "none" }}>{results[i] ? "☘️" : "❌"}</span>
-                <span style={{ fontFamily: SERIF, fontWeight: 700, color: C.navy }}>{q.irish}</span>
-                <span style={{ fontFamily: SANS, fontSize: "0.9rem", color: C.muted }}>{q.english}</span>
+                <span style={{ fontFamily: SERIF, fontWeight: 700, color: C.navy }}>{q.ga || q.irish}</span>
+                <span style={{ fontFamily: SANS, fontSize: "0.9rem", color: C.muted }}>{q.en || q.english}</span>
               </div>
             ))}
           </div>
