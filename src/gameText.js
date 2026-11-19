@@ -5,7 +5,7 @@ export const GAME_LINK = "dailysceal.com/#bearnai";
 /** What Share copies: the score, a shamrock or a cross per question, and the link. */
 export function shareText(results) {
   const right = results.filter(Boolean).length;
-  return `Daily Scéal gap fill ${right}/${results.length}\n${results.map(r => (r ? "☘️" : "❌")).join("")}\n${GAME_LINK}`;
+  return `Bearnaí ${right}/${results.length}\n${results.map(r => (r ? "☘️" : "❌")).join("")}\n${GAME_LINK}`;
 }
 
 const ARTICLE = /(^|[\s("“‘'-])(an?)(\s+)$/i;

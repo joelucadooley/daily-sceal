@@ -2434,6 +2434,15 @@ export default function DailySceal() {
     }
   }, [view]);
 
+  // A link to #bearnai clicked while the site is already open.
+  useEffect(() => {
+    const onHash = () => {
+      if (window.location.hash === "#bearnai") { setView("game"); window.scrollTo(0, 0); }
+    };
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
     fetchTodayContent()

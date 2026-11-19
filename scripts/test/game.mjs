@@ -85,7 +85,7 @@ await test("choose: one per sentence first, then the rest", () => {
 });
 
 await test("share text: score, a shamrock or cross each, the link", () => {
-  assert.equal(shareText([true, true, false, true, true]), "Daily Scéal gap fill 4/5\n☘️☘️❌☘️☘️\ndailysceal.com/#bearnai");
+  assert.equal(shareText([true, true, false, true, true]), "Bearnaí 4/5\n☘️☘️❌☘️☘️\ndailysceal.com/#bearnai");
 });
 
 await test("a or an before the gap: a(n) until answered, then agreeing", () => {
