@@ -1,0 +1,70 @@
+{
+  "v": 1,
+  "date": "2026-11-19",
+  "from": "2026-11-18",
+  "source": "post",
+  "title": "Gamers count down the hours to Grand Theft Auto VI",
+  "link": "https://www.rte.ie/news/2026/1118/1599628-fans-countdown-to-gtavi/",
+  "questions": [
+    {
+      "before": "",
+      "after": " count down the hours to Grand Theft Auto VI",
+      "irish": "Imreoirí cluichí",
+      "english": "Gamers",
+      "options": [
+        "Géarchéim tithíochta",
+        "Meán náisiúnta",
+        "Imreoirí cluichí",
+        "Pobalbhreith teorann"
+      ]
+    },
+    {
+      "before": "Grand Theft Auto ",
+      "after": " are eagerly awaiting tonight's release of the latest instalment in the blockbuster …",
+      "irish": "lucht leanúna",
+      "english": "fans",
+      "options": [
+        "laistigh de",
+        "costais iompair",
+        "lucht leanúna",
+        "céim dheiridh"
+      ]
+    },
+    {
+      "before": "Grand Theft Auto fans are eagerly awaiting tonight's ",
+      "after": " of the latest instalment in the blockbuster video game series, 13 years …",
+      "irish": "eisiúint",
+      "english": "release",
+      "options": [
+        "satailít",
+        "carranna",
+        "eisiúint",
+        "cíosanna"
+      ]
+    },
+    {
+      "before": "Rockstar Games' hugely successful franchise first launched ",
+      "after": " three decades ago and is known for its open-world gameplay, car thefts, …",
+      "irish": "beagnach",
+      "english": "almost",
+      "options": [
+        "staidéar",
+        "dídeanaí",
+        "comhairle",
+        "beagnach"
+      ]
+    },
+    {
+      "before": "Grand Theft Auto VI (GTA VI), the 17th instalment of the ",
+      "after": ", is expected to be one of the biggest gaming launches of …",
+      "irish": "sraith",
+      "english": "series",
+      "options": [
+        "féile",
+        "sraith",
+        "teideal",
+        "áitiúil"
+      ]
+    }
+  ]
+}
