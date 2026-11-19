@@ -86,8 +86,8 @@ export default function GameView() {
 
   return (
     <div style={{ padding: "26px 0 10px", maxWidth: 560, margin: "0 auto" }}>
-      <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.7rem", color: C.navy, margin: "0 0 4px" }}>Gap fill</h2>
-      <p style={{ fontFamily: SANS, fontSize: "0.85rem", color: C.muted, margin: "0 0 22px" }}>A new one every morning, from yesterday's story.</p>
+      <h2 style={{ fontFamily: "Georgia, serif", fontSize: "1.7rem", color: C.navy, margin: "0 0 4px" }}>Daily gap fill</h2>
+      <p style={{ fontFamily: SANS, fontSize: "0.85rem", color: C.muted, margin: "0 0 22px" }}>Did yesterday's words stick?</p>
 
       {!done && (
         <Question
