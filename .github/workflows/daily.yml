@@ -45,6 +45,12 @@ jobs:
       - name: Install dependencies
         run: npm install && npm install @xmldom/xmldom
 
+      # The daily game only needs yesterday's story, so it is built first and
+      # never stops the stories: with nothing usable, game.json stays as it was.
+      - name: Build the daily game
+        continue-on-error: true
+        run: node scripts/game.js
+
       - name: Run generation script
         timeout-minutes: 60
         env:
@@ -87,6 +93,24 @@ jobs:
 
       - name: Trigger deploy
         run: |
+          curl -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/joelucadooley/daily-sceal/actions/workflows/deploy.yml/dispatches \
+            -d '{"ref":"main"}'
+
+      # The stories failed, but the game was built: publish it on its own.
+      - name: Publish the game on its own
+        if: failure()
+        run: |
+          git config user.name "Daily Scéal Bot"
+          git config user.email "bot@daily-sceal"
+          git add public/data/game.json
+          if git diff --cached --quiet; then echo "No new game"; exit 0; fi
+          git commit -m "🎯 Daily game $(date '+%Y-%m-%d')"
+          git stash -u || true
+          git pull --rebase origin main
+          git push origin main
           curl -X POST \
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \

@@ -7,6 +7,7 @@ import { catInfo } from "../scripts/categories.js";
 import places from "../scripts/places.json";
 // Marker parsing, Focal an lae and fetch time limits, tested in Node.
 import { parseText, focalFor, timeoutSignal } from "./helpers.js";
+import GameView from "./Game.jsx";
 
 const C = {
   navy: "#0d2137",
@@ -2400,9 +2401,14 @@ function ExportView({ stories }) {
 }
 
 export default function DailySceal() {
-  // The standalone support and privacy pages link back to /#faoi.
-  const [view, setView] = useState(() =>
-    typeof window !== "undefined" && window.location.hash === "#faoi" ? "about" : "feed");
+  // The standalone support and privacy pages link back to /#faoi; a shared
+  // game score links to /#bearnai.
+  const [view, setView] = useState(() => {
+    if (typeof window === "undefined") return "feed";
+    if (window.location.hash === "#faoi") return "about";
+    if (window.location.hash === "#bearnai") return "game";
+    return "feed";
+  });
   const [stories, setStories] = useState(FALLBACK_STORIES);
   // Today's pull on its own. The public feed may also contain older stories
   // pulled in to pad thin sections, but the export tool must only ever offer
@@ -2414,11 +2420,19 @@ export default function DailySceal() {
   const isExport = typeof window !== "undefined" && (window.location.hash === "#export" || window.location.search.includes("export=1"));
 
   // Drop the #faoi hint once used, so a reload lands on the stories again.
+  // #bearnai stays: it is the address people share.
   useEffect(() => {
     if (window.location.hash === "#faoi") {
       history.replaceState(null, "", window.location.pathname + window.location.search);
     }
   }, []);
+
+  // Leaving the game by any route (the logo, a story) drops #bearnai.
+  useEffect(() => {
+    if (view !== "game" && window.location.hash === "#bearnai") {
+      history.replaceState(null, "", window.location.pathname + window.location.search);
+    }
+  }, [view]);
 
   useEffect(() => {
     let cancelled = false;
@@ -2636,6 +2650,7 @@ export default function DailySceal() {
               <ReadingView story={activeStory} onBack={() => setView("feed")} />
             </div>
           )}
+          {!isExport && view === "game" && <GameView />}
           {!isExport && view === "about" && (
             <div style={{ paddingTop: 28 }}>
               <AboutView />
@@ -2646,16 +2661,20 @@ export default function DailySceal() {
 
       {/* Bottom nav */}
       <nav style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "rgba(255,255,255,0.96)", borderTop: `1px solid ${C.border}`, backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", zIndex: 100 }}>
-        <div style={{ maxWidth: 640, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr" }}>
+        <div style={{ maxWidth: 640, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr 1fr" }}>
           {[
             { id: "feed", label: "Nuacht", icon: "📰" },
+            { id: "game", label: "Bearnaí", icon: "✏️" },
             { id: "about", label: "Faoi", icon: "🍀" },
           ].map(tab => {
             const active = view === tab.id || (tab.id === "feed" && view === "reading");
             return (
             <button key={tab.id} onClick={() => {
                 if (tab.id === "feed" && view === "feed") pickSection("inniu");
+                // Only the game keeps an address in the bar, for sharing.
+                history.replaceState(null, "", window.location.pathname + window.location.search + (tab.id === "game" ? "#bearnai" : ""));
                 setView(tab.id);
+                window.scrollTo(0, 0);
               }}
               style={{ background: "none", border: "none", padding: "11px 0 9px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 3, position: "relative" }}
             >
