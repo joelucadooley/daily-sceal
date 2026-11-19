@@ -75,7 +75,7 @@ await test("the gap sentence: other Irish in English, long sides cut", async () 
   const s = "The [[scoil|school]] in the [[baile|town]] opened.";
   assert.deepEqual(split(s, s.indexOf("[[scoil")), { before: "The ", after: " in the town opened." });
   const long = "one two three four five six seven eight nine ten eleven twelve thirteen fourteen [[x|y]] end";
-  assert.equal(split(long, long.indexOf("[[")).before, "… three four five six seven eight nine ten eleven twelve thirteen fourteen ");
+  assert.equal(split(long, long.indexOf("[[")).before, "…\u00A0three four five six seven eight nine ten eleven twelve thirteen fourteen ");
 });
 
 await test("choose: one per sentence first, then the rest", () => {

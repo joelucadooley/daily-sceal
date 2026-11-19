@@ -75,8 +75,9 @@ export function split(sentence, at) {
   const b = before.split(" ").filter(Boolean);
   const a = after.split(" ").filter(Boolean);
   return {
-    before: b.length > WINDOW ? "… " + b.slice(-WINDOW).join(" ") + " " : before,
-    after: a.length > WINDOW ? (after.startsWith(" ") ? " " : "") + a.slice(0, WINDOW).join(" ") + " …" : after,
+    // A no-break space keeps "…" with its word, so it never wraps onto a line alone.
+    before: b.length > WINDOW ? "…\u00A0" + b.slice(-WINDOW).join(" ") + " " : before,
+    after: a.length > WINDOW ? (after.startsWith(" ") ? " " : "") + a.slice(0, WINDOW).join(" ") + "\u00A0…" : after,
   };
 }
 
