@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import { mkdtempSync, mkdirSync, writeFileSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
-import { makeGame, split, choose, isSad, listed, QUESTIONS } from "../game.js";
+import { makeGame, split, choose, isSad, listed, storyPieces, QUESTIONS } from "../game.js";
 import { shareText, beforeGap } from "../../src/gameText.js";
 
 let failed = 0, passed = 0;
@@ -92,6 +92,18 @@ await test("word list form: a sentence-start capital comes off, names keep their
   assert.deepEqual(listed(m("[[AE|EU]] rules", "AE", "EU"), []), { ga: "AE", en: "EU" });
   assert.deepEqual(listed(m("[[Rialtas|Government]] acts", "Rialtas", "Government"), [{ ga: "Rialtas", en: "Government" }]), { ga: "Rialtas", en: "Government" });
   assert.deepEqual(listed(m("The [[Rialtas|Government]] acts", "Rialtas", "Government"), []), { ga: "Rialtas", en: "Government" });
+});
+
+await test("the story: headline and text to the last gap, gaps as question numbers", () => {
+  const headline = "[[Bád|Boat]] sinks";
+  const text = "The [[teach|house]] and the [[madra|dog]] ran. A [[crann|tree]] fell. Nothing more.";
+  const picked = [{ si: 0, at: 0 }, { si: 1, at: text.indexOf("[[madra") }, { si: 2, at: 2 }];
+  assert.deepEqual(storyPieces(headline, text, picked), [
+    [0, " sinks"],
+    ["The house and the ", 1, " ran. A ", 2, " fell."],
+  ]);
+  // No headline: the first sentence is number 0.
+  assert.deepEqual(storyPieces("", "A [[crann|tree]] fell. The [[bád|boat]] left.", [{ si: 0, at: 2 }]), [["A ", 0, " fell."]]);
 });
 
 await test("share text: score, a shamrock or cross each, the link", () => {

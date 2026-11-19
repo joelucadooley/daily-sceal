@@ -128,6 +128,44 @@ export function listed(m, pool) {
   return { ga: fix(m.irish, "ga"), en: fix(m.english, "en") };
 }
 
+/**
+ * The story the game is played in: the headline, then the text up to the end of
+ * the sentence with the last gap. Each paragraph is a list of plain text (every
+ * other Irish word in English) and question numbers where the gaps go.
+ */
+export function storyPieces(headline, text, picked) {
+  const at = new Map(picked.map((m, i) => [`${m.si}:${m.at}`, i]));
+  const last = Math.max(...picked.map(m => m.si));
+  const piecesOf = (sentence, si) => {
+    const out = [];
+    let pos = 0;
+    for (const m of sentence.matchAll(MARKER)) {
+      const q = at.get(`${si}:${m.index}`);
+      out.push(sentence.slice(pos, m.index));
+      out.push(q === undefined ? m[2] : q);
+      pos = m.index + m[0].length;
+    }
+    out.push(sentence.slice(pos));
+    return out;
+  };
+  const join = parts => {
+    const out = [];
+    for (const p of parts) {
+      if (typeof p === "string" && typeof out[out.length - 1] === "string") out[out.length - 1] += p;
+      else out.push(p);
+    }
+    return out.filter(p => p !== "");
+  };
+  // Numbered as markersIn numbers them: the headline first, when there is one.
+  const all = [headline, ...sentences(text)].filter(Boolean);
+  const first = headline ? 1 : 0;
+  const story = [];
+  if (headline) story.push(join(piecesOf(all[0], 0)));
+  const body = all.slice(first, last + 1);
+  if (body.length) story.push(join(body.flatMap((sentence, i) => [...(i ? [" "] : []), ...piecesOf(sentence, first + i)])));
+  return story;
+}
+
 /** The game from one story, or null when it has too few usable words. */
 export function buildGame({ date, from, source, story, usable, pool }) {
   const markers = markersIn(story.headline, story.text).filter(usable);
@@ -145,20 +183,28 @@ export function buildGame({ date, from, source, story, usable, pool }) {
     return { ...split(m.sentence, m.at), irish: m.irish, english: m.english, ...listed(m, pool), options: shuffle([...wrongCased, m.irish], rnd) };
   });
   if (questions.some(q => q.options.length !== 4)) return null;
-  return { v: 1, date, from, source, title: story.title, link: story.link, questions };
+  return { v: 1, date, from, source, title: story.title, link: story.link, story: storyPieces(story.headline, story.text, picked), questions };
 }
 
 const readJson = p => (existsSync(p) ? JSON.parse(readFileSync(p, "utf8")) : null);
 
+// Three tries, a few seconds apart: a passing network blip shouldn't swap
+// Joe's checked story for the automatic one.
 async function checkedPost(from) {
-  try {
-    const r = await fetch(`${STUDIO}?date=${from}`, { signal: AbortSignal.timeout(10000) });
-    if (!r.ok) return null;
-    const j = await r.json();
-    return j && j.post && typeof j.post.text === "string" ? j.post : null;
-  } catch {
-    return null;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const r = await fetch(`${STUDIO}?date=${from}`, { signal: AbortSignal.timeout(10000) });
+      if (r.ok) {
+        const j = await r.json();
+        return j && j.post && typeof j.post.text === "string" ? j.post : null;
+      }
+      if (r.status < 500) return null;
+    } catch (e) {
+      console.log(`Studio try ${attempt}: ${e.message}`);
+    }
+    if (attempt < 3) await new Promise(res => setTimeout(res, 3000 * attempt));
   }
+  return null;
 }
 
 export async function makeGame(date = dublinDate(), { fetchPost = checkedPost, dataDir = DATA } = {}) {
