@@ -1628,7 +1628,7 @@ const ABOUT_ITEMS = [
     links: [{ href: "https://apps.apple.com/app/id6813254896", text: "App Store →" }],
   },
   {
-    label: "Lean ar Instagram", title: "A story a day, as Gaeilge",
+    label: "Lean ar Instagram", title: "A story a day on Instagram",
     text: "Each day, one story from the news with a few key words translated. On Sundays, Focail na seachtaine: the week's words to guess before the reveal.",
     links: [{ href: "https://instagram.com/dailysceal", text: "@dailysceal →" }],
   },

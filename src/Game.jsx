@@ -9,7 +9,7 @@ import { shareText, beforeGap, praise } from "./gameText.js";
 
 const C = {
   navy: "#0d2137", border: "#e8e2d9", text: "#111111", muted: "#6b6460", faint: "#a8a29a",
-  blue: "#2563eb", green: "#15803d", red: "#b91c1c", gold: "#d97706",
+  blue: "#2563eb", green: "#15803d", red: "#b91c1c", gold: "#e8951e",
 };
 const SANS = "system-ui, sans-serif";
 const SERIF = "Georgia, serif";
