@@ -1,96 +1,97 @@
 {
   "v": 1,
-  "date": "2026-11-19",
-  "from": "2026-11-18",
+  "date": "2026-11-20",
+  "from": "2026-11-19",
   "source": "post",
-  "title": "Gamers count down the hours to Grand Theft Auto VI",
-  "link": "https://www.rte.ie/news/2026/1118/1599628-fans-countdown-to-gtavi/",
+  "title": "Anthropic raises record $81 billion in IPO",
+  "link": "https://www.rte.ie/news/business/2026/1119/1599784-anthropic-raises-81-billion-in-ipo/",
   "story": [
     [
-      0,
-      " count down the hours to Grand Theft Auto VI"
+      "Anthropic raises record $81 billion in IPO"
     ],
     [
-      "Grand Theft Auto ",
+      "Anthropic has raised $81.3 ",
+      0,
+      " in the largest stock-market debut on record after upsizing its ",
       1,
-      " are eagerly awaiting tonight's ",
+      ", valuing the Claude chatbot maker at $1.5 trillion in a ",
       2,
-      " of the latest instalment in the blockbuster video game series, 13 years after its predecessor. Rockstar Games' hugely successful franchise first launched ",
+      " that defies concerns about the AI trade and tech fundraising prospects. The first major frontier AI model developer to go public, Anthropic priced its ",
       3,
-      " three decades ago and is known for its open-world gameplay, car thefts, police chases and criminal mayhem. Grand Theft Auto VI (GTA VI), the 17th instalment of the ",
+      " at $83 each, above its initial range of $70 to $78, in a sign of strong demand for the shares from investors. Reuters was first to report earlier ",
       4,
-      ", is expected to be one of the biggest gaming launches of 2026, with fans going to extreme lengths to prepare for its arrival."
+      " that the company increased the number of shares it was selling by about 19% to 980 million shares."
     ]
   ],
   "questions": [
     {
-      "before": "",
-      "after": " count down the hours to Grand Theft Auto VI",
-      "irish": "Imreoirí cluichí",
-      "english": "Gamers",
-      "ga": "imreoirí cluichí",
-      "en": "gamers",
+      "before": "Anthropic has raised $81.3 ",
+      "after": " in the largest stock-market debut on record after upsizing its offering, valuing …",
+      "irish": "billiún",
+      "english": "billion",
+      "ga": "billiún",
+      "en": "billion",
       "options": [
-        "Géarchéim tithíochta",
-        "Meán náisiúnta",
-        "Imreoirí cluichí",
-        "Pobalbhreith teorann"
+        "billiún",
+        "polasaí",
+        "feachtas",
+        "cumainn"
       ]
     },
     {
-      "before": "Grand Theft Auto ",
-      "after": " are eagerly awaiting tonight's release of the latest instalment in the blockbuster …",
-      "irish": "lucht leanúna",
-      "english": "fans",
-      "ga": "lucht leanúna",
-      "en": "fans",
+      "before": "… $81.3 billion in the largest stock-market debut on record after upsizing its ",
+      "after": ", valuing the Claude chatbot maker at $1.5 trillion in a deal …",
+      "irish": "tairiscint",
+      "english": "offering",
+      "ga": "tairiscint",
+      "en": "offering",
       "options": [
-        "laistigh de",
-        "costais iompair",
-        "lucht leanúna",
-        "céim dheiridh"
+        "tairiscint",
+        "praghsanna",
+        "príomhoide",
+        "taispeáint"
       ]
     },
     {
-      "before": "Grand Theft Auto fans are eagerly awaiting tonight's ",
-      "after": " of the latest instalment in the blockbuster video game series, 13 years …",
-      "irish": "eisiúint",
-      "english": "release",
-      "ga": "eisiúint",
-      "en": "release",
+      "before": "… its offering, valuing the Claude chatbot maker at $1.5 trillion in a ",
+      "after": " that defies concerns about the AI trade and tech fundraising prospects.",
+      "irish": "margadh",
+      "english": "deal",
+      "ga": "margadh",
+      "en": "deal",
       "options": [
-        "satailít",
-        "carranna",
-        "eisiúint",
-        "cíosanna"
+        "méadair",
+        "cánacha",
+        "margadh",
+        "Gaeilge"
       ]
     },
     {
-      "before": "Rockstar Games' hugely successful franchise first launched ",
-      "after": " three decades ago and is known for its open-world gameplay, car thefts, …",
-      "irish": "beagnach",
-      "english": "almost",
-      "ga": "beagnach",
-      "en": "almost",
+      "before": "… first major frontier AI model developer to go public, Anthropic priced its ",
+      "after": " at $83 each, above its initial range of $70 to $78, in …",
+      "irish": "scaireanna",
+      "english": "shares",
+      "ga": "scaireanna",
+      "en": "shares",
       "options": [
-        "staidéar",
-        "dídeanaí",
-        "comhairle",
-        "beagnach"
+        "geimhreadh",
+        "scaireanna",
+        "fadliosta",
+        "urlabhraí"
       ]
     },
     {
-      "before": "Grand Theft Auto VI (GTA VI), the 17th instalment of the ",
-      "after": ", is expected to be one of the biggest gaming launches of …",
-      "irish": "sraith",
-      "english": "series",
-      "ga": "sraith",
-      "en": "series",
+      "before": "Reuters was first to report earlier ",
+      "after": " that the company increased the number of shares it was selling by …",
+      "irish": "inné",
+      "english": "yesterday",
+      "ga": "inné",
+      "en": "yesterday",
       "options": [
-        "féile",
-        "sraith",
-        "teideal",
-        "áitiúil"
+        "inné",
+        "mór",
+        "beag",
+        "dúirt"
       ]
     }
   ]
