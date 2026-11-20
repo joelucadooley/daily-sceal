@@ -159,7 +159,7 @@ export default function GameView({ onStories }) {
   };
 
   const share = async () => {
-    const text = shareText(results);
+    const text = shareText(results, game.date);
     try {
       if (navigator.share && matchMedia("(pointer: coarse)").matches) {
         await navigator.share({ text });
@@ -281,7 +281,7 @@ export default function GameView({ onStories }) {
             </p>
           )}
           {shared === "manual" && (
-            <textarea readOnly value={shareText(results)} rows={3} onFocus={e => e.target.select()} aria-label="Score to copy"
+            <textarea readOnly value={shareText(results, game.date)} rows={3} onFocus={e => e.target.select()} aria-label="Score to copy"
               style={{ width: "100%", fontFamily: SANS, fontSize: "0.95rem", padding: 10, borderRadius: 8, border: `1px solid ${C.border}`, marginBottom: 10, resize: "none", boxSizing: "border-box" }} />
           )}
           <div style={{ border: `1px solid ${C.border}`, borderRadius: 14, textAlign: "left", background: "#fff" }}>

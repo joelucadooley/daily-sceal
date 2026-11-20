@@ -2,10 +2,19 @@
 
 export const GAME_LINK = "dailysceal.com/#bearnai";
 
-/** What Share copies: the score, a shamrock or a cross per question, and the link. */
-export function shareText(results) {
+const MONTHS = ["Eanáir", "Feabhra", "Márta", "Aibreán", "Bealtaine", "Meitheamh", "Iúil", "Lúnasa", "Meán Fómhair", "Deireadh Fómhair", "Samhain", "Nollaig"];
+
+/** "2026-11-20" → "20 Samhain"; anything else → "". */
+export function gameDay(date) {
+  const m = /^\d{4}-(\d{2})-(\d{2})$/.exec(date || "");
+  return m && MONTHS[+m[1] - 1] ? `${+m[2]} ${MONTHS[+m[1] - 1]}` : "";
+}
+
+/** What Share copies: the score and the day, a shamrock or a cross per question, and the link. */
+export function shareText(results, date) {
   const right = results.filter(Boolean).length;
-  return `Bearnaí ${right}/${results.length}\n${results.map(r => (r ? "☘️" : "❌")).join("")}\n${GAME_LINK}`;
+  const day = gameDay(date);
+  return `Bearnaí ${right}/${results.length}${day ? ` · ${day}` : ""}\n${results.map(r => (r ? "☘️" : "❌")).join("")}\n${GAME_LINK}`;
 }
 
 /** The Irish word in gold over the score. */
