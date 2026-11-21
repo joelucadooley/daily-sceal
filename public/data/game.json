@@ -1,97 +1,94 @@
 {
   "v": 1,
-  "date": "2026-11-20",
-  "from": "2026-11-19",
-  "source": "post",
-  "title": "Anthropic raises record $81 billion in IPO",
-  "link": "https://www.rte.ie/news/business/2026/1119/1599784-anthropic-raises-81-billion-in-ipo/",
+  "date": "2026-11-21",
+  "from": "2026-11-20",
+  "source": "auto",
+  "title": "UK retail sales rise 0.7% in October, beating forecasts",
+  "link": "https://www.rte.ie/news/business/2026/1120/1599950-uk-retail-sales/",
   "story": [
     [
-      "Anthropic raises record $81 billion in IPO"
-    ],
-    [
-      "Anthropic has raised $81.3 ",
+      "British retail sales volumes unexpectedly rose 0.7% in October compared with September, official ",
       0,
-      " in the largest stock-market debut on record after upsizing its ",
+      " show today. Economists polled by Reuters had a median ",
       1,
-      ", valuing the Claude chatbot maker at $1.5 trillion in a ",
+      " that sales volumes would be unchanged on the month. UK consumer sentiment had fallen sharply in October, according to Britain's longest-running measure of this, as rising fuel bills and borrowing ",
       2,
-      " that defies concerns about the AI trade and tech fundraising prospects. The first major frontier AI model developer to go public, Anthropic priced its ",
+      " squeezed households, although November data showed ⁠a small recovery. Consumer price ",
       3,
-      " at $83 each, above its initial range of $70 to $78, in a sign of strong demand for the shares from investors. Reuters was first to report earlier ",
+      " rose to a one-year high of 3.6% in October and the Bank of England forecast it would reach close to 5% in the middle of next ‌year when it raised interest rates for the first time in three years ⁠this month. However, overall economic ",
       4,
-      " that the company increased the number of shares it was selling by about 19% to 980 million shares."
+      " has ‌been stronger than expected this year and recent updates from ⁠major ‌British retailers have been mixed."
     ]
   ],
   "questions": [
     {
-      "before": "Anthropic has raised $81.3 ",
-      "after": " in the largest stock-market debut on record after upsizing its offering, valuing …",
-      "irish": "billiún",
-      "english": "billion",
-      "ga": "billiún",
-      "en": "billion",
+      "before": "… retail sales volumes unexpectedly rose 0.7% in October compared with September, official ",
+      "after": " show today.",
+      "irish": "figiúirí",
+      "english": "figures",
+      "ga": "figiúirí",
+      "en": "figures",
+      "options": [
+        "foilsigh",
+        "agallamh",
+        "timpiste",
+        "figiúirí"
+      ]
+    },
+    {
+      "before": "Economists polled by Reuters had a median ",
+      "after": " that sales volumes would be unchanged on the month.",
+      "irish": "réamhaisnéis",
+      "english": "forecast",
+      "ga": "réamhaisnéis",
+      "en": "forecast",
+      "options": [
+        "réamhaisnéis",
+        "contúirteach",
+        "múinteoirí",
+        "neamhchiontach"
+      ]
+    },
+    {
+      "before": "… to Britain's longest-running measure of this, as rising fuel bills and borrowing ",
+      "after": " squeezed households, although November data showed ⁠a small recovery.",
+      "irish": "costais",
+      "english": "costs",
+      "ga": "costais",
+      "en": "costs",
       "options": [
         "billiún",
-        "polasaí",
+        "costais",
+        "teideal",
+        "oighear"
+      ]
+    },
+    {
+      "before": "Consumer price ",
+      "after": " rose to a one-year high of 3.6% in October and the Bank …",
+      "irish": "boilsciú",
+      "english": "inflation",
+      "ga": "boilsciú",
+      "en": "inflation",
+      "options": [
+        "stáisiún",
+        "boilsciú",
         "feachtas",
-        "cumainn"
+        "oibrithe"
       ]
     },
     {
-      "before": "… $81.3 billion in the largest stock-market debut on record after upsizing its ",
-      "after": ", valuing the Claude chatbot maker at $1.5 trillion in a deal …",
-      "irish": "tairiscint",
-      "english": "offering",
-      "ga": "tairiscint",
-      "en": "offering",
+      "before": "However, overall economic ",
+      "after": " has ‌been stronger than expected this year and recent updates from ⁠major …",
+      "irish": "fás",
+      "english": "growth",
+      "ga": "fás",
+      "en": "growth",
       "options": [
-        "tairiscint",
-        "praghsanna",
-        "príomhoide",
-        "taispeáint"
-      ]
-    },
-    {
-      "before": "… its offering, valuing the Claude chatbot maker at $1.5 trillion in a ",
-      "after": " that defies concerns about the AI trade and tech fundraising prospects.",
-      "irish": "margadh",
-      "english": "deal",
-      "ga": "margadh",
-      "en": "deal",
-      "options": [
-        "méadair",
-        "cánacha",
-        "margadh",
-        "Gaeilge"
-      ]
-    },
-    {
-      "before": "… first major frontier AI model developer to go public, Anthropic priced its ",
-      "after": " at $83 each, above its initial range of $70 to $78, in …",
-      "irish": "scaireanna",
-      "english": "shares",
-      "ga": "scaireanna",
-      "en": "shares",
-      "options": [
-        "geimhreadh",
-        "scaireanna",
-        "fadliosta",
-        "urlabhraí"
-      ]
-    },
-    {
-      "before": "Reuters was first to report earlier ",
-      "after": " that the company increased the number of shares it was selling by …",
-      "irish": "inné",
-      "english": "yesterday",
-      "ga": "inné",
-      "en": "yesterday",
-      "options": [
-        "inné",
-        "mór",
+        "scór",
+        "bua",
         "beag",
-        "dúirt"
+        "fás"
       ]
     }
   ]
