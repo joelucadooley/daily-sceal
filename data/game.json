@@ -1,94 +1,94 @@
 {
   "v": 1,
-  "date": "2026-11-21",
-  "from": "2026-11-20",
+  "date": "2026-11-22",
+  "from": "2026-11-21",
   "source": "auto",
-  "title": "UK retail sales rise 0.7% in October, beating forecasts",
-  "link": "https://www.rte.ie/news/business/2026/1120/1599950-uk-retail-sales/",
+  "title": "COP31 enters extra day of talks amid fears over agreement",
+  "link": "https://www.rte.ie/news/environment/2026/1121/1600094-cop31-turkey/",
   "story": [
     [
-      "British retail sales volumes unexpectedly rose 0.7% in October compared with September, official ",
+      "There are fears that the COP31 Climate ",
       0,
-      " show today. Economists polled by Reuters had a median ",
+      " in Turkey could end without a deal as a ",
       1,
-      " that sales volumes would be unchanged on the month. UK consumer sentiment had fallen sharply in October, according to Britain's longest-running measure of this, as rising fuel bills and borrowing ",
+      " dispute over whether even to mention fossil fuels in the final agreement deepens. The talks in Antalya have now into gone into an extra day for negotiations, with the different sides as far apart as ever on fossil fuel inclusion. The draft text on the table this ",
       2,
-      " squeezed households, although November data showed ⁠a small recovery. Consumer price ",
+      " is the one issued on Thursday, which dropped all explicit references to fossil fuels. Much of the frustration on the European side comes down to how little it is now asking of the countries opposing it to mention the transition away from fossil fuels. This frustration is being amplified also by the global acceptance now that warming is set to breach the 1.5 degrees Celsius limit set out in the Paris ",
       3,
-      " rose to a one-year high of 3.6% in October and the Bank of England forecast it would reach close to 5% in the middle of next ‌year when it raised interest rates for the first time in three years ⁠this month. However, overall economic ",
+      " in 2015. In Dubai three ",
       4,
-      " has ‌been stronger than expected this year and recent updates from ⁠major ‌British retailers have been mixed."
+      " ago, governments agreed to contribute to a global effort to move away from fossil fuels in their energy systems."
     ]
   ],
   "questions": [
     {
-      "before": "… retail sales volumes unexpectedly rose 0.7% in October compared with September, official ",
-      "after": " show today.",
-      "irish": "figiúirí",
-      "english": "figures",
-      "ga": "figiúirí",
-      "en": "figures",
+      "before": "There are fears that the COP31 Climate ",
+      "after": " in Turkey could end without a deal as a serious dispute over …",
+      "irish": "cainteanna",
+      "english": "talks",
+      "ga": "cainteanna",
+      "en": "talks",
       "options": [
-        "foilsigh",
-        "agallamh",
-        "timpiste",
-        "figiúirí"
+        "bonneagar",
+        "scoileanna",
+        "cainteanna",
+        "feirmeoir"
       ]
     },
     {
-      "before": "Economists polled by Reuters had a median ",
-      "after": " that sales volumes would be unchanged on the month.",
-      "irish": "réamhaisnéis",
-      "english": "forecast",
-      "ga": "réamhaisnéis",
-      "en": "forecast",
+      "before": "… COP31 Climate talks in Turkey could end without a deal as a ",
+      "after": " dispute over whether even to mention fossil fuels in the final agreement …",
+      "irish": "tromchúiseach",
+      "english": "serious",
+      "ga": "tromchúiseach",
+      "en": "serious",
       "options": [
-        "réamhaisnéis",
-        "contúirteach",
-        "múinteoirí",
-        "neamhchiontach"
+        "tromchúiseach",
+        "custaiméirí",
+        "príomhchathair",
+        "príobháideach"
       ]
     },
     {
-      "before": "… to Britain's longest-running measure of this, as rising fuel bills and borrowing ",
-      "after": " squeezed households, although November data showed ⁠a small recovery.",
-      "irish": "costais",
-      "english": "costs",
-      "ga": "costais",
-      "en": "costs",
+      "before": "The draft text on the table this ",
+      "after": " is the one issued on Thursday, which dropped all explicit references to …",
+      "irish": "maidin",
+      "english": "morning",
+      "ga": "maidin",
+      "en": "morning",
       "options": [
-        "billiún",
-        "costais",
-        "teideal",
-        "oighear"
+        "bainis",
+        "daoine",
+        "maidin",
+        "sheol"
       ]
     },
     {
-      "before": "Consumer price ",
-      "after": " rose to a one-year high of 3.6% in October and the Bank …",
-      "irish": "boilsciú",
-      "english": "inflation",
-      "ga": "boilsciú",
-      "en": "inflation",
+      "before": "… to breach the 1.5 degrees Celsius limit set out in the Paris ",
+      "after": " in 2015.",
+      "irish": "comhaontú",
+      "english": "agreement",
+      "ga": "comhaontú",
+      "en": "agreement",
       "options": [
-        "stáisiún",
-        "boilsciú",
-        "feachtas",
-        "oibrithe"
+        "stairiúil",
+        "comhaontú",
+        "comhshaol",
+        "fadliosta"
       ]
     },
     {
-      "before": "However, overall economic ",
-      "after": " has ‌been stronger than expected this year and recent updates from ⁠major …",
-      "irish": "fás",
-      "english": "growth",
-      "ga": "fás",
-      "en": "growth",
+      "before": "In Dubai three ",
+      "after": " ago, governments agreed to contribute to a global effort to move away …",
+      "irish": "blianta",
+      "english": "years",
+      "ga": "blianta",
+      "en": "years",
       "options": [
-        "scór",
-        "bua",
-        "beag",
-        "fás"
+        "blianta",
+        "eachtra",
+        "Gaeilge",
+        "póilíní"
       ]
     }
   ]
