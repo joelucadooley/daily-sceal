@@ -2402,7 +2402,7 @@ function ExportView({ stories }) {
 
 export default function DailySceal() {
   // The standalone support and privacy pages link back to /#faoi; a shared
-  // game score links to /#bearnai.
+  // game score links to /bearnai, which opens /#bearnai.
   const [view, setView] = useState(() => {
     if (typeof window === "undefined") return "feed";
     if (window.location.hash === "#faoi") return "about";
