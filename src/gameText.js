@@ -1,6 +1,6 @@
 // Text for the daily game (Game.jsx), kept apart so the tests can reach it.
 
-export const GAME_LINK = "dailysceal.com/bearnai";
+export const GAME_LINK = "https://dailysceal.com/bearnai";
 
 const MONTHS = ["Eanáir", "Feabhra", "Márta", "Aibreán", "Bealtaine", "Meitheamh", "Iúil", "Lúnasa", "Meán Fómhair", "Deireadh Fómhair", "Samhain", "Nollaig"];
 

@@ -107,9 +107,9 @@ await test("the story: headline and text to the last gap, gaps as question numbe
 });
 
 await test("share text: score, a shamrock or cross each, the link", () => {
-  assert.equal(shareText([true, true, false, true, true], "2026-11-20"), "Bearnaí 4/5 · 20 Samhain\n☘️☘️❌☘️☘️\ndailysceal.com/bearnai");
-  assert.equal(shareText([true, true, true, true, true], "2027-01-03"), "Bearnaí 5/5 · 3 Eanáir\n☘️☘️☘️☘️☘️\ndailysceal.com/bearnai");
-  assert.equal(shareText([false, true, false, true, true]), "Bearnaí 3/5\n❌☘️❌☘️☘️\ndailysceal.com/bearnai");
+  assert.equal(shareText([true, true, false, true, true], "2026-11-20"), "Bearnaí 4/5 · 20 Samhain\n☘️☘️❌☘️☘️\nhttps://dailysceal.com/bearnai");
+  assert.equal(shareText([true, true, true, true, true], "2027-01-03"), "Bearnaí 5/5 · 3 Eanáir\n☘️☘️☘️☘️☘️\nhttps://dailysceal.com/bearnai");
+  assert.equal(shareText([false, true, false, true, true]), "Bearnaí 3/5\n❌☘️❌☘️☘️\nhttps://dailysceal.com/bearnai");
 });
 
 await test("praise: the Irish word over the score", () => {
