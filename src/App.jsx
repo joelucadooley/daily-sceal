@@ -718,7 +718,7 @@ function SectionBar({ sections, active, onSelect }) {
       backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
       borderBottom: `1px solid ${C.border}`,
     }}>
-      <div style={{
+      <div className="ds-tabs" style={{
         maxWidth: 640, margin: "0 auto", display: "flex",
         alignItems: "stretch", justifyContent: "space-between",
         padding: "0 8px",
@@ -726,7 +726,7 @@ function SectionBar({ sections, active, onSelect }) {
         {sections.map(sec => {
           const on = active === sec.id;
           return (
-            <button key={sec.id} onClick={() => onSelect(sec.id)} aria-pressed={on}
+            <button key={sec.id} className="ds-tab" onClick={() => onSelect(sec.id)} aria-pressed={on}
               style={{
                 // Natural width, not equal shares: equal shares ellipsise the
                 // longer labels on a narrow phone.
@@ -1635,10 +1635,10 @@ function WordPanel({ words }) {
   );
 }
 
-/** A solid link button, as used across the site. */
-function OutButton({ href, children, color = C.navy }) {
+/** A solid link button, as used across the site. `internal` stays on the site. */
+function OutButton({ href, children, color = C.navy, internal = false }) {
   return (
-    <a href={href} target="_blank" rel="noopener noreferrer"
+    <a href={href} {...(internal ? {} : { target: "_blank", rel: "noopener noreferrer" })}
       style={{ display: "inline-block", background: color, color: "#fff", borderRadius: 8, padding: "10px 18px", fontFamily: "system-ui, sans-serif", fontSize: "0.8rem", fontWeight: 600, textDecoration: "none" }}>
       {children}
     </a>
@@ -1649,18 +1649,28 @@ function OutButton({ href, children, color = C.navy }) {
 // a grey line under it. The blocks stack on a phone and sit three across on
 // desktop, so the page fills the sheet the way the other pages do.
 const ABOUT_ITEMS = [
-  { label: "Nuacht", title: "Real news from RTÉ", text: "The day's stories, with Irish words woven into the English." },
-  { label: "Leibhéal", title: "Read at your level", text: "A slider moves the balance from mostly English towards fully Irish." },
-  { label: "Focail", title: "Tap any blue word", text: "See what it means in English." },
+  { label: "Nuacht", title: "Real news from RTÉ", text: "Every morning, the day's stories with Irish words in the English. Tap a blue word to see what it means." },
+  {
+    label: "Leibhéal", title: "Read at your level",
+    text: "Beginner marks key nouns, Foundation adds verbs, Intermediate most words. Your level stays set for the next story.",
+  },
+  {
+    label: "Bearnaí", title: "A daily game",
+    text: "Yesterday's story with five Irish words taken out. Pick the right one for each gap.",
+    links: [{ href: "#bearnai", text: "Play Bearnaí →", internal: true }],
+  },
   {
     label: "An aip", title: "Daily Scéal for iPhone",
     text: "Save words, test yourself with Bearnaí and flashcards, and get Focal an lae on your home screen.",
     links: [{ href: "https://apps.apple.com/app/id6813254896", text: "App Store →" }],
   },
   {
-    label: "Lean ar Instagram", title: "A story a day on Instagram",
-    text: "Each day, one story from the news with a few key words translated. On Sundays, Focail na seachtaine: the week's words to guess before the reveal.",
-    links: [{ href: "https://instagram.com/dailysceal", text: "@dailysceal →" }],
+    label: "Lean orainn", title: "Follow along",
+    text: "A story a day on Instagram, with Focail na seachtaine on Sundays. News about the project on LinkedIn.",
+    links: [
+      { href: "https://instagram.com/dailysceal", text: "Instagram →" },
+      { href: "https://www.linkedin.com/company/dailysceal/", text: "LinkedIn →" },
+    ],
   },
   {
     label: "Le grá", title: "Made with 💚 for the Irish language",
@@ -1690,7 +1700,7 @@ function AboutView() {
             <p style={{ margin: 0, fontSize: "0.82rem", color: C.muted, lineHeight: 1.6, fontFamily: "system-ui, sans-serif" }}>{it.text}</p>
             {it.links && (
               <div className="ds-about-links" style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 14 }}>
-                {it.links.map(l => <OutButton key={l.href} href={l.href} color={l.color}>{l.text}</OutButton>)}
+                {it.links.map(l => <OutButton key={l.href} href={l.href} color={l.color} internal={l.internal}>{l.text}</OutButton>)}
               </div>
             )}
           </div>
@@ -2692,6 +2702,14 @@ export default function DailySceal() {
           .ds-group .ds-cat { display: none; }
           .ds-group .ds-meta { justify-content: flex-end; }
 
+          /* Tabs sized for a big screen: the phone sizes read as a thin
+             strip across a wide page. */
+          .ds-tabs { max-width: 880px !important; }
+          .ds-tab { font-size: 0.85rem !important; padding: 18px 14px 15px !important; }
+          .ds-nav { max-width: 760px !important; }
+          .ds-nav-icon { font-size: 1.3rem !important; }
+          .ds-nav-label { font-size: 0.72rem !important; }
+
           /* Same track count and same gap as the lead row above it. */
           .ds-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0 28px; }
 
@@ -2803,7 +2821,7 @@ export default function DailySceal() {
 
       {/* Bottom nav */}
       <nav style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "rgba(255,255,255,0.96)", borderTop: `1px solid ${C.border}`, backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", zIndex: 100 }}>
-        <div style={{ maxWidth: 640, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr 1fr" }}>
+        <div className="ds-nav" style={{ maxWidth: 640, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr 1fr" }}>
           {[
             { id: "feed", label: "Nuacht", icon: "📰" },
             { id: "game", label: "Bearnaí", icon: "✏️" },
@@ -2819,8 +2837,8 @@ export default function DailySceal() {
               style={{ background: "none", border: "none", padding: "11px 0 9px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 3, position: "relative" }}
             >
               {active && <span style={{ position: "absolute", top: 0, left: "20%", right: "20%", height: 2, background: C.navy, borderRadius: "0 0 2px 2px" }} />}
-              <span aria-hidden="true" style={{ fontSize: "1.1rem" }}>{tab.icon}</span>
-              <span style={{ fontFamily: "system-ui, sans-serif", fontSize: "0.6rem", fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: active ? C.navy : C.faint, transition: "color 0.15s" }}>{tab.label}</span>
+              <span className="ds-nav-icon" aria-hidden="true" style={{ fontSize: "1.1rem" }}>{tab.icon}</span>
+              <span className="ds-nav-label" style={{ fontFamily: "system-ui, sans-serif", fontSize: "0.6rem", fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: active ? C.navy : C.faint, transition: "color 0.15s" }}>{tab.label}</span>
             </button>
             );
           })}
