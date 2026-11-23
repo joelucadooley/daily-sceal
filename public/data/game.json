@@ -1,94 +1,94 @@
 {
   "v": 1,
-  "date": "2026-11-22",
-  "from": "2026-11-21",
+  "date": "2026-11-23",
+  "from": "2026-11-22",
   "source": "auto",
-  "title": "COP31 enters extra day of talks amid fears over agreement",
-  "link": "https://www.rte.ie/news/environment/2026/1121/1600094-cop31-turkey/",
+  "title": "Fossil fuels still absent in latest COP31 draft deal",
+  "link": "https://www.rte.ie/news/world/2026/1122/1600166-cop31-turkey/",
   "story": [
     [
-      "There are fears that the COP31 Climate ",
+      "A new draft agreement at the COP31 climate ",
       0,
-      " in Turkey could end without a deal as a ",
+      " in Turkey still does not mention fossil fuels. Instead, its opening line recalls \"the United Arab Emirates Consensus in its entirety\" - a reference to the agreement reached in Dubai three years ago, when countries agreed to transition away from fossil fuels in their ",
       1,
-      " dispute over whether even to mention fossil fuels in the final agreement deepens. The talks in Antalya have now into gone into an extra day for negotiations, with the different sides as far apart as ever on fossil fuel inclusion. The draft text on the table this ",
+      " systems. Whether those words are enough for Ireland, its EU partners and the countries that pressed for a stronger commitment is the question facing the summit this ",
       2,
-      " is the one issued on Thursday, which dropped all explicit references to fossil fuels. Much of the frustration on the European side comes down to how little it is now asking of the countries opposing it to mention the transition away from fossil fuels. This frustration is being amplified also by the global acceptance now that warming is set to breach the 1.5 degrees Celsius limit set out in the Paris ",
+      ". The closing plenary is due to resume at 9am in Antalya (6am Irish time). The talks are now in their second day of overtime and could still end without ",
       3,
-      " in 2015. In Dubai three ",
+      " on the main text. Yesterday evening, Minister for Climate Darragh O'Brien and European Climate Commissioner Wopke Hoekstra joined ministers and negotiators from the UK, small ",
       4,
-      " ago, governments agreed to contribute to a global effort to move away from fossil fuels in their energy systems."
+      " states and developing countries who walked together to the COP presidency's offices."
     ]
   ],
   "questions": [
     {
-      "before": "There are fears that the COP31 Climate ",
-      "after": " in Turkey could end without a deal as a serious dispute over …",
+      "before": "A new draft agreement at the COP31 climate ",
+      "after": " in Turkey still does not mention fossil fuels.",
       "irish": "cainteanna",
       "english": "talks",
       "ga": "cainteanna",
       "en": "talks",
       "options": [
-        "bonneagar",
-        "scoileanna",
         "cainteanna",
-        "feirmeoir"
+        "custaiméir",
+        "taispeáint",
+        "ambasadóir"
       ]
     },
     {
-      "before": "… COP31 Climate talks in Turkey could end without a deal as a ",
-      "after": " dispute over whether even to mention fossil fuels in the final agreement …",
-      "irish": "tromchúiseach",
-      "english": "serious",
-      "ga": "tromchúiseach",
-      "en": "serious",
+      "before": "… ago, when countries agreed to transition away from fossil fuels in their ",
+      "after": " systems.",
+      "irish": "fuinneamh",
+      "english": "energy",
+      "ga": "fuinneamh",
+      "en": "energy",
       "options": [
-        "tromchúiseach",
-        "custaiméirí",
-        "príomhchathair",
-        "príobháideach"
+        "geimhreadh",
+        "saibhreas",
+        "fuinneamh",
+        "fiosrúchán"
       ]
     },
     {
-      "before": "The draft text on the table this ",
-      "after": " is the one issued on Thursday, which dropped all explicit references to …",
+      "before": "… pressed for a stronger commitment is the question facing the summit this ",
+      "after": ".",
       "irish": "maidin",
       "english": "morning",
       "ga": "maidin",
       "en": "morning",
       "options": [
-        "bainis",
-        "daoine",
         "maidin",
-        "sheol"
+        "daoine",
+        "robáil",
+        "scrúdú"
       ]
     },
     {
-      "before": "… to breach the 1.5 degrees Celsius limit set out in the Paris ",
-      "after": " in 2015.",
+      "before": "… now in their second day of overtime and could still end without ",
+      "after": " on the main text.",
       "irish": "comhaontú",
       "english": "agreement",
       "ga": "comhaontú",
       "en": "agreement",
       "options": [
-        "stairiúil",
+        "bonneagar",
+        "galtoitín",
         "comhaontú",
-        "comhshaol",
-        "fadliosta"
+        "uachtarán"
       ]
     },
     {
-      "before": "In Dubai three ",
-      "after": " ago, governments agreed to contribute to a global effort to move away …",
-      "irish": "blianta",
-      "english": "years",
-      "ga": "blianta",
-      "en": "years",
+      "before": "… Climate Commissioner Wopke Hoekstra joined ministers and negotiators from the UK, small ",
+      "after": " states and developing countries who walked together to the COP presidency's offices.",
+      "irish": "oileán",
+      "english": "island",
+      "ga": "oileán",
+      "en": "island",
       "options": [
-        "blianta",
-        "eachtra",
-        "Gaeilge",
-        "póilíní"
+        "páiste",
+        "ioncam",
+        "ollmhór",
+        "oileán"
       ]
     }
   ]
