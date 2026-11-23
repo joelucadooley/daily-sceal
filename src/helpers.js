@@ -81,9 +81,18 @@ export function timeoutSignal(ms) {
   return c.signal;
 }
 
-// ---- Story addresses ----
+// ---- Page addresses ----
 //
-// Every story has an address: dailysceal.com/#2026-11-22/3/25
+// Every page has an address:
+//   dailysceal.com                  Inniu (#inniu works too)
+//   #eire #sport #domhan #eile      the news tabs
+//   #bearnai                        the game
+//   #faoi                           Faoi
+//   #story/2026-11-22/3/25          a story
+// Written without fadas, which turn into %C3%A9 when a link is copied;
+// typed with them (#éire, #spórt) they still work.
+//
+// In a story address:
 //   2026-11-22  the day's file (today.json, or archive/2026-11-22.json)
 //   3           the story's place in that file, counting from 1. This is the
 //               file's own order, not the order the home page shows. The
@@ -95,15 +104,15 @@ export function timeoutSignal(ms) {
 
 export const ADDRESS_LEVELS = [10, 25, 50];
 
-/** "#2026-11-22/3/25" for a day, a number from 1 and an optional level. */
+/** "#story/2026-11-22/3/25" for a day, a number from 1 and an optional level. */
 export function storyAddress(day, n, level) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(String(day)) || !Number.isInteger(n) || n < 1) return "";
-  return `#${day}/${n}${ADDRESS_LEVELS.includes(level) ? `/${level}` : ""}`;
+  return `#story/${day}/${n}${ADDRESS_LEVELS.includes(level) ? `/${level}` : ""}`;
 }
 
-/** { day, n, level } from "#2026-11-22/3/25" (level null when left out), or null. */
+/** { day, n, level } from "#story/2026-11-22/3/25" (level null when left out), or null. */
 export function parseStoryAddress(hash) {
-  const m = /^#?(\d{4})-(\d{2})-(\d{2})\/(\d{1,3})(?:\/(\d{1,3}))?\/?$/.exec(String(hash || "").trim());
+  const m = /^#?story\/(\d{4})-(\d{2})-(\d{2})\/(\d{1,3})(?:\/(\d{1,3}))?\/?$/i.exec(String(hash || "").trim());
   if (!m) return null;
   const [, y, mo, d, num, lv] = m;
   const date = new Date(Date.UTC(+y, +mo - 1, +d));
@@ -112,6 +121,32 @@ export function parseStoryAddress(hash) {
   if (n < 1) return null;
   const level = lv != null && ADDRESS_LEVELS.includes(Number(lv)) ? Number(lv) : null;
   return { day: `${y}-${mo}-${d}`, n, level };
+}
+
+/**
+ * Which page an address names: { view: "feed", tab }, { view: "game" },
+ * { view: "about" }, { view: "export" } or { view: "story", story }.
+ * `tabs` are the news tab ids. Anything else is Inniu.
+ */
+export function routeFor(hash, tabs = []) {
+  let h = String(hash || "").trim().replace(/^#/, "");
+  try { h = decodeURIComponent(h); } catch {}
+  const story = parseStoryAddress(h);
+  if (story) return { view: "story", story };
+  const key = h.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\/+$/, "");
+  if (key === "bearnai") return { view: "game" };
+  if (key === "faoi") return { view: "about" };
+  if (key === "export") return { view: "export" };
+  if (tabs.includes(key)) return { view: "feed", tab: key };
+  return { view: "feed", tab: "inniu" };
+}
+
+/** The address of a page other than a story; "" for Inniu. */
+export function addressFor({ view, tab } = {}) {
+  if (view === "game") return "#bearnai";
+  if (view === "about") return "#faoi";
+  if (view === "feed" && tab && tab !== "inniu") return `#${tab}`;
+  return "";
 }
 
 /** Each story of a day's file with its address parts (addrDay, addrN). */

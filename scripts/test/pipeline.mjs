@@ -22,7 +22,7 @@ const { RTE_FEEDS, feedById } = await import("../feeds.js");
 const { run } = await import("../generate.js");
 const {
   fixArticle, parseText, focalFor, fnv1a64, timeoutSignal,
-  storyAddress, parseStoryAddress, withAddresses, storyAt, rememberedLevel, rememberLevel,
+  storyAddress, parseStoryAddress, routeFor, addressFor, withAddresses, storyAt, rememberedLevel, rememberLevel,
 } = await import("../../src/helpers.js");
 
 let failed = 0, passed = 0;
@@ -337,29 +337,61 @@ await test("timeoutSignal works where AbortSignal.timeout is missing", async () 
   }
 });
 
-// ---- 6. Story addresses (#2026-11-22/3/25) ----
+// ---- 6. Page addresses (#sport, #faoi, #story/2026-11-22/3/25) ----
 
-await test("a story address is the day, the story's number from 1 and the level", () => {
-  eq(storyAddress("2026-11-22", 3, 25), "#2026-11-22/3/25", "with a level");
-  eq(storyAddress("2026-11-22", 3), "#2026-11-22/3", "without");
-  eq(storyAddress("2026-11-22", 3, 75), "#2026-11-22/3", "a locked level is left out");
+await test("a story address is story/, the day, the story's number from 1 and the level", () => {
+  eq(storyAddress("2026-11-22", 3, 25), "#story/2026-11-22/3/25", "with a level");
+  eq(storyAddress("2026-11-22", 3), "#story/2026-11-22/3", "without");
+  eq(storyAddress("2026-11-22", 3, 75), "#story/2026-11-22/3", "a locked level is left out");
   eq(storyAddress(undefined, 3, 10), "", "no day (the built-in stories)");
   eq(storyAddress("2026-11-22", 0, 10), "", "no story 0");
 });
 
 await test("addresses are read back, and anything else is not an address", () => {
-  const got = parseStoryAddress("#2026-11-22/3/25");
+  const got = parseStoryAddress("#story/2026-11-22/3/25");
   eq(JSON.stringify(got), JSON.stringify({ day: "2026-11-22", n: 3, level: 25 }), "full");
-  eq(parseStoryAddress("#2026-11-22/3").level, null, "no level");
-  eq(parseStoryAddress("#2026-11-22/3/").n, 3, "a trailing slash");
-  eq(parseStoryAddress("#2026-11-22/3/99").level, null, "an unknown level is ignored, the story still opens");
-  for (const bad of ["", "#", "#bearnai", "#faoi", "#export", "#2026-11-22", "#2026-11-22/0", "#2026-02-30/1",
-    "#2026-13-01/1", "#26-11-22/3", "#2026-11-22/x", "#2026-11-22/3/25/4", "#2026-11-22/1234"]) {
+  eq(parseStoryAddress("#story/2026-11-22/3").level, null, "no level");
+  eq(parseStoryAddress("#story/2026-11-22/3/").n, 3, "a trailing slash");
+  eq(parseStoryAddress("#Story/2026-11-22/3").n, 3, "a capital S");
+  eq(parseStoryAddress("#story/2026-11-22/3/99").level, null, "an unknown level is ignored, the story still opens");
+  for (const bad of ["", "#", "#bearnai", "#faoi", "#export", "#story", "#story/2026-11-22", "#story/2026-11-22/0",
+    "#story/2026-02-30/1", "#story/2026-13-01/1", "#story/26-11-22/3", "#story/2026-11-22/x",
+    "#story/2026-11-22/3/25/4", "#story/2026-11-22/1234", "#2026-11-22/3", "#stories/2026-11-22/3"]) {
     eq(parseStoryAddress(bad), null, `not an address: ${bad}`);
   }
   for (const [day, n, level] of [["2026-11-22", 1, 10], ["2026-01-05", 30, 50], ["2026-12-31", 7, null]]) {
     const back = parseStoryAddress(storyAddress(day, n, level));
     assert(back.day === day && back.n === n && back.level === level, `round trip ${day}/${n}/${level}`);
+  }
+});
+
+const TABS = ["inniu", "eire", "sport", "domhan", "eile"];
+
+await test("every page has an address, and the address opens that page", () => {
+  const pages = [
+    [{ view: "feed", tab: "inniu" }, ""],
+    [{ view: "feed", tab: "eire" }, "#eire"],
+    [{ view: "feed", tab: "sport" }, "#sport"],
+    [{ view: "feed", tab: "domhan" }, "#domhan"],
+    [{ view: "feed", tab: "eile" }, "#eile"],
+    [{ view: "game" }, "#bearnai"],
+    [{ view: "about" }, "#faoi"],
+  ];
+  for (const [page, address] of pages) {
+    eq(addressFor(page), address, `address of ${JSON.stringify(page)}`);
+    eq(JSON.stringify(routeFor(address, TABS)), JSON.stringify(page.view === "feed" ? page : { view: page.view }), `page at "${address}"`);
+  }
+  eq(routeFor("#story/2026-11-22/3/25", TABS).story.n, 3, "a story");
+  eq(routeFor("#export", TABS).view, "export", "the export page");
+});
+
+await test("addresses are forgiving: #inniu, fadas, capitals, a trailing slash, copied links", () => {
+  for (const [typed, tab] of [["#inniu", "inniu"], ["#éire", "eire"], ["#Éire", "eire"], ["#%C3%89ire", "eire"],
+    ["#Spórt", "sport"], ["#SPORT", "sport"], ["#domhan/", "domhan"], ["eile", "eile"]]) {
+    eq(routeFor(typed, TABS).tab, tab, typed);
+  }
+  for (const junk of ["#", "#nuacht", "#2026-11-22/3", "#%E0%A4%A", "#story/nope", "#eire/extra"]) {
+    eq(JSON.stringify(routeFor(junk, TABS)), JSON.stringify({ view: "feed", tab: "inniu" }), `unknown: ${junk}`);
   }
 });
 

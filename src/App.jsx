@@ -8,7 +8,8 @@ import places from "../scripts/places.json";
 // Marker parsing, Focal an lae and fetch time limits, tested in Node.
 import {
   parseText, focalFor, timeoutSignal,
-  storyAddress, parseStoryAddress, withAddresses, storyAt, rememberedLevel, rememberLevel,
+  storyAddress, parseStoryAddress, routeFor, addressFor, withAddresses, storyAt,
+  rememberedLevel, rememberLevel,
 } from "./helpers.js";
 import GameView from "./Game.jsx";
 
@@ -45,6 +46,8 @@ const SECTIONS = [
   { id: "domhan", label: "Domhan" },
   { id: "eile",   label: "Eile"   },
 ];
+// Each tab's address is its id: #eire, #sport (helpers.js routeFor).
+const TAB_IDS = SECTIONS.map(s => s.id);
 
 // How many stories the Inniu tab shows: the lead, then three rows of two.
 const HOMEPAGE_COUNT = 7;
@@ -2428,16 +2431,19 @@ function ExportView({ stories }) {
 }
 
 export default function DailySceal() {
-  // The standalone support and privacy pages link back to /#faoi; a shared
-  // game score links to /bearnai, which opens /#bearnai.
-  const [view, setView] = useState(() => {
-    if (typeof window === "undefined") return "feed";
-    if (window.location.hash === "#faoi") return "about";
-    if (window.location.hash === "#bearnai") return "game";
-    // A story address (#2026-11-22/3/25): show a spinner until it is found.
-    if (parseStoryAddress(window.location.hash)) return "opening";
-    return "feed";
-  });
+  // Every page has an address (routeFor and addressFor in helpers.js): the
+  // plain address is Inniu, #eire #sport #domhan #eile the news tabs,
+  // #bearnai the game, #faoi Faoi, #story/2026-11-22/3/25 a story. The
+  // support and privacy pages link back to /#faoi; a shared game score
+  // opens /#bearnai.
+  const startRoute = useRef(null);
+  if (!startRoute.current) {
+    startRoute.current = typeof window === "undefined"
+      ? { view: "feed", tab: "inniu" }
+      : routeFor(window.location.hash, TAB_IDS);
+  }
+  // A story address shows a spinner ("opening") until the story is found.
+  const [view, setView] = useState(() => (startRoute.current.view === "story" ? "opening" : startRoute.current.view));
   const [stories, setStories] = useState(FALLBACK_STORIES);
   // Today's pull on its own. The public feed may also contain older stories
   // pulled in to pad thin sections, but the export tool must only ever offer
@@ -2447,42 +2453,38 @@ export default function DailySceal() {
   const [activeStory, setActiveStory] = useState(null);
   // The level an address asked for, for that one opening of a story.
   const [openLevel, setOpenLevel] = useState(null);
-  const [section, setSection] = useState("inniu");
+  const [section, setSection] = useState(() => startRoute.current.tab || "inniu");
   // Where the list was scrolled to, so Back returns to the same place.
   const feedScroll = useRef(0);
   const viewRef = useRef(view);
   viewRef.current = view;
   const storiesRef = useRef(stories);
   storiesRef.current = stories;
-  const isExport = typeof window !== "undefined" && (window.location.hash === "#export" || window.location.search.includes("export=1"));
+  const isExport = typeof window !== "undefined" &&
+    (routeFor(window.location.hash).view === "export" || window.location.search.includes("export=1"));
 
-  // Drop the #faoi hint once used, so a reload lands on the stories again.
-  // #bearnai stays: it is the address people share.
+  // The address bar follows the page: a tab, the game or Faoi. Switching
+  // between them replaces the address rather than adding a Back step. A
+  // story writes its own address when it opens (openStory).
   useEffect(() => {
-    if (window.location.hash === "#faoi") {
-      history.replaceState(null, "", window.location.pathname + window.location.search);
-    }
-  }, []);
-
-  // Leaving the game by any route (the logo, a story) drops #bearnai, and
-  // leaving a story by the logo or the bottom bar drops its address.
-  useEffect(() => {
-    const h = window.location.hash;
-    if ((view !== "game" && h === "#bearnai") ||
-        (view !== "reading" && view !== "opening" && parseStoryAddress(h))) {
-      history.replaceState(null, "", window.location.pathname + window.location.search);
-    }
     if (view !== "reading") document.title = BASE_TITLE;
-  }, [view]);
+    if (isExport || view === "reading" || view === "opening") return;
+    const want = addressFor({ view, tab: section });
+    if (window.location.hash !== want) {
+      history.replaceState(null, "", window.location.pathname + window.location.search + want);
+    }
+  }, [view, section, isExport]);
 
-  // The browser's Back and Forward. Opening a story adds a step to the
-  // history, so Back from a story returns to the list, on the same tab and
-  // at the same place, instead of leaving the site.
+  // The browser's Back and Forward, and an address typed or clicked while the
+  // site is open. Opening a story adds a step to the history, so Back from a
+  // story returns to the tab it was opened from, at the same place.
   useEffect(() => {
     if ("scrollRestoration" in history) history.scrollRestoration = "manual";
-    const onPop = () => {
-      const addr = parseStoryAddress(window.location.hash);
-      if (addr) {
+    const go = () => {
+      const route = routeFor(window.location.hash, TAB_IDS);
+      const fromStory = viewRef.current === "reading" || viewRef.current === "opening";
+      if (route.view === "story") {
+        const addr = route.story;
         const known = storiesRef.current.find(s => s.addrDay === addr.day && s.addrN === addr.n);
         if (known) {
           showStory(known, addr.level);
@@ -2496,29 +2498,32 @@ export default function DailySceal() {
         });
         return;
       }
-      if (window.location.hash === "#bearnai") return;   // the hashchange handler opens the game
-      const fromStory = viewRef.current === "reading" || viewRef.current === "opening";
-      setView("feed");
+      if (route.tab) setSection(route.tab);
+      setView(route.view);
       // Twice, so the list has been drawn before scrolling back down it.
-      const y = fromStory ? feedScroll.current : 0;
+      const y = fromStory && route.view === "feed" ? feedScroll.current : 0;
       requestAnimationFrame(() => requestAnimationFrame(() => window.scrollTo(0, y)));
     };
-    window.addEventListener("popstate", onPop);
-    return () => window.removeEventListener("popstate", onPop);
-  }, []);
-
-  // A link to #bearnai clicked while the site is already open.
-  useEffect(() => {
-    const onHash = () => {
-      if (window.location.hash === "#bearnai") { setView("game"); window.scrollTo(0, 0); }
+    // Browsers send popstate and then hashchange for the same change of
+    // address; act on it once.
+    let popped = false;
+    const onPop = () => {
+      popped = true;
+      setTimeout(() => { popped = false; }, 0);
+      go();
     };
+    const onHash = () => { if (!popped) go(); };
+    window.addEventListener("popstate", onPop);
     window.addEventListener("hashchange", onHash);
-    return () => window.removeEventListener("hashchange", onHash);
+    return () => {
+      window.removeEventListener("popstate", onPop);
+      window.removeEventListener("hashchange", onHash);
+    };
   }, []);
 
   useEffect(() => {
     let cancelled = false;
-    const startAddr = parseStoryAddress(window.location.hash);
+    const startAddr = startRoute.current.story;
     fetchTodayContent()
       .then(data => {
         if (cancelled || !data?.stories?.length) return null;
@@ -2558,10 +2563,13 @@ export default function DailySceal() {
   const inniuLeadId = storiesForSection(stories, "inniu")[0]?.id;
   const sectionLabel = SECTIONS.find(s => s.id === section)?.label || "";
 
-  // If today's pull has nothing for the selected section, fall back to Inniu
+  // If today's pull has nothing for the selected section, fall back to Inniu.
+  // Not before today's stories arrive, or an address such as #domhan would
+  // be lost to the built-in stories shown while loading.
   useEffect(() => {
+    if (loading) return;
     if (!sections.some(s => s.id === section)) setSection("inniu");
-  }, [stories]);
+  }, [stories, loading]);
 
   function pickSection(id) {
     setSection(id);
@@ -2579,7 +2587,6 @@ export default function DailySceal() {
 
   // An address that names no story (a rerun day, a typo) opens the news.
   function leaveForFeed() {
-    history.replaceState(null, "", window.location.pathname + window.location.search);
     setView("feed");
   }
 
@@ -2609,7 +2616,6 @@ export default function DailySceal() {
       history.back();
       return;
     }
-    history.replaceState(null, "", window.location.pathname + window.location.search);
     setView("feed");
     window.scrollTo(0, 0);
   }
@@ -2807,8 +2813,6 @@ export default function DailySceal() {
             return (
             <button key={tab.id} onClick={() => {
                 if (tab.id === "feed" && view === "feed") pickSection("inniu");
-                // Only the game keeps an address in the bar, for sharing.
-                history.replaceState(null, "", window.location.pathname + window.location.search + (tab.id === "game" ? "#bearnai" : ""));
                 setView(tab.id);
                 window.scrollTo(0, 0);
               }}
