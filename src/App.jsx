@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 // Single source of truth for RTÉ categories, shared with scripts/generate.js.
 // Pure ESM with no Node APIs, so Vite bundles it for the browser fine.
 import { catInfo } from "../scripts/categories.js";
@@ -6,7 +6,10 @@ import { catInfo } from "../scripts/categories.js";
 // so no extra fetch, and it works for backfilled archive stories too.
 import places from "../scripts/places.json";
 // Marker parsing, Focal an lae and fetch time limits, tested in Node.
-import { parseText, focalFor, timeoutSignal } from "./helpers.js";
+import {
+  parseText, focalFor, timeoutSignal,
+  storyAddress, parseStoryAddress, withAddresses, storyAt, rememberedLevel, rememberLevel,
+} from "./helpers.js";
 import GameView from "./Game.jsx";
 
 const C = {
@@ -239,7 +242,7 @@ async function backfillThinSections(todayStories) {
       data = await r.json();
     } catch { continue; }
 
-    for (const s of data.stories || []) {
+    for (const s of withAddresses(data.stories, key)) {
       const sec = sectionOf(s);
       if (!thin.includes(sec)) continue;
       if ((need[sec] || 0) >= TARGET_PER_SECTION) continue;
@@ -615,6 +618,26 @@ async function scanArchiveWords(days, verified, base) {
   }
   // Verified first, then alphabetical
   return [...seen.values()].sort((a, b) => (b.verified - a.verified) || a.irish.localeCompare(b.irish));
+}
+
+// The page title from index.html; a story shows its headline there instead,
+// so bookmarks and the browser's history tell stories apart.
+const BASE_TITLE = typeof document !== "undefined" ? document.title : "Daily Scéal";
+
+// The story an address names: today's file when the day is today, otherwise
+// that day's copy in the archive. null when there is no such story.
+async function loadAddressedStory(addr, todayData) {
+  if (todayData && todayData.date === addr.day) {
+    const s = storyAt(todayData, addr.n);
+    if (s) return s;
+  }
+  try {
+    const r = await fetch(`${import.meta.env.BASE_URL}data/archive/${addr.day}.json`, { signal: timeoutSignal(15000) });
+    if (!r.ok) return null;
+    return storyAt(await r.json(), addr.n);
+  } catch {
+    return null;
+  }
 }
 
 function Spinner() {
@@ -1321,8 +1344,12 @@ function makeShareCanvas(story, parts, levelLabel) {
   return canvas;
 }
 
-function ReadingView({ story, onBack }) {
-  const [pct, setPct] = useState(10);
+function ReadingView({ story, onBack, startLevel, onLevel }) {
+  // A level in the address wins for this story; otherwise the reader's own.
+  const [pct, setPctState] = useState(() => startLevel ?? rememberedLevel() ?? 10);
+  // The reader's choice is kept for the next story (open levels only).
+  const setPct = p => { setPctState(p); rememberLevel(p); };
+  useEffect(() => { if (onLevel) onLevel(pct); }, [pct]);
   const [activeWord, setActiveWord] = useState(null);
 
   // An open word closes when you click or tap anywhere else, or press Escape.
@@ -2407,6 +2434,8 @@ export default function DailySceal() {
     if (typeof window === "undefined") return "feed";
     if (window.location.hash === "#faoi") return "about";
     if (window.location.hash === "#bearnai") return "game";
+    // A story address (#2026-11-22/3/25): show a spinner until it is found.
+    if (parseStoryAddress(window.location.hash)) return "opening";
     return "feed";
   });
   const [stories, setStories] = useState(FALLBACK_STORIES);
@@ -2416,7 +2445,15 @@ export default function DailySceal() {
   const [todayOnly, setTodayOnly] = useState(FALLBACK_STORIES);
   const [loading, setLoading] = useState(true);
   const [activeStory, setActiveStory] = useState(null);
+  // The level an address asked for, for that one opening of a story.
+  const [openLevel, setOpenLevel] = useState(null);
   const [section, setSection] = useState("inniu");
+  // Where the list was scrolled to, so Back returns to the same place.
+  const feedScroll = useRef(0);
+  const viewRef = useRef(view);
+  viewRef.current = view;
+  const storiesRef = useRef(stories);
+  storiesRef.current = stories;
   const isExport = typeof window !== "undefined" && (window.location.hash === "#export" || window.location.search.includes("export=1"));
 
   // Drop the #faoi hint once used, so a reload lands on the stories again.
@@ -2427,12 +2464,48 @@ export default function DailySceal() {
     }
   }, []);
 
-  // Leaving the game by any route (the logo, a story) drops #bearnai.
+  // Leaving the game by any route (the logo, a story) drops #bearnai, and
+  // leaving a story by the logo or the bottom bar drops its address.
   useEffect(() => {
-    if (view !== "game" && window.location.hash === "#bearnai") {
+    const h = window.location.hash;
+    if ((view !== "game" && h === "#bearnai") ||
+        (view !== "reading" && view !== "opening" && parseStoryAddress(h))) {
       history.replaceState(null, "", window.location.pathname + window.location.search);
     }
+    if (view !== "reading") document.title = BASE_TITLE;
   }, [view]);
+
+  // The browser's Back and Forward. Opening a story adds a step to the
+  // history, so Back from a story returns to the list, on the same tab and
+  // at the same place, instead of leaving the site.
+  useEffect(() => {
+    if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+    const onPop = () => {
+      const addr = parseStoryAddress(window.location.hash);
+      if (addr) {
+        const known = storiesRef.current.find(s => s.addrDay === addr.day && s.addrN === addr.n);
+        if (known) {
+          showStory(known, addr.level);
+          return;
+        }
+        setView("opening");
+        loadAddressedStory(addr, null).then(story => {
+          if (viewRef.current !== "opening") return;
+          if (story) showStory(story, addr.level);
+          else leaveForFeed();
+        });
+        return;
+      }
+      if (window.location.hash === "#bearnai") return;   // the hashchange handler opens the game
+      const fromStory = viewRef.current === "reading" || viewRef.current === "opening";
+      setView("feed");
+      // Twice, so the list has been drawn before scrolling back down it.
+      const y = fromStory ? feedScroll.current : 0;
+      requestAnimationFrame(() => requestAnimationFrame(() => window.scrollTo(0, y)));
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
 
   // A link to #bearnai clicked while the site is already open.
   useEffect(() => {
@@ -2445,10 +2518,13 @@ export default function DailySceal() {
 
   useEffect(() => {
     let cancelled = false;
+    const startAddr = parseStoryAddress(window.location.hash);
     fetchTodayContent()
       .then(data => {
-        if (cancelled || !data?.stories?.length) return;
-        const todayStories = data.stories;
+        if (cancelled || !data?.stories?.length) return null;
+        // Each story knows its day and its place in that day's file, which
+        // make up its address.
+        const todayStories = withAddresses(data.stories, data.date);
         setStories(todayStories);
         setTodayOnly(todayStories);
         // Top up thin sections in the background. Today's stories are already
@@ -2459,8 +2535,17 @@ export default function DailySceal() {
             setStories([...todayStories, ...extra]);
           })
           .catch(() => {});
+        return data;
       })
-      .catch(() => {})
+      .catch(() => null)
+      .then(async data => {
+        // The site was opened at a story's address.
+        if (cancelled || !startAddr) return;
+        const story = await loadAddressedStory(startAddr, data);
+        if (cancelled || viewRef.current !== "opening") return;
+        if (story) showStory(story, startAddr.level);
+        else leaveForFeed();
+      })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, []);
@@ -2483,9 +2568,49 @@ export default function DailySceal() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  function openStory(story) {
+  // Show a story without touching the history (Back, Forward, an address).
+  function showStory(story, level = null) {
     setActiveStory(story);
+    setOpenLevel(level);
     setView("reading");
+    document.title = `${story.title} · Daily Scéal`;
+    window.scrollTo(0, 0);
+  }
+
+  // An address that names no story (a rerun day, a typo) opens the news.
+  function leaveForFeed() {
+    history.replaceState(null, "", window.location.pathname + window.location.search);
+    setView("feed");
+  }
+
+  // A story tapped in the list: shown, with its address added to the history.
+  function openStory(story) {
+    feedScroll.current = window.scrollY;
+    const addr = storyAddress(story.addrDay, story.addrN, rememberedLevel() ?? 10);
+    if (addr) history.pushState({ ds: "story" }, "", window.location.pathname + window.location.search + addr);
+    showStory(story);
+  }
+
+  // The level the reader is on goes into the address, so a copied or shared
+  // link opens at that level. The locked levels leave it out.
+  function levelChanged(pct) {
+    const s = activeStory;
+    if (!s || !s.addrDay || !parseStoryAddress(window.location.hash)) return;
+    const addr = storyAddress(s.addrDay, s.addrN, pct);
+    if (addr && addr !== window.location.hash) {
+      history.replaceState(history.state, "", window.location.pathname + window.location.search + addr);
+    }
+  }
+
+  // "← Nuacht": the same as Back when the list is the step before; a story
+  // opened straight from a link has no list behind it, so the list is shown.
+  function backToFeed() {
+    if (history.state && history.state.ds === "story") {
+      history.back();
+      return;
+    }
+    history.replaceState(null, "", window.location.pathname + window.location.search);
+    setView("feed");
     window.scrollTo(0, 0);
   }
 
@@ -2656,9 +2781,11 @@ export default function DailySceal() {
           )}
           {!isExport && view === "reading" && activeStory && (
             <div style={{ paddingTop: 20 }}>
-              <ReadingView story={activeStory} onBack={() => setView("feed")} />
+              <ReadingView key={`${activeStory.addrDay || ""}/${activeStory.addrN || activeStory.id}`}
+                story={activeStory} onBack={backToFeed} startLevel={openLevel} onLevel={levelChanged} />
             </div>
           )}
+          {!isExport && view === "opening" && <Spinner />}
           {!isExport && view === "game" && <GameView onStories={() => { setSection("inniu"); setView("feed"); window.scrollTo(0, 0); }} />}
           {!isExport && view === "about" && (
             <div style={{ paddingTop: 28 }}>
@@ -2676,7 +2803,7 @@ export default function DailySceal() {
             { id: "game", label: "Bearnaí", icon: "✏️" },
             { id: "about", label: "Faoi", icon: "🍀" },
           ].map(tab => {
-            const active = view === tab.id || (tab.id === "feed" && view === "reading");
+            const active = view === tab.id || (tab.id === "feed" && (view === "reading" || view === "opening"));
             return (
             <button key={tab.id} onClick={() => {
                 if (tab.id === "feed" && view === "feed") pickSection("inniu");
