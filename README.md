@@ -49,6 +49,8 @@ The approach draws on the idea of comprehensible input: you absorb a language be
 
 ## Sharing
 
+Every story has its own address: `dailysceal.com/#2026-11-22/3/25` is the third story in that day's file, at Foundation (10, 25 or 50; leave it off to open at the reader's own level). The number is the story's place in `today.json` or `archive/<date>.json`, not its place on the home page. Add a story puts new stories at the end, so numbers never move; rerunning the morning run would renumber that day.
+
 The reading view can generate a 1080×1080 share card for any story at the chosen level, drawn with the Canvas API (no external libraries). A private export page at `/#export` generates a full Instagram carousel for the day: a cover slide, one card per story, and a closing slide.
 
 ## Tech stack

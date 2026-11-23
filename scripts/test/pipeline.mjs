@@ -20,7 +20,10 @@ const { articleFromHtml } = await import("../lib/pick.js");
 const { loadOverrides, loadDict, focailLists } = await import("../lib/dict.js");
 const { RTE_FEEDS, feedById } = await import("../feeds.js");
 const { run } = await import("../generate.js");
-const { fixArticle, parseText, focalFor, fnv1a64, timeoutSignal } = await import("../../src/helpers.js");
+const {
+  fixArticle, parseText, focalFor, fnv1a64, timeoutSignal,
+  storyAddress, parseStoryAddress, withAddresses, storyAt, rememberedLevel, rememberLevel,
+} = await import("../../src/helpers.js");
 
 let failed = 0, passed = 0;
 async function test(name, fn) {
@@ -332,6 +335,74 @@ await test("timeoutSignal works where AbortSignal.timeout is missing", async () 
   } finally {
     AbortSignal.timeout = saved;
   }
+});
+
+// ---- 6. Story addresses (#2026-11-22/3/25) ----
+
+await test("a story address is the day, the story's number from 1 and the level", () => {
+  eq(storyAddress("2026-11-22", 3, 25), "#2026-11-22/3/25", "with a level");
+  eq(storyAddress("2026-11-22", 3), "#2026-11-22/3", "without");
+  eq(storyAddress("2026-11-22", 3, 75), "#2026-11-22/3", "a locked level is left out");
+  eq(storyAddress(undefined, 3, 10), "", "no day (the built-in stories)");
+  eq(storyAddress("2026-11-22", 0, 10), "", "no story 0");
+});
+
+await test("addresses are read back, and anything else is not an address", () => {
+  const got = parseStoryAddress("#2026-11-22/3/25");
+  eq(JSON.stringify(got), JSON.stringify({ day: "2026-11-22", n: 3, level: 25 }), "full");
+  eq(parseStoryAddress("#2026-11-22/3").level, null, "no level");
+  eq(parseStoryAddress("#2026-11-22/3/").n, 3, "a trailing slash");
+  eq(parseStoryAddress("#2026-11-22/3/99").level, null, "an unknown level is ignored, the story still opens");
+  for (const bad of ["", "#", "#bearnai", "#faoi", "#export", "#2026-11-22", "#2026-11-22/0", "#2026-02-30/1",
+    "#2026-13-01/1", "#26-11-22/3", "#2026-11-22/x", "#2026-11-22/3/25/4", "#2026-11-22/1234"]) {
+    eq(parseStoryAddress(bad), null, `not an address: ${bad}`);
+  }
+  for (const [day, n, level] of [["2026-11-22", 1, 10], ["2026-01-05", 30, 50], ["2026-12-31", 7, null]]) {
+    const back = parseStoryAddress(storyAddress(day, n, level));
+    assert(back.day === day && back.n === n && back.level === level, `round trip ${day}/${n}/${level}`);
+  }
+});
+
+await test("story n is the nth story in that day's file, in every saved day", () => {
+  const index = JSON.parse(readFileSync(new URL("../../public/data/archive/index.json", import.meta.url), "utf-8"));
+  for (const { date } of index.slice(0, 14)) {
+    const day = JSON.parse(readFileSync(new URL(`../../public/data/archive/${date}.json`, import.meta.url), "utf-8"));
+    const marked = withAddresses(day.stories, day.date);
+    marked.forEach((s, i) => {
+      const at = storyAt(day, s.addrN);
+      assert(at && at.title === day.stories[i].title && at.addrDay === date, `${date} story ${s.addrN}`);
+      // The file's own ids agree, so the number is the id plus one.
+      eq(day.stories[i].id, `story-${s.addrN - 1}`, `${date} id`);
+    });
+    eq(storyAt(day, day.stories.length + 1), null, `${date}: past the end`);
+  }
+  eq(storyAt(null, 1), null, "no file");
+  eq(storyAt({ date: "2026-11-22", stories: [null] }, 1), null, "a broken entry");
+});
+
+await test("a story added later takes the next number and moves no other", () => {
+  const day = { date: "2026-11-22", stories: [{ title: "One" }, { title: "Two" }] };
+  const before = withAddresses(day.stories, day.date).map(s => `${s.addrN}:${s.title}`);
+  day.stories.push({ title: "Added" });   // what add-story.js does
+  const after = withAddresses(day.stories, day.date).map(s => `${s.addrN}:${s.title}`);
+  eq(after.slice(0, 2).join(","), before.join(","), "earlier numbers unchanged");
+  eq(after[2], "3:Added", "new story");
+});
+
+await test("the reader's level is remembered, open levels only", () => {
+  const store = new Map();
+  const storage = { getItem: k => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, v) };
+  eq(rememberedLevel(storage), null, "nothing yet");
+  rememberLevel(25, storage);
+  eq(rememberedLevel(storage), 25, "kept");
+  rememberLevel(75, storage);
+  eq(rememberedLevel(storage), 25, "a locked level is not kept");
+  store.set("ds-level", "abc");
+  eq(rememberedLevel(storage), null, "junk ignored");
+  const blocked = { getItem() { throw new Error("blocked"); }, setItem() { throw new Error("blocked"); } };
+  eq(rememberedLevel(blocked), null, "storage blocked (private window)");
+  rememberLevel(10, blocked);
+  eq(rememberedLevel(undefined), null, "no storage at all");
 });
 
 assert(net.calls === 0, "MyMemory was called");

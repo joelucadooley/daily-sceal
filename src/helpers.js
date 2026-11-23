@@ -80,3 +80,64 @@ export function timeoutSignal(ms) {
   setTimeout(() => c.abort(), ms);
   return c.signal;
 }
+
+// ---- Story addresses ----
+//
+// Every story has an address: dailysceal.com/#2026-11-22/3/25
+//   2026-11-22  the day's file (today.json, or archive/2026-11-22.json)
+//   3           the story's place in that file, counting from 1. This is the
+//               file's own order, not the order the home page shows. The
+//               morning run writes it once and Add a story adds to the end,
+//               so a number never moves. Rerunning the morning run would
+//               renumber that day.
+//   25          the level: 10, 25 or 50. Optional; without it the story opens
+//               at the reader's own level.
+
+export const ADDRESS_LEVELS = [10, 25, 50];
+
+/** "#2026-11-22/3/25" for a day, a number from 1 and an optional level. */
+export function storyAddress(day, n, level) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(day)) || !Number.isInteger(n) || n < 1) return "";
+  return `#${day}/${n}${ADDRESS_LEVELS.includes(level) ? `/${level}` : ""}`;
+}
+
+/** { day, n, level } from "#2026-11-22/3/25" (level null when left out), or null. */
+export function parseStoryAddress(hash) {
+  const m = /^#?(\d{4})-(\d{2})-(\d{2})\/(\d{1,3})(?:\/(\d{1,3}))?\/?$/.exec(String(hash || "").trim());
+  if (!m) return null;
+  const [, y, mo, d, num, lv] = m;
+  const date = new Date(Date.UTC(+y, +mo - 1, +d));
+  if (date.getUTCFullYear() !== +y || date.getUTCMonth() !== +mo - 1 || date.getUTCDate() !== +d) return null;
+  const n = Number(num);
+  if (n < 1) return null;
+  const level = lv != null && ADDRESS_LEVELS.includes(Number(lv)) ? Number(lv) : null;
+  return { day: `${y}-${mo}-${d}`, n, level };
+}
+
+/** Each story of a day's file with its address parts (addrDay, addrN). */
+export function withAddresses(stories, day) {
+  return (Array.isArray(stories) ? stories : []).map((s, i) => ({ ...s, addrDay: day, addrN: i + 1 }));
+}
+
+/** Story n (from 1) of a day's file, with its address parts, or null. */
+export function storyAt(dayData, n) {
+  const list = dayData && Array.isArray(dayData.stories) ? dayData.stories : [];
+  const s = list[n - 1];
+  return s && typeof s === "object" && s.title ? { ...s, addrDay: dayData.date, addrN: n } : null;
+}
+
+// The reader's own level on this device, so a story opens where they left
+// it. Only the three open levels; private windows can block storage.
+const LEVEL_KEY = "ds-level";
+export function rememberedLevel(storage = globalThis.localStorage) {
+  try {
+    const v = Number(storage && storage.getItem(LEVEL_KEY));
+    return ADDRESS_LEVELS.includes(v) ? v : null;
+  } catch {
+    return null;
+  }
+}
+export function rememberLevel(level, storage = globalThis.localStorage) {
+  if (!ADDRESS_LEVELS.includes(level)) return;
+  try { storage && storage.setItem(LEVEL_KEY, String(level)); } catch {}
+}
