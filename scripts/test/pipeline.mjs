@@ -383,6 +383,9 @@ await test("every page has an address, and the address opens that page", () => {
   }
   eq(routeFor("#story/2026-11-22/3/25", TABS).story.n, 3, "a story");
   eq(routeFor("#export", TABS).view, "export", "the export page");
+  // The first story links, live on 23 November 2026, still open their story.
+  eq(JSON.stringify(routeFor("#2026-11-23/3/25", TABS)), JSON.stringify({ view: "story", story: { day: "2026-11-23", n: 3, level: 25 } }), "first story links");
+  eq(routeFor("#2026-11-23/3", TABS).story.level, null, "first story links without a level");
 });
 
 await test("addresses are forgiving: #inniu, fadas, capitals, a trailing slash, copied links", () => {
@@ -390,7 +393,7 @@ await test("addresses are forgiving: #inniu, fadas, capitals, a trailing slash, 
     ["#Spórt", "sport"], ["#SPORT", "sport"], ["#domhan/", "domhan"], ["eile", "eile"]]) {
     eq(routeFor(typed, TABS).tab, tab, typed);
   }
-  for (const junk of ["#", "#nuacht", "#2026-11-22/3", "#%E0%A4%A", "#story/nope", "#eire/extra"]) {
+  for (const junk of ["#", "#nuacht", "#2026-02-30/3", "#%E0%A4%A", "#story/nope", "#eire/extra"]) {
     eq(JSON.stringify(routeFor(junk, TABS)), JSON.stringify({ view: "feed", tab: "inniu" }), `unknown: ${junk}`);
   }
 });

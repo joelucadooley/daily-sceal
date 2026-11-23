@@ -131,7 +131,9 @@ export function parseStoryAddress(hash) {
 export function routeFor(hash, tabs = []) {
   let h = String(hash || "").trim().replace(/^#/, "");
   try { h = decodeURIComponent(h); } catch {}
-  const story = parseStoryAddress(h);
+  // Story links were #2026-11-23/3/25 for their first day live (23 November
+  // 2026); those still open their story.
+  const story = parseStoryAddress(h) || (/^\d{4}-\d{2}-\d{2}\//.test(h) ? parseStoryAddress(`story/${h}`) : null);
   if (story) return { view: "story", story };
   const key = h.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\/+$/, "");
   if (key === "bearnai") return { view: "game" };

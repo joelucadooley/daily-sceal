@@ -8,7 +8,7 @@ import places from "../scripts/places.json";
 // Marker parsing, Focal an lae and fetch time limits, tested in Node.
 import {
   parseText, focalFor, timeoutSignal,
-  storyAddress, parseStoryAddress, routeFor, addressFor, withAddresses, storyAt,
+  storyAddress, routeFor, addressFor, withAddresses, storyAt,
   rememberedLevel, rememberLevel,
 } from "./helpers.js";
 import GameView from "./Game.jsx";
@@ -2602,7 +2602,7 @@ export default function DailySceal() {
   // link opens at that level. The locked levels leave it out.
   function levelChanged(pct) {
     const s = activeStory;
-    if (!s || !s.addrDay || !parseStoryAddress(window.location.hash)) return;
+    if (!s || !s.addrDay || routeFor(window.location.hash).view !== "story") return;
     const addr = storyAddress(s.addrDay, s.addrN, pct);
     if (addr && addr !== window.location.hash) {
       history.replaceState(history.state, "", window.location.pathname + window.location.search + addr);
