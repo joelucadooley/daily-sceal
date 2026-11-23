@@ -10,11 +10,20 @@ export function gameDay(date) {
   return m && MONTHS[+m[1] - 1] ? `${+m[2]} ${MONTHS[+m[1] - 1]}` : "";
 }
 
+/**
+ * The link for a score: /bearnai/11011 (1 for right, 0 for wrong), whose
+ * preview shows the gaps in green and red (public/bearnai/, made by
+ * scripts/bearnai-cards.mjs). Anything but five answers gets the plain link.
+ */
+export function scoreLink(results) {
+  return results.length === 5 ? `${GAME_LINK}/${results.map(r => (r ? "1" : "0")).join("")}` : GAME_LINK;
+}
+
 /** What Share copies: the score and the day, a shamrock or a cross per question, and the link. */
 export function shareText(results, date) {
   const right = results.filter(Boolean).length;
   const day = gameDay(date);
-  return `Bearnaí ${right}/${results.length}${day ? ` · ${day}` : ""}\n${results.map(r => (r ? "☘️" : "❌")).join("")}\n${GAME_LINK}`;
+  return `Bearnaí ${right}/${results.length}${day ? ` · ${day}` : ""}\n${results.map(r => (r ? "☘️" : "❌")).join("")}\n${scoreLink(results)}`;
 }
 
 /** The Irish word in gold over the score. */

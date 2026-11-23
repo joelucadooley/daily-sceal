@@ -6,7 +6,8 @@ import { mkdtempSync, mkdirSync, writeFileSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 import { makeGame, split, choose, isSad, listed, storyPieces, QUESTIONS } from "../game.js";
-import { shareText, beforeGap, praise } from "../../src/gameText.js";
+import { shareText, scoreLink, beforeGap, praise } from "../../src/gameText.js";
+import { existsSync } from "node:fs";
 
 let failed = 0, passed = 0;
 async function test(name, fn) {
@@ -107,9 +108,18 @@ await test("the story: headline and text to the last gap, gaps as question numbe
 });
 
 await test("share text: score, a shamrock or cross each, the link", () => {
-  assert.equal(shareText([true, true, false, true, true], "2026-11-20"), "Bearnaí 4/5 · 20 Samhain\n☘️☘️❌☘️☘️\nhttps://dailysceal.com/bearnai");
-  assert.equal(shareText([true, true, true, true, true], "2027-01-03"), "Bearnaí 5/5 · 3 Eanáir\n☘️☘️☘️☘️☘️\nhttps://dailysceal.com/bearnai");
-  assert.equal(shareText([false, true, false, true, true]), "Bearnaí 3/5\n❌☘️❌☘️☘️\nhttps://dailysceal.com/bearnai");
+  assert.equal(shareText([true, true, false, true, true], "2026-11-20"), "Bearnaí 4/5 · 20 Samhain\n☘️☘️❌☘️☘️\nhttps://dailysceal.com/bearnai/11011");
+  assert.equal(shareText([true, true, true, true, true], "2027-01-03"), "Bearnaí 5/5 · 3 Eanáir\n☘️☘️☘️☘️☘️\nhttps://dailysceal.com/bearnai/11111");
+  assert.equal(shareText([false, true, false, true, true]), "Bearnaí 3/5\n❌☘️❌☘️☘️\nhttps://dailysceal.com/bearnai/01011");
+});
+
+await test("every score link has its page and picture", () => {
+  assert.equal(scoreLink([true, false]), "https://dailysceal.com/bearnai");
+  for (let n = 0; n < 32; n++) {
+    const results = [...n.toString(2).padStart(5, "0")].map(c => c === "1");
+    const r = scoreLink(results).split("/").pop();
+    for (const ext of ["html", "png"]) assert.ok(existsSync(new URL(`../../public/bearnai/${r}.${ext}`, import.meta.url)), `${r}.${ext}`);
+  }
 });
 
 await test("praise: the Irish word over the score", () => {
