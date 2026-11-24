@@ -3051,6 +3051,8 @@ export default function DailySceal() {
             <div onClick={goToday} style={{ cursor: "pointer" }} role="link" tabIndex={0} onKeyDown={onActivate(goToday)}>
               <div style={{ fontSize: "clamp(1.2rem,3.5vw,1.5rem)", fontWeight: 700, color: "#fff", fontFamily: "Georgia, serif", letterSpacing: "-0.01em", lineHeight: 1 }}>
                 Daily <span style={{ color: C.amber }}>Scéal</span>
+                {/* Claims the name as a brand; free, and needs no registration. */}
+                <sup style={{ fontSize: "0.4em", fontFamily: "system-ui, sans-serif", fontWeight: 400, color: "rgba(255,255,255,0.45)", marginLeft: 2, verticalAlign: "super" }}>™</sup>
               </div>
             </div>
             <DayMenu days={todayDate && !isExport ? recentDays(todayDate) : []} today={todayDate}
