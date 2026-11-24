@@ -34,16 +34,26 @@ export function parseText(text) {
 }
 
 // Focal an lae: the same word the app, its widget and the noon reminder show
-// that day. Same pool, same order and the same FNV-1a hash of the local date
-// as Focail.focal(for:) in the iOS app, so every place agrees.
+// that day. The morning run fixes the word for yesterday, today and tomorrow
+// in focail.json (`days`), so adding words to the dictionary never changes a
+// word already shown; the site and the apps use that word when the day is
+// there. Otherwise, as before: the same pool, order and FNV-1a hash of the
+// local date as Focail.focal(for:) in the apps, so every place agrees.
 export function focalFor(focail, date = new Date()) {
+  const pad = n => String(n).padStart(2, "0");
+  const key = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+  const fixed = focail?.days?.[key];
+  if (fixed && typeof fixed.ga === "string" && typeof fixed.en === "string") return fixed;
+  return focalForKey(focail, key);
+}
+
+/** The word worked out from the list alone, for a "YYYY-MM-DD" day. */
+export function focalForKey(focail, key) {
   const pool = (focail?.words || [])
     .filter(w => w && typeof w.en === "string" && typeof w.ga === "string")
     .filter(w => !w.en.includes(" ") && [...w.ga].length <= 18 && w.en.length >= 3)
     .sort((a, b) => (a.en < b.en ? -1 : a.en > b.en ? 1 : 0));
   if (!pool.length) return null;
-  const pad = n => String(n).padStart(2, "0");
-  const key = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
   const start = Number(fnv1a64(key) % BigInt(pool.length));
   // A grim word gives way to the next one, so every other day keeps its word.
   for (let i = 0; i < pool.length; i++) {
@@ -51,6 +61,30 @@ export function focalFor(focail, date = new Date()) {
     if (!isGrimWord(w.en)) return w;
   }
   return pool[start];
+}
+
+/**
+ * The fixed words for focail.json: yesterday, today and tomorrow around
+ * `day` (the run's date). A day already fixed keeps its word. A new entry
+ * for today or yesterday uses the list that was live until now (`before`),
+ * which is what readers have seen; tomorrow uses the new list (`after`).
+ */
+export function fixedDays(before, after, day) {
+  const shift = n => {
+    const d = new Date(`${day}T12:00:00Z`);
+    d.setUTCDate(d.getUTCDate() + n);
+    return d.toISOString().slice(0, 10);
+  };
+  const ok = w => w && typeof w.ga === "string" && typeof w.en === "string";
+  const out = {};
+  for (const n of [-1, 0, 1]) {
+    const key = shift(n);
+    const kept = before?.days?.[key];
+    const list = n < 1 && before?.words?.length ? before : after;
+    const w = ok(kept) ? kept : focalForKey(list, key);
+    if (w) out[key] = { ga: w.ga, en: w.en };
+  }
+  return out;
 }
 
 // The same list as Sensitive.word in the iPhone app (Shared/Story.swift) and

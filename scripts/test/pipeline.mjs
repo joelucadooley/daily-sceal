@@ -23,7 +23,7 @@ const { run } = await import("../generate.js");
 const {
   fixArticle, parseText, focalFor, fnv1a64, timeoutSignal,
   storyAddress, parseStoryAddress, routeFor, addressFor, withAddresses, storyAt, rememberedLevel, rememberLevel,
-  regionIn, packGroups,
+  regionIn, packGroups, fixedDays, focalForKey,
 } = await import("../../src/helpers.js");
 
 let failed = 0, passed = 0;
@@ -245,6 +245,7 @@ await test("a broken story is left out, the rest publish with ids in order", asy
   eq(archived.stories.length, day.stories.length, "archive copy");
   const focail = JSON.parse(readFileSync(join(OUT, "focail.json"), "utf-8"));
   assert(Array.isArray(focail.words) && Array.isArray(focail.places), "focail.json shape");
+  eq(Object.keys(focail.days || {}).length, 3, "focail.json fixes three days of Focal an lae");
 });
 
 await test("too many broken stories: the run fails and yesterday's file stays", async () => {
@@ -516,6 +517,38 @@ await test("gaps are offered for older stories, which join that group", () => {
   const input = [grp("CLG", 2)];
   packGroups(input, 3, () => ["x"]);
   eq(input[0].items.length, 2, "the groups passed in are not changed");
+});
+
+// ---- 9. Focal an lae fixed for the day ----
+
+await test("a word added to the dictionary never changes a day's word already shown", () => {
+  const live = JSON.parse(readFileSync(new URL("../../public/data/focail.json", import.meta.url), "utf-8"));
+  const before = { ...live, days: undefined };
+  // A word that moves most days' picks.
+  const after = { ...before, words: [...before.words, { en: "details", ga: "sonraí" }] };
+  const day = "2026-11-24";
+  assert(focalForKey(before, day).en !== focalForKey(after, day).en, "fixture: the new word moves today's pick");
+  const days = fixedDays(before, after, day);
+  eq(Object.keys(days).join(","), "2026-11-23,2026-11-24,2026-11-25", "yesterday, today, tomorrow");
+  eq(days["2026-11-24"].en, focalForKey(before, "2026-11-24").en, "today keeps the word shown since midnight");
+  eq(days["2026-11-23"].en, focalForKey(before, "2026-11-23").en, "yesterday too");
+  eq(days["2026-11-25"].en, focalForKey(after, "2026-11-25").en, "tomorrow comes from the new list");
+  // The next morning: what was fixed stays fixed.
+  const next = fixedDays({ ...after, days }, after, "2026-11-25");
+  eq(next["2026-11-24"].en, days["2026-11-24"].en, "a fixed day keeps its word");
+  eq(next["2026-11-25"].en, days["2026-11-25"].en, "and tomorrow, once fixed, too");
+  eq(Object.keys(next).length, 3, "older days drop off");
+  // First run ever (no list yet): everything from the new list.
+  eq(fixedDays(null, after, day)["2026-11-24"].en, focalForKey(after, day).en, "no earlier list");
+});
+
+await test("the site uses the fixed word for the day, and works it out otherwise", () => {
+  const live = JSON.parse(readFileSync(new URL("../../public/data/focail.json", import.meta.url), "utf-8"));
+  const f = { ...live, days: { "2026-11-24": { ga: "farraige", en: "sea" } } };
+  eq(focalFor(f, new Date(2026, 10, 24, 0, 5)).en, "sea", "fixed day, just after midnight");
+  eq(focalFor(f, new Date(2026, 10, 24, 23, 55)).en, "sea", "fixed day, late");
+  eq(focalFor(f, new Date(2026, 10, 26)).en, focalForKey(live, "2026-11-26").en, "a day not fixed: worked out as before");
+  eq(focalFor({ ...live, days: { "2026-11-26": { ga: 1 } } }, new Date(2026, 10, 26)).en, focalForKey(live, "2026-11-26").en, "a broken entry is ignored");
 });
 
 assert(net.calls === 0, "MyMemory was called");

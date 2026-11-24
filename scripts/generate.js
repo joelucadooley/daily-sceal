@@ -13,6 +13,7 @@ import { pickStories, articleFromHtml, MIN_ARTICLE_WORDS } from "./lib/pick.js";
 import { pageInfo } from "./lib/page.js";
 import { storyFromItem, msAgo } from "./lib/feeditem.js";
 import { checkStories } from "./lib/day.js";
+import { fixedDays } from "../src/helpers.js";
 // Stories actually processed. Every one of these costs a page scrape plus
 // three levels of MyMemory calls, so this is the expensive number. Feeds are
 // read far more widely than this and then filtered down to it.
@@ -276,7 +277,12 @@ async function run({
   // Place names are listed separately so they count as verified in the
   // reader but never become the focal of the day. Extra words stay out.
   try {
+    // The word of the day is fixed for yesterday, today and tomorrow, so a
+    // word added to the dictionary never changes one already shown.
+    let before = null;
+    try { before = JSON.parse(readFileSync(`${OUT_DIR}/focail.json`, "utf-8")); } catch {}
     const focail = { generated: new Date().toISOString(), ...focailLists(DICT) };
+    focail.days = fixedDays(before, focail, output.date);
     writeFileSync(`${OUT_DIR}/focail.json`, JSON.stringify(focail, null, 2));
     console.log(`✓ Written ${OUT_DIR}/focail.json (${focail.words.length} words, ${focail.places.length} places)`);
   } catch (e) {
