@@ -1,94 +1,97 @@
 {
   "v": 1,
-  "date": "2026-11-23",
-  "from": "2026-11-22",
-  "source": "auto",
-  "title": "Fossil fuels still absent in latest COP31 draft deal",
-  "link": "https://www.rte.ie/news/world/2026/1122/1600166-cop31-turkey/",
+  "date": "2026-11-24",
+  "from": "2026-11-23",
+  "source": "post",
+  "title": "U2 score 14th US top 10 album with Carnaval De Luz",
+  "link": "https://www.rte.ie/entertainment/2026/1123/1600249-u2-score-14th-us-top-10-album-with-carnaval-de-luz/",
   "story": [
     [
-      "A new draft agreement at the COP31 climate ",
+      "U2 score 14th US top 10 album with Carnaval De Luz"
+    ],
+    [
+      "U2 have scored their 14th top 10 ",
       0,
-      " in Turkey still does not mention fossil fuels. Instead, its opening line recalls \"the United Arab Emirates Consensus in its entirety\" - a reference to the agreement reached in Dubai three years ago, when countries agreed to transition away from fossil fuels in their ",
+      " in the US after their latest release, Carnaval De Luz, debuted at number four on the Billboard 200 ",
       1,
-      " systems. Whether those words are enough for Ireland, its EU partners and the countries that pressed for a stronger commitment is the question facing the summit this ",
+      ". It marks the Dublin band's first appearance in the US albums chart top 10 since Songs of Surrender reached ",
       2,
-      ". The closing plenary is due to resume at 9am in Antalya (6am Irish time). The talks are now in their second day of overtime and could still end without ",
+      " five in 2023. Released on 13 November, Carnaval De Luz is U2’s 16th ",
       3,
-      " on the main text. Yesterday evening, Minister for Climate Darragh O'Brien and European Climate Commissioner Wopke Hoekstra joined ministers and negotiators from the UK, small ",
+      " album and their first collection of new material in nine years. Produced by Dubliner Jacknife Lee, the 12-track record features a ",
       4,
-      " states and developing countries who walked together to the COP presidency's offices."
+      " with Dolly Parton on the closing song Torn."
     ]
   ],
   "questions": [
     {
-      "before": "A new draft agreement at the COP31 climate ",
-      "after": " in Turkey still does not mention fossil fuels.",
-      "irish": "cainteanna",
-      "english": "talks",
-      "ga": "cainteanna",
-      "en": "talks",
+      "before": "U2 have scored their 14th top 10 ",
+      "after": " in the US after their latest release, Carnaval De Luz, debuted at …",
+      "irish": "albam",
+      "english": "album",
+      "ga": "albam",
+      "en": "album",
       "options": [
-        "cainteanna",
-        "custaiméir",
-        "taispeáint",
-        "ambasadóir"
+        "agóid",
+        "fiord",
+        "spórt",
+        "albam"
       ]
     },
     {
-      "before": "… ago, when countries agreed to transition away from fossil fuels in their ",
-      "after": " systems.",
-      "irish": "fuinneamh",
-      "english": "energy",
-      "ga": "fuinneamh",
-      "en": "energy",
-      "options": [
-        "geimhreadh",
-        "saibhreas",
-        "fuinneamh",
-        "fiosrúchán"
-      ]
-    },
-    {
-      "before": "… pressed for a stronger commitment is the question facing the summit this ",
+      "before": "… release, Carnaval De Luz, debuted at number four on the Billboard 200 ",
       "after": ".",
-      "irish": "maidin",
-      "english": "morning",
-      "ga": "maidin",
-      "en": "morning",
+      "irish": "cairt",
+      "english": "chart",
+      "ga": "cairt",
+      "en": "chart",
       "options": [
-        "maidin",
-        "daoine",
-        "robáil",
-        "scrúdú"
+        "cumas",
+        "fiord",
+        "spórt",
+        "cairt"
       ]
     },
     {
-      "before": "… now in their second day of overtime and could still end without ",
-      "after": " on the main text.",
-      "irish": "comhaontú",
-      "english": "agreement",
-      "ga": "comhaontú",
-      "en": "agreement",
+      "before": "… in the US albums chart top 10 since Songs of Surrender reached ",
+      "after": " five in 2023.",
+      "irish": "uimhir",
+      "english": "number",
+      "ga": "uimhir",
+      "en": "number",
       "options": [
-        "bonneagar",
-        "galtoitín",
-        "comhaontú",
-        "uachtarán"
+        "siopaí",
+        "uimhir",
+        "blianta",
+        "triail"
       ]
     },
     {
-      "before": "… Climate Commissioner Wopke Hoekstra joined ministers and negotiators from the UK, small ",
-      "after": " states and developing countries who walked together to the COP presidency's offices.",
-      "irish": "oileán",
-      "english": "island",
-      "ga": "oileán",
-      "en": "island",
+      "before": "Released on 13 November, Carnaval De Luz is U2’s 16th ",
+      "after": " album and their first collection of new material in nine years.",
+      "irish": "stiúideo",
+      "english": "studio",
+      "ga": "stiúideo",
+      "en": "studio",
       "options": [
-        "páiste",
-        "ioncam",
-        "ollmhór",
-        "oileán"
+        "stiúideo",
+        "tearmann",
+        "oscailte",
+        "imreoirí"
+      ]
+    },
+    {
+      "before": "Produced by Dubliner Jacknife Lee, the 12-track record features a ",
+      "after": " with Dolly Parton on the closing song Torn.",
+      "irish": "díséad",
+      "english": "duet",
+      "ga": "díséad",
+      "en": "duet",
+      "options": [
+        "riosca",
+        "díséad",
+        "éirigh",
+        "cabhair"
       ]
     }
   ]
