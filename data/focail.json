@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-23T08:38:25.974Z",
+  "generated": "2026-11-24T08:39:16.782Z",
   "words": [
     {
       "ga": "cumas",
@@ -536,6 +536,10 @@
     {
       "ga": "dúil",
       "en": "desire"
+    },
+    {
+      "ga": "sonraí",
+      "en": "details"
     },
     {
       "ga": "diongbháilte",
@@ -2579,5 +2583,19 @@
       "ga": "Gaeltacht",
       "en": "gaeltacht"
     }
-  ]
+  ],
+  "days": {
+    "2026-11-23": {
+      "ga": "cumas",
+      "en": "ability"
+    },
+    "2026-11-24": {
+      "ga": "comhaontú",
+      "en": "agreement"
+    },
+    "2026-11-25": {
+      "ga": "margadh",
+      "en": "market"
+    }
+  }
 }
