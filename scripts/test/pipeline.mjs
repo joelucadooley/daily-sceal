@@ -474,6 +474,8 @@ await test("a world story takes the region it names", () => {
     ["Macron and Merz meet in Brussels", "", "An Eoraip"],
     ["Venezuela quakes kill 1,400 amid race to find survivors", "", "Meiriceá"],
     ["US Senate committee votes to hold Fauci in contempt", "", "Meiriceá"],
+    ["Man convicted of arson for deadly Palisades fire in LA", "", "Meiriceá"],
+    ["Wildfires spread across Los Angeles", "", "Meiriceá"],
     // The headline names nowhere: the opening of the story decides.
     ["Kim highlights 'sovereignty' in ties after Trump no-show", "North Korean leader Kim Jong-un said", "An Áise"],
     // Whichever comes first in the headline.

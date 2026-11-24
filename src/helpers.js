@@ -233,8 +233,9 @@ export const REGIONS = [
   ["An Afraic", /\b(africa|african|nigeria|kenya|sudan|ethiopia|somalia|congo|libya|uganda|ghana|zimbabwe|mali|rwanda)\b/i],
   ["An Eoraip", /\b(europe|european|brussels|france|french|paris|germany|german|berlin|spain|spanish|madrid|italy|italian|rome|poland|polish|netherlands|dutch|belgium|belgian|greece|greek|portugal|sweden|swedish|denmark|danish|norway|norwegian|finland|austria|hungary|hungarian|czech|romania|macron|merz)\b/i],
   ["Meiriceá", /\b(united states|american|americans|washington|white house|pentagon|congress|senate|new york|california|texas|florida|chicago|canada|canadian|mexico|mexican|brazil|venezuela|argentina|colombia)\b/i],
-  // "US" only in capitals: "us" is a word.
-  ["Meiriceá", /\bUSA?\b/],
+  ["Meiriceá", /\b(los angeles|hollywood|hawaii|alaska|miami|boston|seattle|san francisco|las vegas|minnesota|ohio|virginia|maine|alabama|mississippi)\b/i],
+  // "US" and "LA" only in capitals: "us" and "la" are words.
+  ["Meiriceá", /\b(USA?|LA)\b/],
 ];
 
 /**
