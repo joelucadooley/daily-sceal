@@ -305,7 +305,7 @@ async function run({
     index.unshift({
       date: output.date,
       generated: output.generated,
-      stories: output.stories.map(s => ({ title: s.title, category: s.categoryIr })),
+      stories: output.stories.map(s => ({ title: s.title, category: s.categoryIr, section: s.section })),
     });
     writeFileSync(indexPath, JSON.stringify(index, null, 2));
     console.log(`✓ Archived ${output.date} (${index.length} days in archive)`);

@@ -4,7 +4,7 @@
 //
 //   node scripts/test/pipeline.mjs
 import { net } from "./archive.mjs";
-import { mkdtempSync, existsSync, writeFileSync, readFileSync, rmSync } from "fs";
+import { mkdtempSync, existsSync, writeFileSync, readFileSync, rmSync, readdirSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 import { pathToFileURL } from "url";
@@ -130,16 +130,29 @@ await test("a well-formed story passes", () => {
   eq(p.length, 0, `problems ${p.join("; ")}`);
 });
 
-await test("the archive's own recent stories pass", () => {
-  const index = JSON.parse(readFileSync(new URL("../../public/data/archive/index.json", import.meta.url), "utf-8"));
-  const dates = index.map(e => e.date).filter(d => d >= "2026-09-11").slice(0, 10);
-  assert(dates.length, "no recent days");
-  for (const d of dates) {
-    const day = JSON.parse(readFileSync(new URL(`../../public/data/archive/${d}.json`, import.meta.url), "utf-8"));
+await test("every story in the archive passes the check", () => {
+  const dir = new URL("../../public/data/archive/", import.meta.url);
+  const days = readdirSync(dir).filter(f => /^\d{4}-\d{2}-\d{2}\.json$/.test(f));
+  assert(days.length > 100, `only ${days.length} days`);
+  for (const f of days) {
+    const day = JSON.parse(readFileSync(new URL(f, dir), "utf-8"));
+    eq(day.date, f.slice(0, 10), `${f}: date`);
     for (const s of day.stories) {
       const p = storyProblems(s);
-      assert(!p.length, `${d} ${s.title}: ${p.join("; ")}`);
+      assert(!p.length, `${f} ${s.title}: ${p.join("; ")}`);
     }
+  }
+});
+
+await test("the archive list has every day, newest first, and matches the day files", () => {
+  const dir = new URL("../../public/data/archive/", import.meta.url);
+  const days = readdirSync(dir).filter(f => /^\d{4}-\d{2}-\d{2}\.json$/.test(f)).map(f => f.slice(0, 10)).sort().reverse();
+  const index = JSON.parse(readFileSync(new URL("index.json", dir), "utf-8"));
+  eq(index.map(e => e.date).join(","), days.join(","), "the same days, newest first");
+  for (const e of index) {
+    const day = JSON.parse(readFileSync(new URL(`${e.date}.json`, dir), "utf-8"));
+    eq(e.generated, day.generated, `${e.date}: generated`);
+    eq(JSON.stringify(e.stories), JSON.stringify(day.stories.map(s => ({ title: s.title, category: s.categoryIr, section: s.section }))), `${e.date}: stories`);
   }
 });
 
@@ -311,6 +324,13 @@ await test("fixArticle: a/an agrees with the Irish shown", () => {
     ["", "uisce", ""],
   ];
   for (const [before, irish, want] of cases) eq(fixArticle(before, irish), want, `${before}+${irish}`);
+});
+
+await test("marked text splits into the same sentences as the plain text", async () => {
+  const { firstSentences, stripMarkers, splitSentences } = await import("../summary.js");
+  const marked = "UK consumer champion Which? [[anailís|analyses]] the caffeine. [[Inniu|Today]] it said more. Then [[oíche|night]] fell.";
+  eq(splitSentences(stripMarkers(marked)).length, splitSentences(marked).length, "same count");
+  eq(stripMarkers(firstSentences(marked, 40)), firstSentences(stripMarkers(marked), 40), "same summary");
 });
 
 await test("parseText reads markers and nothing else", () => {

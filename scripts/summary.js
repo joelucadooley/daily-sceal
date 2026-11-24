@@ -19,13 +19,15 @@ export function stripMarkers(text) {
 }
 
 // Split on sentence-ending punctuation followed by whitespace and either a
-// capital letter, a digit, a quote, or the start of a marker. Abbreviations
-// like "Mr. Healy-Rae" survive because "Mr." is followed by a capital... which
-// this would split. RTÉ copy uses "Mr Healy-Rae" without the stop, so that is
-// rare in practice, and a false split only shortens a summary slightly.
+// capital letter, a digit, a quote, or a marker whose English starts with
+// one ("Which? [[anailís|analyses]]" is one sentence, as in the plain text).
+// Abbreviations like "Mr. Healy-Rae" survive because "Mr." is followed by a
+// capital... which this would split. RTÉ copy uses "Mr Healy-Rae" without the
+// stop, so that is rare in practice, and a false split only shortens a summary
+// slightly.
 export function splitSentences(text) {
   return text
-    .split(/(?<=[.!?]["’”')\]]*)\s+(?=[A-Z0-9"“‘'(\[])/)
+    .split(/(?<=[.!?]["’”')\]]*)\s+(?=[A-Z0-9"“‘'(]|\[\[[^|\]]+\|[A-Z0-9"“‘'(])/)
     .map(s => s.trim())
     .filter(Boolean);
 }

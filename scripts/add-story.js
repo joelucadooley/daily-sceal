@@ -122,7 +122,7 @@ async function main() {
     let index = [];
     try { index = JSON.parse(readFileSync(indexPath, "utf-8")); } catch { index = []; }
     if (!Array.isArray(index)) index = [];
-    const entry = { date: today.date, generated: today.generated, stories: today.stories.map(s => ({ title: s.title, category: s.categoryIr })) };
+    const entry = { date: today.date, generated: today.generated, stories: today.stories.map(s => ({ title: s.title, category: s.categoryIr, section: s.section })) };
     const at = index.findIndex(e => e.date === today.date);
     if (at === -1) index.unshift(entry);
     else index[at] = entry;
