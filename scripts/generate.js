@@ -13,7 +13,7 @@ import { pickStories, articleFromHtml, MIN_ARTICLE_WORDS } from "./lib/pick.js";
 import { pageInfo } from "./lib/page.js";
 import { storyFromItem, msAgo } from "./lib/feeditem.js";
 import { checkStories } from "./lib/day.js";
-import { fixedDays } from "../src/helpers.js";
+import { fixedDays, placeFinder, sharpLabel } from "../src/helpers.js";
 // Stories actually processed. Every one of these costs a page scrape plus
 // three levels of MyMemory calls, so this is the expensive number. Feeds are
 // read far more widely than this and then filtered down to it.
@@ -42,6 +42,8 @@ const OUT_DIR = process.env.OUT_DIR || "public/data";
 const DICT = loadDict();
 const OVERRIDES = DICT.overrides;
 const PLACES = DICT.places;
+// The county a text names, for sharper labels (sharpLabel in src/helpers.js).
+const placeIn = placeFinder(PLACES);
 console.log(`Loaded ${Object.keys(OVERRIDES).length} translation overrides`);
 console.log(`Loaded ${Object.keys(PLACES).length} place names`);
 console.log(`Loaded ${Object.keys(DICT.senses).length} approved senses`);
@@ -213,7 +215,10 @@ async function processStory(story, index) {
     { pause: () => sleep(300), log: msg => console.log(msg), warn: msg => console.warn(msg) },
   );
 
-  return { ...story, summary: baseText, rssSummary, levels, summaryLevels, titleIr };
+  // A sharper label, saved so the apps show it as the website does: Domhan
+  // becomes the region the story names, Éire its county.
+  const categoryIr = sharpLabel(story.categoryIr, story.title, baseText, placeIn);
+  return { ...story, categoryIr, summary: baseText, rssSummary, levels, summaryLevels, titleIr };
 }
 
 // The whole day: read feeds, choose and read pages, mark the stories, write

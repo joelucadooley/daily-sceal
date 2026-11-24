@@ -278,6 +278,53 @@ export const REGIONS = [
   ["Meiriceá", /\b(USA?|LA)\b/],
 ];
 
+// ---- Sharper labels ----
+
+// County names that are also ordinary English words or first names. A bare
+// match on these produces nonsense ("stepped down" becoming An Dún), so they
+// only count when the text actually says "Co" or "County" in front.
+const RISKY_PLACES = new Set(["down", "clare", "bray", "lu", "sord", "laois", "ennis", "naas", "meath", "mayo"]);
+
+/**
+ * A function giving the county a text names, in Irish, or null, from the
+ * place list (scripts/places.json). Longest names first, so "londonderry"
+ * wins over "derry".
+ */
+export function placeFinder(places) {
+  const rx = Object.keys(places || {})
+    .filter(k => k !== "ireland")
+    .sort((a, b) => b.length - a.length)
+    .map(k => ({ ir: places[k], risky: RISKY_PLACES.has(k), re: new RegExp(`(^|\\s)(co |county )?${k}(\\s|$)`) }));
+  return text => {
+    if (!text) return null;
+    const t = " " + String(text).toLowerCase().replace(/[^a-z\s]/g, " ") + " ";
+    for (const p of rx) {
+      const m = t.match(p.re);
+      if (m && (!p.risky || m[2])) return p.ir;
+    }
+    return null;
+  };
+}
+
+// Labels too broad to be worth repeating down a whole tab: sharpened into
+// the county the story names, so Éire reads AN CLÁR, LIATROIM, PORT LÁIRGE
+// rather than ÉIRE eight times over. Domhan is NOT here: a world story that
+// happens to mention Cork should not be labelled CORCAIGH; it takes a
+// region instead (regionIn).
+const BROAD_LABELS = new Set(["Éire", "Ulaidh", "Laighin", "An Mhumhain", "Connachta", "Nuacht"]);
+
+/**
+ * A story's label made more exact: Domhan into the region it names, a broad
+ * Irish label into its county (headline first, then only the opening of the
+ * story, so a passing mention further down cannot decide). Anything else,
+ * or nothing found, keeps the label.
+ */
+export function sharpLabel(label, title, text, placeIn) {
+  if (label === "Domhan") return regionIn(title, text) || label;
+  if (!BROAD_LABELS.has(label) || !placeIn) return label;
+  return placeIn(title) || placeIn(String(text || "").slice(0, 200)) || label;
+}
+
 /**
  * The region a world story is about, or null: the region named first in the
  * headline, else in the opening 200 characters of the story.

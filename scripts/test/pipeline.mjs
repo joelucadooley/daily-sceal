@@ -23,7 +23,7 @@ const { run } = await import("../generate.js");
 const {
   fixArticle, parseText, focalFor, fnv1a64, timeoutSignal,
   storyAddress, parseStoryAddress, routeFor, addressFor, withAddresses, storyAt, rememberedLevel, rememberLevel,
-  regionIn, packGroups, fixedDays, focalForKey, recentDays, dayLabel, dayTabLabel,
+  regionIn, packGroups, fixedDays, focalForKey, recentDays, dayLabel, dayTabLabel, placeFinder, sharpLabel,
 } = await import("../../src/helpers.js");
 
 let failed = 0, passed = 0;
@@ -569,6 +569,38 @@ await test("an earlier day has an address, a menu label and a first-tab name", (
   // Opened straight at an earlier day, before today's date is known.
   eq(dayTabLabel("2026-11-23", null), "Dé Luain", "no today yet: the weekday");
   eq(dayLabel("2026-11-23", null), "Mon 23 Nov", "no today yet: the date");
+});
+
+// ---- 11. Sharper labels, saved for the apps ----
+
+await test("broad labels become a county or a region; others stay", () => {
+  const placeIn = placeFinder(loadDict().places);
+  const cases = [
+    ["Éire", "Two injured in Cork crash", "", "Corcaigh"],
+    ["Nuacht", "Galway flooding warning", "", "Gaillimh"],
+    ["Éire", "Woman dies in Co Down crash", "", "An Dún"],
+    ["Éire", "Minister steps down after report", "", "Éire"],          // down, not County Down
+    ["Éire", "Budget talks continue", "Talks in Cork resumed today.", "Corcaigh"],   // the opening of the story
+    ["Éire", "Budget talks continue", `${"x ".repeat(120)} in Cork.`, "Éire"],  // a passing mention further down
+    ["Domhan", "Ukraine sank Russian ship near Libya", "", "An Úcráin"],
+    ["Domhan", "Man in Cork court over Kyiv fraud", "", "An Úcráin"],   // a world story never takes a county
+    ["Spórt", "Cork win the Munster final", "", "Spórt"],
+    ["Cúirt", "Man in court in Cork", "", "Cúirt"],
+  ];
+  for (const [label, title, text, want] of cases) eq(sharpLabel(label, title, text, placeIn), want, `${label}: ${title}`);
+});
+
+await test("the morning run saves the sharpened label", async () => {
+  const { processStory } = await import("../generate.js");
+  const story = { title: "Two injured in Cork crash", categoryIr: "Éire", category: "Ireland", section: "eire", feed: "news",
+    rssSummary: "Two people were injured.", fullText: "Two people were injured in a crash in the city this morning, gardaí said." };
+  const { log, warn } = console;
+  console.log = () => {}; console.warn = () => {};
+  try {
+    const out = await processStory(story, 0);
+    eq(out.categoryIr, "Corcaigh", "saved label");
+    eq(out.section, "eire", "tab unchanged");
+  } finally { console.log = log; console.warn = warn; }
 });
 
 assert(net.calls === 0, "MyMemory was called");

@@ -9,7 +9,7 @@ import places from "../scripts/places.json";
 import {
   parseText, focalFor, timeoutSignal,
   storyAddress, routeFor, addressFor, withAddresses, storyAt,
-  rememberedLevel, rememberLevel, regionIn, packGroups,
+  rememberedLevel, rememberLevel, regionIn, packGroups, placeFinder, sharpLabel,
   recentDays, dayLabel, dayTabLabel,
 } from "./helpers.js";
 import GameView from "./Game.jsx";
@@ -82,50 +82,19 @@ const sectionOf = s => {
   return "eile";
 };
 
-// County names that are also ordinary English words or first names. A bare
-// match on these produces nonsense ("stepped down" becoming An Dún), so they
-// only count when the text actually says "Co" or "County" in front.
-const RISKY_PLACES = new Set(["down", "clare", "bray", "lu", "sord", "laois", "ennis", "naas", "meath", "mayo"]);
-
-// Longest first, so "londonderry" wins over "derry". Compiled once.
-const PLACE_RX = Object.keys(places)
-  .filter(k => k !== "ireland")
-  .sort((a, b) => b.length - a.length)
-  .map(k => ({
-    ir: places[k],
-    risky: RISKY_PLACES.has(k),
-    re: new RegExp(`(^|\\s)(co |county )?${k}(\\s|$)`),
-  }));
-
-function placeIn(text) {
-  if (!text) return null;
-  const t = " " + text.toLowerCase().replace(/[^a-z\s]/g, " ") + " ";
-  for (const p of PLACE_RX) {
-    const m = t.match(p.re);
-    if (m && (!p.risky || m[2])) return p.ir;
-  }
-  return null;
-}
-
-// Labels too broad to be worth repeating down a whole tab. When one of these
-// comes up we look for a county in the story and show that instead, so Éire
-// reads AN CLÁR, LIATROIM, PORT LÁIRGE rather than ÉIRE eight times over.
-// Domhan is deliberately NOT here: county names are Irish, and a world story
-// that happens to mention Cork should not end up labelled CORCAIGH.
-const BROAD_LABELS = new Set(["Éire", "Ulaidh", "Laighin", "An Mhumhain", "Connachta", "Nuacht"]);
+// The county a text names, in Irish (helpers.js placeFinder), for the gold
+// labels and the export page's opening lines.
+const placeIn = placeFinder(places);
 
 // Gold label on the card. Prefer the freshly resolved category so older archive
 // stories show AN EORAIP rather than the generic NUACHT they were saved with,
-// then sharpen a broad label into a county where the story names one.
+// then sharpen a broad label (helpers.js sharpLabel): Domhan into the region
+// the story names, Éire into its county. The morning run now saves the
+// sharpened label, so the apps show it too.
 const displayCat = s => {
   const info = catInfo(s.category);
   const label = (info && info[0]) || s.categoryIr || "Nuacht";
-  // RTÉ's plain "World": the region the story names (helpers.js regionIn).
-  if (label === "Domhan") return regionIn(s.title, s.summary) || label;
-  if (!BROAD_LABELS.has(label)) return label;
-  // Headline first; only the opening of the summary, so a passing mention
-  // further down cannot hijack the label.
-  return placeIn(s.title) || placeIn((s.summary || "").slice(0, 200)) || label;
+  return sharpLabel(label, s.title, s.summary, placeIn);
 };
 
 /** Stories for a tab. Inniu gets a spread across sections, newest first. */
@@ -2048,6 +2017,7 @@ function ExportView({ stories }) {
     "Rugbaí": ["#rugbaí"], "Dornálaíocht": ["#dornálaíocht"],
     "Polaitíocht": ["#polaitíocht"], "Gnó": ["#gnó"], "Eacnamaíocht": ["#gnó"],
     "Domhan": ["#domhan"], "An Eoraip": ["#eoraip"], "An Meánoirthear": ["#domhan"],
+    "An Úcráin": ["#domhan"], "Meiriceá": ["#domhan"], "An Áise": ["#domhan"], "An Afraic": ["#domhan"],
     "Cultúr": ["#cultúr"], "Ceol": ["#ceol"], "Siamsaíocht": ["#siamsaíocht"],
     "Sláinte": ["#sláinte"], "Aimsir": ["#aimsir"], "Comhshaol": ["#comhshaol"],
     "Baile Átha Cliath": ["#bac"],
