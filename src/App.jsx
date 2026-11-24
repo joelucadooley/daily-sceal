@@ -1471,7 +1471,7 @@ function makeShareCanvas(story, parts, levelLabel) {
   return canvas;
 }
 
-function ReadingView({ story, onBack, startLevel, onLevel }) {
+function ReadingView({ story, onBack, backLabel = "Nuacht", startLevel, onLevel }) {
   // A level in the address wins for this story; otherwise the reader's own.
   const [pct, setPctState] = useState(() => startLevel ?? rememberedLevel() ?? 10);
   // The reader's choice is kept for the next story (open levels only).
@@ -1547,7 +1547,7 @@ function ReadingView({ story, onBack, startLevel, onLevel }) {
       {/* Nav */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: 20, borderBottom: `1px solid ${C.border}`, marginBottom: 20 }}>
         <button onClick={onBack} style={{ background: "none", border: "none", color: C.muted, fontFamily: "system-ui, sans-serif", fontSize: "0.8rem", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", gap: 5 }}>
-          ← Nuacht
+          ← {backLabel}
         </button>
       </div>
 
@@ -2748,8 +2748,9 @@ export default function DailySceal() {
     }
   }
 
-  // "← Nuacht": the same as Back when the list is the step before; a story
-  // opened straight from a link has no list behind it, so the list is shown.
+  // "← Spórt" (the tab the story came from): the same as Back when the list
+  // is the step before; a story opened straight from a link has no list
+  // behind it, so the list is shown (Inniu).
   function backToFeed() {
     if (history.state && history.state.ds === "story") {
       history.back();
@@ -2941,7 +2942,7 @@ export default function DailySceal() {
           {!isExport && view === "reading" && activeStory && (
             <div style={{ paddingTop: 20 }}>
               <ReadingView key={`${activeStory.addrDay || ""}/${activeStory.addrN || activeStory.id}`}
-                story={activeStory} onBack={backToFeed} startLevel={openLevel} onLevel={levelChanged} />
+                story={activeStory} onBack={backToFeed} backLabel={sectionLabel || "Nuacht"} startLevel={openLevel} onLevel={levelChanged} />
             </div>
           )}
           {!isExport && view === "opening" && <Spinner />}
