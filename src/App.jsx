@@ -9,7 +9,7 @@ import places from "../scripts/places.json";
 import {
   parseText, focalFor, timeoutSignal,
   storyAddress, routeFor, addressFor, withAddresses, storyAt,
-  rememberedLevel, rememberLevel, regionIn,
+  rememberedLevel, rememberLevel, regionIn, packGroups,
 } from "./helpers.js";
 import GameView from "./Game.jsx";
 
@@ -288,6 +288,34 @@ async function backfillThinSections(todayStories) {
     }
   }
   return added;
+}
+
+/**
+ * The days before `day` (SPARE_DAYS), for the desktop grid to fill a row's gaps
+ * (packGroups): each story once, without anything already on the page,
+ * newest first, each with its own address.
+ */
+const SPARE_DAYS = 4;
+async function loadSpares(day, onPage) {
+  const base = import.meta.env.BASE_URL;
+  const norm = s => (s.link || "").toLowerCase().replace(/[?#].*$/, "").replace(/\/$/, "");
+  const seen = new Set(onPage.map(norm));
+  const out = [];
+  for (let d = 1; d <= SPARE_DAYS; d++) {
+    const dt = new Date(`${day}T12:00:00Z`);
+    dt.setUTCDate(dt.getUTCDate() - d);
+    const key = dt.toISOString().slice(0, 10);
+    try {
+      const r = await fetch(`${base}data/archive/${key}.json`, { signal: timeoutSignal(8000) });
+      if (!r.ok) continue;
+      for (const s of withAddresses((await r.json()).stories, key)) {
+        if (!s.link || seen.has(norm(s))) continue;
+        seen.add(norm(s));
+        out.push({ ...s, id: `${key}-${s.id}`, published: s.published || `${key}T09:00:00.000Z` });
+      }
+    } catch {}
+  }
+  return out.sort(byNewest);
 }
 
 const byNewest = (a, b) =>
@@ -858,7 +886,72 @@ function useGridCols(highlights) {
   return wide ? GRID_COLS_WIDE : GRID_COLS;
 }
 
-function FeedView({ stories, loading, onStoryClick, sectionLabel, sectionId = null, highlights = false, avoidLeadId = null }) {
+/**
+ * A tab's stories as desktop grid rows: grouped under their labels
+ * (groupByCategory), small groups side by side (packGroups), and a row's
+ * blank cells filled with stories from the last few days under the same
+ * label, or any of the tab's for the general group or an ungrouped tab.
+ * A small group that still leaves blanks joins the general group. With
+ * nothing to fill it, an ungrouped tab keeps whole rows as before.
+ */
+function desktopRows(rest, sectionId, cols, onPage, spares) {
+  const shown = new Set(onPage.map(s => s.link));
+  const restLabel = TAB_REST[sectionId] || "Eile";
+  const isRest = g => g.mixed || g.label === restLabel;
+
+  // One try at a layout: groups packed into rows, gaps filled from a fresh
+  // copy of the older stories. Returns the rows and the small named groups
+  // still sitting next to blank cells.
+  const attempt = groups => {
+    const pool = spares.filter(s => sectionOf(s) === sectionId && !shown.has(s.link));
+    const named = new Set(groups.filter(g => g.label && !isRest(g)).map(g => g.label));
+    const take = (fits, n) => {
+      const got = [];
+      for (let i = 0; i < pool.length && got.length < n; i++) {
+        if (fits(pool[i])) { got.push(pool[i]); pool.splice(i--, 1); }
+      }
+      return got;
+    };
+    const more = (g, n) => (g.label === null || isRest(g))
+      ? take(s => !named.has(displayCat(s)), n)
+      : take(s => displayCat(s) === g.label, n);
+    const rows = packGroups(groups, cols, more);
+    const stuck = [];
+    for (const r of rows) {
+      const used = r.blocks.reduce((n, b) => n + b.span, 0);
+      const wide = r.blocks.length === 1 && r.blocks[0].span === cols;
+      const blank = wide ? (cols - (r.blocks[0].group.items.length % cols)) % cols : cols - used;
+      if (blank) stuck.push(...r.blocks.filter(b => b.group.label && !isRest(b.group)).map(b => b.group.label));
+    }
+    return { rows, stuck };
+  };
+
+  let groups = groupByCategory(rest, sectionId);
+  for (let tries = 0; tries < 8; tries++) {
+    const { rows, stuck } = attempt(groups);
+    if (!stuck.length) return finish(rows, groups);
+    // The smallest group beside a gap joins the general group, where each
+    // story keeps its own label, and the rows are laid out again.
+    const small = groups.filter(g => stuck.includes(g.label)).sort((x, y) => x.items.length - y.items.length)[0];
+    let general = groups.find(isRest);
+    if (!general) { general = { label: restLabel, items: [], mixed: true }; groups = [...groups, general]; }
+    groups = groups.filter(g => g !== small).map(g => g === general ? { ...g, items: [...g.items, ...small.items], mixed: true } : g);
+    // Nothing left to head: one list, as a tab with nothing to group.
+    if (groups.length === 1) groups = [{ label: null, items: groups[0].items }];
+  }
+  return finish(attempt(groups).rows, groups);
+
+  // Still a short last row on an ungrouped tab: whole rows, as before.
+  function finish(rows, gs) {
+    if (gs.length === 1 && gs[0].label === null) {
+      const g = rows.flatMap(r => r.blocks)[0]?.group;
+      if (g) g.items = wholeRows(g.items, cols);
+    }
+    return rows;
+  }
+}
+
+function FeedView({ stories, loading, onStoryClick, sectionLabel, sectionId = null, highlights = false, avoidLeadId = null, spares = [] }) {
   const isDesktop = useIsDesktop();
   const cols = useGridCols(highlights);
   // Lead with the first story that is not already leading Inniu. If this
@@ -894,21 +987,21 @@ function FeedView({ stories, loading, onStoryClick, sectionLabel, sectionId = nu
           {highlights && <FocalCard />}
 
           {!highlights && isDesktop ? (
-            groupByCategory(rest, sectionId).map((group, gi) => {
-              // One list (nothing to group) keeps whole rows, as before.
-              const items = group.label === null ? wholeRows(group.items, cols) : group.items;
-              if (!items.length) return null;
-              return (
-                <section key={group.label || `group-${gi}`} className={group.mixed ? "ds-group ds-group-mixed" : "ds-group"}>
-                  {group.label && <h2 className="ds-group-head">{group.label}</h2>}
-                  <div className="ds-grid">
-                    {items.map((s, i) => (
-                      <StoryRow key={s.id} story={s} index={i + 1} onClick={onStoryClick} />
-                    ))}
-                  </div>
-                </section>
-              );
-            })
+            desktopRows(rest, sectionId, cols, stories, spares).map((row, ri) => (
+              <div key={`row-${ri}`} className={ri === 0 ? "ds-pack-row ds-pack-first" : "ds-pack-row"} style={{ display: "grid", gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`, columnGap: 28 }}>
+                {row.blocks.map((b, bi) => (
+                  <section key={b.group.label || `group-${ri}-${bi}`} style={{ gridColumn: `span ${b.span}` }}
+                    className={b.group.mixed || b.group.label === null ? "ds-group ds-group-mixed" : "ds-group"}>
+                    {b.group.label && <h2 className="ds-group-head">{b.group.label}</h2>}
+                    <div style={{ display: "grid", gridTemplateColumns: `repeat(${b.span}, minmax(0, 1fr))`, columnGap: 28 }}>
+                      {b.group.items.map((s, i) => (
+                        <StoryRow key={s.id} story={s} index={i + 1} onClick={onStoryClick} />
+                      ))}
+                    </div>
+                  </section>
+                ))}
+              </div>
+            ))
           ) : (
             <div className="ds-grid">
               {/* Whole rows only where there is a grid: a phone's single
@@ -2490,6 +2583,8 @@ export default function DailySceal() {
   // pulled in to pad thin sections, but the export tool must only ever offer
   // today's, or you could end up posting a three-day-old story.
   const [todayOnly, setTodayOnly] = useState(FALLBACK_STORIES);
+  // The days before, on desktop only, to fill gaps in the grid.
+  const [spares, setSpares] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeStory, setActiveStory] = useState(null);
   // The level an address asked for, for that one opening of a story.
@@ -2581,6 +2676,9 @@ export default function DailySceal() {
             setStories([...todayStories, ...extra]);
           })
           .catch(() => {});
+        if (window.matchMedia("(min-width:1000px)").matches) {
+          loadSpares(data.date, todayStories).then(list => { if (!cancelled) setSpares(list); }).catch(() => {});
+        }
         return data;
       })
       .catch(() => null)
@@ -2730,6 +2828,9 @@ export default function DailySceal() {
             margin: 30px 0 2px; padding-bottom: 0;
           }
           .ds-group:first-of-type .ds-group-head { margin-top: 14px; }
+          /* Groups side by side share a row: their headings line up. */
+          .ds-pack-row .ds-group .ds-group-head { margin-top: 30px; }
+          .ds-pack-row.ds-pack-first .ds-group .ds-group-head { margin-top: 14px; }
           .ds-group .ds-cat { display: none; }
           .ds-group .ds-meta { justify-content: flex-end; }
           /* The catch-all group has no one label, so each story keeps its own. */
@@ -2834,7 +2935,7 @@ export default function DailySceal() {
           {!isExport && view === "feed" && (
             <>
               <SectionBar sections={sections} active={section} onSelect={pickSection} />
-              <FeedView stories={shown} loading={loading} onStoryClick={openStory} sectionLabel={sectionLabel} sectionId={section} highlights={section === "inniu"} avoidLeadId={section === "inniu" ? null : inniuLeadId} />
+              <FeedView stories={shown} loading={loading} onStoryClick={openStory} sectionLabel={sectionLabel} sectionId={section} spares={spares} highlights={section === "inniu"} avoidLeadId={section === "inniu" ? null : inniuLeadId} />
             </>
           )}
           {!isExport && view === "reading" && activeStory && (

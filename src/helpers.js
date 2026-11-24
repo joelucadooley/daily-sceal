@@ -220,3 +220,48 @@ export function regionIn(title, summary = "") {
   }
   return null;
 }
+
+// ---- Desktop rows ----
+
+/**
+ * Lay a tab's groups out in grid rows of `cols` columns, so small groups sit
+ * side by side instead of each leaving blank columns. A group as wide as the
+ * grid takes whole rows; smaller ones share a row, each in the first row
+ * with room. Gaps left at the end of a row are offered to `more(group, n)`,
+ * which may return up to n older stories to add to that group.
+ *
+ *   groups  [{ label, items, mixed? }]
+ *   returns [{ blocks: [{ group, span }] }], groups copied with any added items
+ */
+export function packGroups(groups, cols, more = () => []) {
+  const rows = [];
+  for (const g0 of groups) {
+    const g = { ...g0, items: [...g0.items] };
+    if (g.items.length >= cols) {
+      rows.push({ wide: true, blocks: [{ group: g, span: cols }] });
+      continue;
+    }
+    const used = r => r.blocks.reduce((n, b) => n + b.span, 0);
+    const row = rows.find(r => !r.wide && used(r) + g.items.length <= cols);
+    if (row) row.blocks.push({ group: g, span: g.items.length });
+    else rows.push({ wide: false, blocks: [{ group: g, span: g.items.length }] });
+  }
+  for (const row of rows) {
+    if (row.wide) {
+      const g = row.blocks[0].group;
+      const free = (cols - (g.items.length % cols)) % cols;
+      if (free) g.items.push(...more(g, free).slice(0, free));
+      continue;
+    }
+    let free = cols - row.blocks.reduce((n, b) => n + b.span, 0);
+    // The last group in the row first: its blank cells are the ones beside it.
+    for (let i = row.blocks.length - 1; i >= 0 && free > 0; i--) {
+      const b = row.blocks[i];
+      const got = more(b.group, free).slice(0, free);
+      b.group.items.push(...got);
+      b.span += got.length;
+      free -= got.length;
+    }
+  }
+  return rows.map(({ blocks }) => ({ blocks }));
+}

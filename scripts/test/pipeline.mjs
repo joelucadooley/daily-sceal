@@ -23,7 +23,7 @@ const { run } = await import("../generate.js");
 const {
   fixArticle, parseText, focalFor, fnv1a64, timeoutSignal,
   storyAddress, parseStoryAddress, routeFor, addressFor, withAddresses, storyAt, rememberedLevel, rememberLevel,
-  regionIn,
+  regionIn, packGroups,
 } = await import("../../src/helpers.js");
 
 let failed = 0, passed = 0;
@@ -491,6 +491,31 @@ await test("Britain, world bodies and stories naming nowhere stay Domhan", () =>
     ["Trump tells us nothing new", "It was said to us"],   // "us" is a word, not the US
     ["80% chance of El Niño developing in June-August, says UN", ""],
   ]) eq(regionIn(title, summary), null, title);
+});
+
+// ---- 8. Desktop rows ----
+
+const grp = (label, n) => ({ label, items: Array.from({ length: n }, (_, i) => `${label} ${i}`) });
+const layout = rows => rows.map(r => r.blocks.map(b => `${b.group.label}:${b.span}/${b.group.items.length}`).join(" + ")).join(" | ");
+
+await test("small groups share a row instead of leaving blank columns", () => {
+  const sport = [grp("Rugbaí", 3), grp("CLG", 2), grp("Sacar", 2), grp("Spórt eile", 1)];
+  eq(layout(packGroups(sport, 4)), "Rugbaí:3/3 + Spórt eile:1/1 | CLG:2/2 + Sacar:2/2", "four columns");
+  eq(layout(packGroups([grp("An Meánoirthear", 2), grp("An Úcráin", 2)], 4)), "An Meánoirthear:2/2 + An Úcráin:2/2", "two pairs side by side");
+  eq(layout(packGroups([grp("Gnó", 5)], 3)), "Gnó:3/5", "a group wider than the grid takes whole rows");
+});
+
+await test("gaps are offered for older stories, which join that group", () => {
+  const asked = [];
+  const more = (g, n) => { asked.push(`${g.label}:${n}`); return g.label === "Sacar" ? ["old 1", "old 2", "old 3"] : []; };
+  const rows = packGroups([grp("Rugbaí", 3), grp("CLG", 2), grp("Sacar", 2), grp("Spórt eile", 1)], 3, more);
+  eq(layout(rows), "Rugbaí:3/3 | CLG:2/2 + Spórt eile:1/1 | Sacar:3/3", "Sacar row filled, never more than the gap");
+  eq(asked.join(","), "Sacar:1", "only the row with a gap is asked");
+  const wide = packGroups([grp("Gnó", 4)], 3, () => ["a", "b", "c"]);
+  eq(wide[0].blocks[0].group.items.length, 6, "a wide group's last row is filled");
+  const input = [grp("CLG", 2)];
+  packGroups(input, 3, () => ["x"]);
+  eq(input[0].items.length, 2, "the groups passed in are not changed");
 });
 
 assert(net.calls === 0, "MyMemory was called");
