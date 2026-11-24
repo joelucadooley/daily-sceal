@@ -6,8 +6,8 @@ import { mkdtempSync, mkdirSync, writeFileSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 import { makeGame, split, choose, isSad, listed, storyPieces, QUESTIONS } from "../game.js";
-import { shareText, scoreLink, beforeGap, praise } from "../../src/gameText.js";
-import { existsSync } from "node:fs";
+import { shareText, shareMessage, scoreLink, beforeGap, praise } from "../../src/gameText.js";
+import { existsSync, readFileSync } from "node:fs";
 
 let failed = 0, passed = 0;
 async function test(name, fn) {
@@ -111,6 +111,29 @@ await test("share text: score, a shamrock or cross each, the link", () => {
   assert.equal(shareText([true, true, false, true, true], "2026-11-20"), "Bearnaí 4/5 · 20 Samhain\n☘️☘️❌☘️☘️\nhttps://dailysceal.com/bearnai/11011");
   assert.equal(shareText([true, true, true, true, true], "2027-01-03"), "Bearnaí 5/5 · 3 Eanáir\n☘️☘️☘️☘️☘️\nhttps://dailysceal.com/bearnai/11111");
   assert.equal(shareText([false, true, false, true, true]), "Bearnaí 3/5\n❌☘️❌☘️☘️\nhttps://dailysceal.com/bearnai/01011");
+});
+
+await test("share: the message and the link go as two items", () => {
+  const r = [true, true, false, true, true];
+  assert.equal(shareMessage(r, "2026-11-20"), "Bearnaí 4/5 · 20 Samhain\n☘️☘️❌☘️☘️");
+  assert.ok(!shareMessage(r).includes("http"), "no link in the message");
+  assert.equal(shareText(r, "2026-11-20"), `${shareMessage(r, "2026-11-20")}\n${scoreLink(r)}`, "Copy gives both");
+});
+
+await test("a score page shows its own picture; a missing or made-up score, the plain game", () => {
+  const page = p => readFileSync(new URL(`../../public/${p}`, import.meta.url), "utf-8");
+  assert.match(page("bearnai/10110.html"), /og:image" content="https:\/\/dailysceal\.com\/bearnai\/10110\.png"/);
+  for (const p of ["bearnai.html", "bearnai/index.html", "404.html"]) {
+    assert.match(page(p), /og:image" content="https:\/\/dailysceal\.com\/og-bearnai\.png/, `${p}: the white boxes`);
+  }
+  // The not-found page opens the game for /bearnai/..., the news for anything else.
+  const go = page("404.html").match(/location\.replace\((.+)\);<\/script>/)[1];
+  const where = path => new Function("location", `return ${go}`)({ pathname: path });
+  assert.equal(where("/bearnai/abc"), "/#bearnai");
+  assert.equal(where("/bearnai/1101"), "/#bearnai");
+  assert.equal(where("/Bearnai/xyz"), "/#bearnai");
+  assert.equal(where("/no-such-page"), "/");
+  assert.equal(where("/bearnaix"), "/");
 });
 
 await test("every score link has its page and picture", () => {

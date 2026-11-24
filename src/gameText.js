@@ -19,11 +19,16 @@ export function scoreLink(results) {
   return results.length === 5 ? `${GAME_LINK}/${results.map(r => (r ? "1" : "0")).join("")}` : GAME_LINK;
 }
 
-/** What Share copies: the score and the day, a shamrock or a cross per question, and the link. */
-export function shareText(results, date) {
+/** The score and the day, and a shamrock or a cross per question: what is shared beside the link. */
+export function shareMessage(results, date) {
   const right = results.filter(Boolean).length;
   const day = gameDay(date);
-  return `Bearnaí ${right}/${results.length}${day ? ` · ${day}` : ""}\n${results.map(r => (r ? "☘️" : "❌")).join("")}\n${scoreLink(results)}`;
+  return `Bearnaí ${right}/${results.length}${day ? ` · ${day}` : ""}\n${results.map(r => (r ? "☘️" : "❌")).join("")}`;
+}
+
+/** What Copy gives: the message, then the link on its own line. */
+export function shareText(results, date) {
+  return `${shareMessage(results, date)}\n${scoreLink(results)}`;
 }
 
 /** The Irish word in gold over the score. */

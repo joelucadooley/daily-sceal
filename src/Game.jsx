@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { timeoutSignal } from "./helpers.js";
-import { shareText, beforeGap, praise } from "./gameText.js";
+import { shareText, shareMessage, scoreLink, beforeGap, praise } from "./gameText.js";
 
 const C = {
   navy: "#0d2137", border: "#e8e2d9", text: "#111111", muted: "#6b6460", faint: "#a8a29a",
@@ -162,7 +162,9 @@ export default function GameView({ onStories }) {
     const text = shareText(results, game.date);
     try {
       if (navigator.share && matchMedia("(pointer: coarse)").matches) {
-        await navigator.share({ text });
+        // The link as its own item, so Messages shows its preview card (the
+        // score in green and red) rather than a link inside the text.
+        await navigator.share({ text: shareMessage(results, game.date), url: scoreLink(results) });
         return;
       }
     } catch (e) {
