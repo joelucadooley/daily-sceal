@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useLayoutEffect, useRef } from "react";
 // Single source of truth for RTÉ categories, shared with scripts/generate.js.
 // Pure ESM with no Node APIs, so Vite bundles it for the browser fine.
 import { catInfo } from "../scripts/categories.js";
@@ -814,6 +814,25 @@ function WordChip({ part, active, onToggle }) {
  * moves around between taps.
  */
 function SectionBar({ sections, active, onSelect }) {
+  // One amber line that slides to the tab you pick: placed under the active
+  // tab's button, and moved there with a CSS transition. The first placing
+  // and a resize jump straight there.
+  const row = useRef(null);
+  const [bar, setBar] = useState(null);
+  const lastActive = useRef(null);
+  useLayoutEffect(() => {
+    const place = (animate) => {
+      const btn = row.current?.querySelector('[aria-pressed="true"]');
+      if (!btn) return;
+      setBar({ left: btn.offsetLeft + 6, width: btn.offsetWidth - 12, animate });
+    };
+    // Slides only when the tab changed; tabs arriving or relabelled jump.
+    place(lastActive.current !== null && lastActive.current !== active);
+    lastActive.current = active;
+    const onResize = () => place(false);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [active, sections.map(s => s.id + s.label).join("|")]);
   return (
     <nav style={{
       position: "sticky", top: 0, zIndex: 50, margin: "0 -20px",
@@ -821,10 +840,10 @@ function SectionBar({ sections, active, onSelect }) {
       backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
       borderBottom: `1px solid ${C.border}`,
     }}>
-      <div className="ds-tabs" style={{
+      <div ref={row} className="ds-tabs" style={{
         maxWidth: 640, margin: "0 auto", display: "flex",
         alignItems: "stretch", justifyContent: "space-between",
-        padding: "0 8px",
+        padding: "0 8px", position: "relative",
       }}>
         {sections.map(sec => {
           const on = active === sec.id;
@@ -841,13 +860,14 @@ function SectionBar({ sections, active, onSelect }) {
                 whiteSpace: "nowrap", transition: "color 0.15s",
               }}>
               {sec.label}
-              {on && <span style={{
-                position: "absolute", left: 6, right: 6, bottom: 0,
-                height: 3, background: C.amber, borderRadius: "2px 2px 0 0",
-              }} />}
             </button>
           );
         })}
+        {bar && <span aria-hidden="true" className={bar.animate ? "ds-tab-bar ds-tab-bar-move" : "ds-tab-bar"} style={{
+          position: "absolute", bottom: 0, left: 0, width: bar.width,
+          transform: `translateX(${bar.left}px)`,
+          height: 3, background: C.amber, borderRadius: "2px 2px 0 0",
+        }} />}
       </div>
     </nav>
   );
@@ -2796,6 +2816,32 @@ export default function DailySceal() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
+  // A tab tapped or swiped to: the stories slide in from the side the tab is
+  // on, as in the apps. Other changes (Back, a link) just show the tab.
+  const [slideFrom, setSlideFrom] = useState(null);
+  function moveToSection(id) {
+    if (id === section) return;
+    const order = sections.map(s => s.id);
+    setSlideFrom(order.indexOf(id) > order.indexOf(section) ? "right" : "left");
+    pickSection(id);
+  }
+  // A sideways swipe on the stories (phones): left for the next tab, right
+  // for the one before. Only a clearly sideways swipe counts.
+  const touch = useRef(null);
+  const swipeHandlers = {
+    onTouchStart: e => { const t = e.touches[0]; touch.current = { x: t.clientX, y: t.clientY }; },
+    onTouchEnd: e => {
+      const start = touch.current; touch.current = null;
+      if (!start) return;
+      const t = e.changedTouches[0];
+      const dx = t.clientX - start.x, dy = t.clientY - start.y;
+      if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.8) return;
+      const order = sections.map(s => s.id);
+      const next = order[order.indexOf(section) + (dx < 0 ? 1 : -1)];
+      if (next) moveToSection(next);
+    },
+  };
+
   // Show a story without touching the history (Back, Forward, an address).
   function showStory(story, level = null) {
     setActiveStory(story);
@@ -2872,6 +2918,18 @@ export default function DailySceal() {
         .sceal-range { background: linear-gradient(to right, ${C.border} 0%, ${C.border} 80%, #ede8e0 80%, #f0ede8 100%) !important; }
         .sceal-sections::-webkit-scrollbar { display: none; }
         button:active { opacity: 0.7; }
+        /* Changing tab: the amber line slides, the stories come in from the
+           side of the tab picked. None of it with reduced motion. */
+        .ds-tab-bar-move { transition: transform 0.32s cubic-bezier(0.2, 0.8, 0.2, 1), width 0.32s cubic-bezier(0.2, 0.8, 0.2, 1); }
+        .ds-slide { overflow-x: hidden; overflow-x: clip; }
+        @keyframes dsInRight { from { transform: translateX(56px); opacity: 0; } to { transform: none; opacity: 1; } }
+        @keyframes dsInLeft { from { transform: translateX(-56px); opacity: 0; } to { transform: none; opacity: 1; } }
+        .ds-in-right { animation: dsInRight 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); }
+        .ds-in-left { animation: dsInLeft 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); }
+        @media (prefers-reduced-motion: reduce) {
+          .ds-tab-bar-move { transition: none; }
+          .ds-in-right, .ds-in-left { animation: none; }
+        }
         /* Keyboard focus shows; a tap or click on a story or word does not. */
         [role="link"]:focus:not(:focus-visible), [role="button"]:focus:not(:focus-visible) { outline: none; }
         a:hover { opacity: 0.75; }
@@ -3035,8 +3093,12 @@ export default function DailySceal() {
           {isExport && <ExportView stories={todayOnly} />}
           {!isExport && view === "feed" && (
             <>
-              <SectionBar sections={sections} active={section} onSelect={pickSection} />
+              <SectionBar sections={sections} active={section} onSelect={moveToSection} />
+              <div key={`${viewDay || "today"}/${section}`} {...swipeHandlers}
+                className={slideFrom ? `ds-slide ds-in-${slideFrom}` : "ds-slide"}
+                onAnimationEnd={e => { if (e.target === e.currentTarget) setSlideFrom(null); }}>
               <FeedView stories={shown} loading={dayLoading} onStoryClick={openStory} sectionLabel={sectionLabel} sectionId={section} spares={daySpares} highlights={section === "inniu"} avoidLeadId={section === "inniu" ? null : inniuLeadId} />
+              </div>
             </>
           )}
           {!isExport && view === "reading" && activeStory && (
