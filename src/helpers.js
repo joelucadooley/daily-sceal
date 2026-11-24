@@ -158,9 +158,10 @@ export function parseStoryAddress(hash) {
 }
 
 /**
- * Which page an address names: { view: "feed", tab }, { view: "game" },
+ * Which page an address names: { view: "feed", tab, day? }, { view: "game" },
  * { view: "about" }, { view: "export" } or { view: "story", story }.
- * `tabs` are the news tab ids. Anything else is Inniu.
+ * `tabs` are the news tab ids. An earlier day's news is #day/2026-11-21, or
+ * #day/2026-11-21/sport for one of its tabs. Anything else is Inniu.
  */
 export function routeFor(hash, tabs = []) {
   let h = String(hash || "").trim().replace(/^#/, "");
@@ -173,16 +174,55 @@ export function routeFor(hash, tabs = []) {
   if (key === "bearnai") return { view: "game" };
   if (key === "faoi") return { view: "about" };
   if (key === "export") return { view: "export" };
+  const day = /^day\/(\d{4}-\d{2}-\d{2})(?:\/([a-z]+))?$/.exec(key);
+  if (day && parseStoryAddress(`story/${day[1]}/1`)) {
+    return { view: "feed", tab: day[2] && tabs.includes(day[2]) ? day[2] : "inniu", day: day[1] };
+  }
   if (tabs.includes(key)) return { view: "feed", tab: key };
   return { view: "feed", tab: "inniu" };
 }
 
-/** The address of a page other than a story; "" for Inniu. */
-export function addressFor({ view, tab } = {}) {
+/** The address of a page other than a story; "" for today's Inniu. */
+export function addressFor({ view, tab, day } = {}) {
   if (view === "game") return "#bearnai";
   if (view === "about") return "#faoi";
+  if (view === "feed" && day) return `#day/${day}${tab && tab !== "inniu" ? `/${tab}` : ""}`;
   if (view === "feed" && tab && tab !== "inniu") return `#${tab}`;
   return "";
+}
+
+// ---- Earlier days ----
+
+const shiftDay = (key, n) => {
+  const d = new Date(`${key}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+};
+
+/** The week to choose from: `today` ("YYYY-MM-DD") and the six days before, newest first. */
+export function recentDays(today, n = 7) {
+  return Array.from({ length: n }, (_, i) => shiftDay(today, -i));
+}
+
+const WEEKDAYS_EN = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const MONTHS_EN = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+// As DayKey.irishLabel in the apps.
+const WEEKDAYS_GA = ["Dé Domhnaigh", "Dé Luain", "Dé Máirt", "Dé Céadaoin", "Déardaoin", "Dé hAoine", "Dé Sathairn"];
+
+/** "Today", "Yesterday" or "Sat 21 Nov", as the apps' day menu. */
+export function dayLabel(key, today) {
+  if (key === today) return "Today";
+  if (today && key === shiftDay(today, -1)) return "Yesterday";
+  const d = new Date(`${key}T12:00:00Z`);
+  return `${WEEKDAYS_EN[d.getUTCDay()]} ${d.getUTCDate()} ${MONTHS_EN[d.getUTCMonth()]}`;
+}
+
+/** The first tab's name for a day: Inniu, Inné, or the Irish weekday, as in the apps. */
+export function dayTabLabel(key, today) {
+  if (!key || key === today) return "Inniu";
+  // Today's date not known yet (the page opened at an earlier day): the weekday.
+  if (today && key === shiftDay(today, -1)) return "Inné";
+  return WEEKDAYS_GA[new Date(`${key}T12:00:00Z`).getUTCDay()];
 }
 
 /** Each story of a day's file with its address parts (addrDay, addrN). */

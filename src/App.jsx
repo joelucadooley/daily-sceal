@@ -10,6 +10,7 @@ import {
   parseText, focalFor, timeoutSignal,
   storyAddress, routeFor, addressFor, withAddresses, storyAt,
   rememberedLevel, rememberLevel, regionIn, packGroups,
+  recentDays, dayLabel, dayTabLabel,
 } from "./helpers.js";
 import GameView from "./Game.jsx";
 
@@ -697,6 +698,52 @@ async function loadAddressedStory(addr, todayData) {
   } catch {
     return null;
   }
+}
+
+/**
+ * The date under the wordmark, which opens the week's days, as in the apps:
+ * Today, Yesterday, then "Sat 21 Nov". Picking one shows that day's news.
+ */
+function DayMenu({ days, today, current, label, onPick }) {
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (!open) return;
+    const close = () => setOpen(false);
+    const onKey = e => { if (e.key === "Escape") close(); };
+    document.addEventListener("click", close);
+    document.addEventListener("keydown", onKey);
+    return () => { document.removeEventListener("click", close); document.removeEventListener("keydown", onKey); };
+  }, [open]);
+  const style = { fontSize: "0.62rem", color: "rgba(255,255,255,0.4)", fontFamily: "system-ui, sans-serif", marginTop: 3, letterSpacing: "0.03em" };
+  if (!days.length) return <div style={style}>{label}</div>;
+  return (
+    <div style={{ position: "relative" }}>
+      <button onClick={e => { e.stopPropagation(); setOpen(o => !o); }} aria-haspopup="menu" aria-expanded={open}
+        aria-label={`${label}. Choose another day`}
+        style={{ ...style, background: "none", border: "none", padding: 0, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
+        {label}<span aria-hidden="true" style={{ fontSize: "0.5rem", opacity: 0.8 }}>▾</span>
+      </button>
+      {open && (
+        <div role="menu" style={{
+          position: "absolute", top: "calc(100% + 8px)", left: 0, zIndex: 200, minWidth: 170,
+          background: C.card, border: `1px solid ${C.border}`, borderRadius: 10, padding: "6px 0",
+          boxShadow: "0 8px 32px rgba(13,33,55,0.2)", fontFamily: "system-ui, sans-serif",
+        }}>
+          {days.map(d => {
+            const on = d === current;
+            return (
+              <button key={d} role="menuitemradio" aria-checked={on} onClick={() => { setOpen(false); onPick(d); }}
+                style={{ display: "flex", justifyContent: "space-between", width: "100%", gap: 12, background: "none", border: "none",
+                  padding: "9px 16px", cursor: "pointer", fontSize: "0.85rem", textAlign: "left",
+                  color: on ? C.navy : C.text, fontWeight: on ? 700 : 400 }}>
+                <span>{dayLabel(d, today)}</span>{on && <span aria-hidden="true" style={{ color: C.amber }}>✓</span>}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
 }
 
 function Spinner() {
@@ -2590,12 +2637,18 @@ export default function DailySceal() {
   // The level an address asked for, for that one opening of a story.
   const [openLevel, setOpenLevel] = useState(null);
   const [section, setSection] = useState(() => startRoute.current.tab || "inniu");
+  // An earlier day's news (#day/2026-11-21), or null for today's. `todayDate`
+  // is today.json's date; `other` holds the earlier day once loaded.
+  const [viewDay, setViewDay] = useState(() => startRoute.current.day || null);
+  const [todayDate, setTodayDate] = useState(null);
+  const [other, setOther] = useState(null);
+  const onOther = !!viewDay && viewDay !== todayDate;
   // Where the list was scrolled to, so Back returns to the same place.
   const feedScroll = useRef(0);
   const viewRef = useRef(view);
   viewRef.current = view;
   const storiesRef = useRef(stories);
-  storiesRef.current = stories;
+  storiesRef.current = other ? [...stories, ...other.stories] : stories;
   const isExport = typeof window !== "undefined" &&
     (routeFor(window.location.hash).view === "export" || window.location.search.includes("export=1"));
 
@@ -2605,11 +2658,31 @@ export default function DailySceal() {
   useEffect(() => {
     if (view !== "reading") document.title = BASE_TITLE;
     if (isExport || view === "reading" || view === "opening") return;
-    const want = addressFor({ view, tab: section });
+    const want = addressFor({ view, tab: section, day: onOther ? viewDay : null });
     if (window.location.hash !== want) {
       history.replaceState(null, "", window.location.pathname + window.location.search + want);
     }
-  }, [view, section, isExport]);
+  }, [view, section, isExport, viewDay, todayDate]);
+
+  // An earlier day: its file from the archive, and on desktop the days before
+  // it for the grid's gaps. A day that cannot be read goes back to today.
+  useEffect(() => {
+    if (!onOther || other?.day === viewDay) return;
+    let cancelled = false;
+    fetch(`${import.meta.env.BASE_URL}data/archive/${viewDay}.json`, { signal: timeoutSignal(15000) })
+      .then(r => (r.ok ? r.json() : null))
+      .then(data => {
+        if (cancelled) return;
+        if (!data?.stories?.length) { setViewDay(null); return; }
+        const list = withAddresses(data.stories, data.date);
+        setOther({ day: viewDay, stories: list, spares: [] });
+        if (window.matchMedia("(min-width:1000px)").matches) {
+          loadSpares(viewDay, list).then(sp => { if (!cancelled) setOther(o => (o?.day === viewDay ? { ...o, spares: sp } : o)); }).catch(() => {});
+        }
+      })
+      .catch(() => { if (!cancelled) setViewDay(null); });
+    return () => { cancelled = true; };
+  }, [viewDay, todayDate]);
 
   // The browser's Back and Forward, and an address typed or clicked while the
   // site is open. Opening a story adds a step to the history, so Back from a
@@ -2635,6 +2708,7 @@ export default function DailySceal() {
         return;
       }
       if (route.tab) setSection(route.tab);
+      if (route.view === "feed") setViewDay(route.day || null);
       setView(route.view);
       // Twice, so the list has been drawn before scrolling back down it.
       const y = fromStory && route.view === "feed" ? feedScroll.current : 0;
@@ -2666,6 +2740,7 @@ export default function DailySceal() {
         // Each story knows its day and its place in that day's file, which
         // make up its address.
         const todayStories = withAddresses(data.stories, data.date);
+        setTodayDate(data.date);
         setStories(todayStories);
         setTodayOnly(todayStories);
         // Top up thin sections in the background. Today's stories are already
@@ -2694,21 +2769,27 @@ export default function DailySceal() {
     return () => { cancelled = true; };
   }, []);
 
-  const sections = availableSections(stories);
-  const shown = storiesForSection(stories, section);
+  // The day on screen: today's stories (with the archive top-up), or an
+  // earlier day's once it has loaded.
+  const dayStories = onOther ? (other?.day === viewDay ? other.stories : []) : stories;
+  const daySpares = onOther ? (other?.day === viewDay ? other.spares : []) : spares;
+  const dayLoading = loading || (onOther && other?.day !== viewDay);
+  const firstTab = dayTabLabel(onOther ? viewDay : null, todayDate);
+  const sections = availableSections(dayStories).map(sec => (sec.id === "inniu" ? { ...sec, label: firstTab } : sec));
+  const shown = storiesForSection(dayStories, section);
   // Inniu's lead is also the newest story in its own section, so switching tabs
   // would show the same headline twice. Section tabs lead with something else
   // and keep that story further down the page instead.
-  const inniuLeadId = storiesForSection(stories, "inniu")[0]?.id;
-  const sectionLabel = SECTIONS.find(s => s.id === section)?.label || "";
+  const inniuLeadId = storiesForSection(dayStories, "inniu")[0]?.id;
+  const sectionLabel = sections.find(s => s.id === section)?.label || SECTIONS.find(s => s.id === section)?.label || "";
 
   // If today's pull has nothing for the selected section, fall back to Inniu.
   // Not before today's stories arrive, or an address such as #domhan would
   // be lost to the built-in stories shown while loading.
   useEffect(() => {
-    if (loading) return;
+    if (dayLoading) return;
     if (!sections.some(s => s.id === section)) setSection("inniu");
-  }, [stories, loading]);
+  }, [dayStories, dayLoading]);
 
   function pickSection(id) {
     setSection(id);
@@ -2760,7 +2841,24 @@ export default function DailySceal() {
     window.scrollTo(0, 0);
   }
 
-  const todayFmt = new Date().toLocaleDateString("en-IE", { weekday: "long", day: "numeric", month: "long" });
+  const todayFmt = onOther
+    ? new Date(`${viewDay}T12:00:00Z`).toLocaleDateString("en-IE", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" })
+    : new Date().toLocaleDateString("en-IE", { weekday: "long", day: "numeric", month: "long" });
+
+  // Today's news from the logo or the Nuacht button.
+  function goToday() {
+    setViewDay(null);
+    setSection("inniu");
+    setView("feed");
+  }
+
+  // A day from the menu under the date: its first tab, from the top.
+  function pickDay(d) {
+    setViewDay(d === todayDate ? null : d);
+    setSection("inniu");
+    setView("feed");
+    window.scrollTo(0, 0);
+  }
 
   return (
     <div style={{ minHeight: "100vh", background: C.bg }}>
@@ -2918,12 +3016,14 @@ export default function DailySceal() {
       {/* Header */}
       <header style={{ background: C.navy, borderBottom: `3px solid ${C.amber}` }}>
         <div className="ds-shell ds-head-pad" style={{ padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div onClick={() => { setSection("inniu"); setView("feed"); }} style={{ cursor: "pointer" }}
-            role="link" tabIndex={0} onKeyDown={onActivate(() => { setSection("inniu"); setView("feed"); })}>
-            <div style={{ fontSize: "clamp(1.2rem,3.5vw,1.5rem)", fontWeight: 700, color: "#fff", fontFamily: "Georgia, serif", letterSpacing: "-0.01em", lineHeight: 1 }}>
-              Daily <span style={{ color: C.amber }}>Scéal</span>
+          <div>
+            <div onClick={goToday} style={{ cursor: "pointer" }} role="link" tabIndex={0} onKeyDown={onActivate(goToday)}>
+              <div style={{ fontSize: "clamp(1.2rem,3.5vw,1.5rem)", fontWeight: 700, color: "#fff", fontFamily: "Georgia, serif", letterSpacing: "-0.01em", lineHeight: 1 }}>
+                Daily <span style={{ color: C.amber }}>Scéal</span>
+              </div>
             </div>
-            <div style={{ fontSize: "0.62rem", color: "rgba(255,255,255,0.4)", fontFamily: "system-ui, sans-serif", marginTop: 3, letterSpacing: "0.03em" }}>{todayFmt}</div>
+            <DayMenu days={todayDate && !isExport ? recentDays(todayDate) : []} today={todayDate}
+              current={onOther ? viewDay : todayDate} label={todayFmt} onPick={pickDay} />
           </div>
           <div style={{ fontFamily: "system-ui, sans-serif", fontSize: "0.7rem", color: "rgba(255,255,255,0.35)", letterSpacing: "0.03em" }}>Cad é an scéal?</div>
         </div>
@@ -2936,7 +3036,7 @@ export default function DailySceal() {
           {!isExport && view === "feed" && (
             <>
               <SectionBar sections={sections} active={section} onSelect={pickSection} />
-              <FeedView stories={shown} loading={loading} onStoryClick={openStory} sectionLabel={sectionLabel} sectionId={section} spares={spares} highlights={section === "inniu"} avoidLeadId={section === "inniu" ? null : inniuLeadId} />
+              <FeedView stories={shown} loading={dayLoading} onStoryClick={openStory} sectionLabel={sectionLabel} sectionId={section} spares={daySpares} highlights={section === "inniu"} avoidLeadId={section === "inniu" ? null : inniuLeadId} />
             </>
           )}
           {!isExport && view === "reading" && activeStory && (
@@ -2966,7 +3066,7 @@ export default function DailySceal() {
             const active = view === tab.id || (tab.id === "feed" && (view === "reading" || view === "opening"));
             return (
             <button key={tab.id} onClick={() => {
-                if (tab.id === "feed" && view === "feed") pickSection("inniu");
+                if (tab.id === "feed" && view === "feed") { setViewDay(null); pickSection("inniu"); }
                 setView(tab.id);
                 window.scrollTo(0, 0);
               }}

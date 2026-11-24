@@ -23,7 +23,7 @@ const { run } = await import("../generate.js");
 const {
   fixArticle, parseText, focalFor, fnv1a64, timeoutSignal,
   storyAddress, parseStoryAddress, routeFor, addressFor, withAddresses, storyAt, rememberedLevel, rememberLevel,
-  regionIn, packGroups, fixedDays, focalForKey,
+  regionIn, packGroups, fixedDays, focalForKey, recentDays, dayLabel, dayTabLabel,
 } = await import("../../src/helpers.js");
 
 let failed = 0, passed = 0;
@@ -551,6 +551,24 @@ await test("the site uses the fixed word for the day, and works it out otherwise
   eq(focalFor(f, new Date(2026, 10, 24, 23, 55)).en, "sea", "fixed day, late");
   eq(focalFor(f, new Date(2026, 10, 26)).en, focalForKey(live, "2026-11-26").en, "a day not fixed: worked out as before");
   eq(focalFor({ ...live, days: { "2026-11-26": { ga: 1 } } }, new Date(2026, 10, 26)).en, focalForKey(live, "2026-11-26").en, "a broken entry is ignored");
+});
+
+// ---- 10. Earlier days ----
+
+await test("an earlier day has an address, a menu label and a first-tab name", () => {
+  const T = ["inniu", "eire", "sport", "domhan", "eile"];
+  eq(JSON.stringify(routeFor("#day/2026-11-21/sport", T)), JSON.stringify({ view: "feed", tab: "sport", day: "2026-11-21" }), "day and tab");
+  eq(routeFor("#day/2026-11-21", T).tab, "inniu", "day alone");
+  eq(routeFor("#day/2026-11-21/nope", T).tab, "inniu", "unknown tab");
+  eq(routeFor("#day/2026-02-30", T).day, undefined, "no such date");
+  eq(addressFor({ view: "feed", tab: "sport", day: "2026-11-21" }), "#day/2026-11-21/sport", "address with a tab");
+  eq(addressFor({ view: "feed", tab: "inniu", day: "2026-11-21" }), "#day/2026-11-21", "address of the day");
+  eq(recentDays("2026-03-02").join(","), "2026-03-02,2026-03-01,2026-02-28,2026-02-27,2026-02-26,2026-02-25,2026-02-24", "a week, across a month");
+  eq(recentDays("2026-11-24").map(d => dayLabel(d, "2026-11-24")).slice(0, 3).join(","), "Today,Yesterday,Sun 22 Nov", "menu labels");
+  eq(["2026-11-24", "2026-11-23", "2026-11-21"].map(d => dayTabLabel(d, "2026-11-24")).join(","), "Inniu,Inné,Dé Sathairn", "first tab");
+  // Opened straight at an earlier day, before today's date is known.
+  eq(dayTabLabel("2026-11-23", null), "Dé Luain", "no today yet: the weekday");
+  eq(dayLabel("2026-11-23", null), "Mon 23 Nov", "no today yet: the date");
 });
 
 assert(net.calls === 0, "MyMemory was called");
