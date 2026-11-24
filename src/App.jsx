@@ -152,25 +152,23 @@ function storiesForSection(stories, sectionId) {
 }
 
 /**
- * Group a section's stories by their Irish sub-category, so Spórt reads as
- * Peil, Rugbaí, Sacar and so on rather than one undifferentiated list. Groups
- * are ordered by size, then alphabetically. A group needs a full row to earn
- * its own heading; anything thinner goes into one group at the end, where
- * each story shows its own label (`mixed`).
- *
- * Spórt is sorted by sport: two stories are enough for a heading, the Gaelic
- * games join under CLG when each is too small alone, the rest go under
- * Spórt eile, and no story is trimmed to fill a row.
+ * Group a tab's stories under their Irish labels on desktop, so Spórt reads
+ * as Rugbaí, CLG, Sacar and Domhan as An Eoraip, Meiriceá, An Úcráin rather
+ * than one undifferentiated list. Two stories are enough for a heading;
+ * small Gaelic games groups join under CLG; whatever is left joins the tab's
+ * general group (Spórt eile, Domhan, Éire, Eile), where each story shows its
+ * own label. Groups run largest first, the general group last. A tab with
+ * nothing to group stays one list. No story is dropped to fill a row.
  */
 const SPORT_FAMILY = { "Peil": "CLG", "Iomáint": "CLG", "Camógaíocht": "CLG", "Liathróid Láimhe": "CLG", "CLG": "CLG" };
+const TAB_REST = { sport: "Spórt eile", domhan: "Domhan", eire: "Éire", eile: "Eile" };
+const GROUP_MIN = 2;
 
-function groupByCategory(stories, cols = GRID_COLS, { sport = false } = {}) {
-  // Splitting is only worth it when there is enough to split. Below two full
-  // rows, sub-headings just carve the list into part-empty grids, which is
-  // where most of the white space on a quiet tab came from.
-  if (stories.length < (sport ? 4 : cols * 2)) return [{ label: null, items: stories, trim: !sport }];
-  const min = sport ? 2 : cols;
-
+function groupByCategory(stories, tab) {
+  const whole = [{ label: null, items: stories }];
+  if (stories.length < 4) return whole;
+  const restLabel = TAB_REST[tab] || "Eile";
+  const labelOf = s => displayCat(s) || restLabel;
   const bucket = list => {
     const m = new Map();
     for (const [k, item] of list) {
@@ -179,31 +177,35 @@ function groupByCategory(stories, cols = GRID_COLS, { sport = false } = {}) {
     }
     return m;
   };
-  const groups = [];
+  let groups = [];
   let small = [];
-  for (const [label, items] of bucket(stories.map(s => [displayCat(s) || "Eile", s]))) {
-    if (items.length >= min) groups.push({ label, items });
+  for (const [label, items] of bucket(stories.map(s => [labelOf(s), s]))) {
+    if (items.length >= GROUP_MIN) groups.push({ label, items });
     else small.push(...items);
   }
   // Too few of one Gaelic game for a heading: together under CLG.
-  if (sport) {
-    const rest = [];
-    for (const [label, items] of bucket(small.map(s => [SPORT_FAMILY[displayCat(s)] || null, s]))) {
-      if (label && items.length >= min) {
+  if (tab === "sport") {
+    const left = [];
+    for (const [label, items] of bucket(small.map(s => [SPORT_FAMILY[labelOf(s)] || null, s]))) {
+      if (label && items.length >= GROUP_MIN) {
         const same = groups.find(g => g.label === label);
         if (same) same.items.push(...items);
         else groups.push({ label, items });
-      } else rest.push(...items);
+      } else left.push(...items);
     }
-    small = rest;
+    small = left;
   }
+  // The tab's general group takes the leftovers, like stories together.
+  let rest = groups.find(g => g.label === restLabel);
+  groups = groups.filter(g => g !== rest);
+  if (!groups.length) return whole;
   groups.sort((a, b) => b.items.length - a.items.length || a.label.localeCompare(b.label));
   if (small.length) {
-    // Like stories next to each other, so the leftovers still read by sport.
-    if (sport) small = small.map((s, i) => [s, i]).sort((a, b) => displayCat(a[0]).localeCompare(displayCat(b[0])) || a[1] - b[1]).map(x => x[0]);
-    groups.push({ label: sport ? "Spórt eile" : "Eile", items: small, mixed: true });
+    small = small.map((s, i) => [s, i]).sort((a, b) => labelOf(a[0]).localeCompare(labelOf(b[0])) || a[1] - b[1]).map(x => x[0]);
+    rest = { label: restLabel, items: [...(rest ? rest.items : []), ...small], mixed: true };
   }
-  return groups.map(g => ({ ...g, trim: !sport }));
+  if (rest) groups.push(rest);
+  return groups;
 }
 
 /**
@@ -890,8 +892,9 @@ function FeedView({ stories, loading, onStoryClick, sectionLabel, sectionId = nu
           {highlights && <FocalCard />}
 
           {!highlights && isDesktop ? (
-            groupByCategory(rest, cols, { sport: sectionId === "sport" }).map((group, gi) => {
-              const items = group.trim ? wholeRows(group.items, cols) : group.items;
+            groupByCategory(rest, sectionId).map((group, gi) => {
+              // One list (nothing to group) keeps whole rows, as before.
+              const items = group.label === null ? wholeRows(group.items, cols) : group.items;
               if (!items.length) return null;
               return (
                 <section key={group.label || `group-${gi}`} className={group.mixed ? "ds-group ds-group-mixed" : "ds-group"}>
