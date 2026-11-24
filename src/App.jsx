@@ -2887,8 +2887,11 @@ export default function DailySceal() {
     window.scrollTo(0, 0);
   }
 
-  const todayFmt = onOther
-    ? new Date(`${viewDay}T12:00:00Z`).toLocaleDateString("en-IE", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" })
+  // The date of the news on screen, as in the apps' masthead: before the
+  // morning run that is still yesterday's. The phone's date until it loads.
+  const shownDay = onOther ? viewDay : todayDate;
+  const todayFmt = shownDay
+    ? new Date(`${shownDay}T12:00:00Z`).toLocaleDateString("en-IE", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" })
     : new Date().toLocaleDateString("en-IE", { weekday: "long", day: "numeric", month: "long" });
 
   // Today's news from the logo or the Nuacht button.
