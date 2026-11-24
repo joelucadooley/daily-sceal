@@ -154,32 +154,56 @@ function storiesForSection(stories, sectionId) {
 /**
  * Group a section's stories by their Irish sub-category, so Spórt reads as
  * Peil, Rugbaí, Sacar and so on rather than one undifferentiated list. Groups
- * are ordered by size, then alphabetically, and anything with a single story
- * is swept into one group at the end rather than getting a heading of its own.
+ * are ordered by size, then alphabetically. A group needs a full row to earn
+ * its own heading; anything thinner goes into one group at the end, where
+ * each story shows its own label (`mixed`).
+ *
+ * Spórt is sorted by sport: two stories are enough for a heading, the Gaelic
+ * games join under CLG when each is too small alone, the rest go under
+ * Spórt eile, and no story is trimmed to fill a row.
  */
-function groupByCategory(stories, cols = GRID_COLS) {
+const SPORT_FAMILY = { "Peil": "CLG", "Iomáint": "CLG", "Camógaíocht": "CLG", "Liathróid Láimhe": "CLG", "CLG": "CLG" };
+
+function groupByCategory(stories, cols = GRID_COLS, { sport = false } = {}) {
   // Splitting is only worth it when there is enough to split. Below two full
   // rows, sub-headings just carve the list into part-empty grids, which is
   // where most of the white space on a quiet tab came from.
-  if (stories.length < cols * 2) return [{ label: null, items: stories }];
+  if (stories.length < (sport ? 4 : cols * 2)) return [{ label: null, items: stories, trim: !sport }];
+  const min = sport ? 2 : cols;
 
-  const buckets = new Map();
-  for (const s of stories) {
-    const k = displayCat(s) || "Eile";
-    if (!buckets.has(k)) buckets.set(k, []);
-    buckets.get(k).push(s);
-  }
+  const bucket = list => {
+    const m = new Map();
+    for (const [k, item] of list) {
+      if (!m.has(k)) m.set(k, []);
+      m.get(k).push(item);
+    }
+    return m;
+  };
   const groups = [];
-  const singles = [];
-  for (const [label, items] of buckets) {
-    // A group needs to fill a row to earn its own heading. Anything thinner
-    // goes to the catch-all, so we never render a grid with one item in it.
-    if (items.length < cols) singles.push(...items);
-    else groups.push({ label, items });
+  let small = [];
+  for (const [label, items] of bucket(stories.map(s => [displayCat(s) || "Eile", s]))) {
+    if (items.length >= min) groups.push({ label, items });
+    else small.push(...items);
+  }
+  // Too few of one Gaelic game for a heading: together under CLG.
+  if (sport) {
+    const rest = [];
+    for (const [label, items] of bucket(small.map(s => [SPORT_FAMILY[displayCat(s)] || null, s]))) {
+      if (label && items.length >= min) {
+        const same = groups.find(g => g.label === label);
+        if (same) same.items.push(...items);
+        else groups.push({ label, items });
+      } else rest.push(...items);
+    }
+    small = rest;
   }
   groups.sort((a, b) => b.items.length - a.items.length || a.label.localeCompare(b.label));
-  if (singles.length) groups.push({ label: "Eile", items: singles });
-  return groups;
+  if (small.length) {
+    // Like stories next to each other, so the leftovers still read by sport.
+    if (sport) small = small.map((s, i) => [s, i]).sort((a, b) => displayCat(a[0]).localeCompare(displayCat(b[0])) || a[1] - b[1]).map(x => x[0]);
+    groups.push({ label: sport ? "Spórt eile" : "Eile", items: small, mixed: true });
+  }
+  return groups.map(g => ({ ...g, trim: !sport }));
 }
 
 /**
@@ -830,7 +854,7 @@ function useGridCols(highlights) {
   return wide ? GRID_COLS_WIDE : GRID_COLS;
 }
 
-function FeedView({ stories, loading, onStoryClick, sectionLabel, highlights = false, avoidLeadId = null }) {
+function FeedView({ stories, loading, onStoryClick, sectionLabel, sectionId = null, highlights = false, avoidLeadId = null }) {
   const isDesktop = useIsDesktop();
   const cols = useGridCols(highlights);
   // Lead with the first story that is not already leading Inniu. If this
@@ -866,11 +890,11 @@ function FeedView({ stories, loading, onStoryClick, sectionLabel, highlights = f
           {highlights && <FocalCard />}
 
           {!highlights && isDesktop ? (
-            groupByCategory(rest, cols).map((group, gi) => {
-              const items = wholeRows(group.items, cols);
+            groupByCategory(rest, cols, { sport: sectionId === "sport" }).map((group, gi) => {
+              const items = group.trim ? wholeRows(group.items, cols) : group.items;
               if (!items.length) return null;
               return (
-                <section key={group.label || `group-${gi}`} className="ds-group">
+                <section key={group.label || `group-${gi}`} className={group.mixed ? "ds-group ds-group-mixed" : "ds-group"}>
                   {group.label && <h2 className="ds-group-head">{group.label}</h2>}
                   <div className="ds-grid">
                     {items.map((s, i) => (
@@ -2701,6 +2725,9 @@ export default function DailySceal() {
           .ds-group:first-of-type .ds-group-head { margin-top: 14px; }
           .ds-group .ds-cat { display: none; }
           .ds-group .ds-meta { justify-content: flex-end; }
+          /* The catch-all group has no one label, so each story keeps its own. */
+          .ds-group-mixed .ds-cat { display: inline; }
+          .ds-group-mixed .ds-meta { justify-content: space-between; }
 
           /* Tabs sized for a big screen: the phone sizes read as a thin
              strip across a wide page. */
@@ -2800,7 +2827,7 @@ export default function DailySceal() {
           {!isExport && view === "feed" && (
             <>
               <SectionBar sections={sections} active={section} onSelect={pickSection} />
-              <FeedView stories={shown} loading={loading} onStoryClick={openStory} sectionLabel={sectionLabel} highlights={section === "inniu"} avoidLeadId={section === "inniu" ? null : inniuLeadId} />
+              <FeedView stories={shown} loading={loading} onStoryClick={openStory} sectionLabel={sectionLabel} sectionId={section} highlights={section === "inniu"} avoidLeadId={section === "inniu" ? null : inniuLeadId} />
             </>
           )}
           {!isExport && view === "reading" && activeStory && (
