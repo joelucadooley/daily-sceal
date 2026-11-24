@@ -23,6 +23,7 @@ const { run } = await import("../generate.js");
 const {
   fixArticle, parseText, focalFor, fnv1a64, timeoutSignal,
   storyAddress, parseStoryAddress, routeFor, addressFor, withAddresses, storyAt, rememberedLevel, rememberLevel,
+  regionIn,
 } = await import("../../src/helpers.js");
 
 let failed = 0, passed = 0;
@@ -458,6 +459,38 @@ await test("the reader's level is remembered, open levels only", () => {
   eq(rememberedLevel(blocked), null, "storage blocked (private window)");
   rememberLevel(10, blocked);
   eq(rememberedLevel(undefined), null, "no storage at all");
+});
+
+// ---- 7. World regions for RTÉ's plain "World" ----
+
+await test("a world story takes the region it names", () => {
+  const cases = [
+    ["Ukraine sank Russian ship near Libya, says Zelensky", "", "An Úcráin"],
+    ["EU condemns Russian 'atrocities' as 17 killed in Kyiv", "", "An Úcráin"],
+    ["Netanyahu and Eisenkot blocs fail to reach coalition deal", "", "An Meánoirthear"],
+    ["Trump accuses China of interfering in 2020 election", "", "An Áise"],
+    ["Ebola outbreak in DR Congo 'out of control', warns MSF", "", "An Afraic"],
+    ["Macron and Merz meet in Brussels", "", "An Eoraip"],
+    ["Venezuela quakes kill 1,400 amid race to find survivors", "", "Meiriceá"],
+    ["US Senate committee votes to hold Fauci in contempt", "", "Meiriceá"],
+    // The headline names nowhere: the opening of the story decides.
+    ["Kim highlights 'sovereignty' in ties after Trump no-show", "North Korean leader Kim Jong-un said", "An Áise"],
+    // Whichever comes first in the headline.
+    ["Poland strips Zelensky of top honour", "", "An Eoraip"],
+  ];
+  for (const [title, summary, want] of cases) eq(regionIn(title, summary), want, title);
+});
+
+await test("Britain, world bodies and stories naming nowhere stay Domhan", () => {
+  for (const [title, summary] of [
+    ["UK govt braced for massive release of Mandelson files", "The former ambassador in Washington"],
+    ["NATO to unveil major arms deals at Ankara summit", "The US and its allies"],
+    ["Pope Leo draws huge crowds at Argentina's holiest shrine", ""],
+    ["AI, peace and multilateralism on UNGA delegates' minds", "In New York this week"],
+    ["Fossil fuels still absent in latest COP31 draft deal", ""],
+    ["Trump tells us nothing new", "It was said to us"],   // "us" is a word, not the US
+    ["80% chance of El Niño developing in June-August, says UN", ""],
+  ]) eq(regionIn(title, summary), null, title);
 });
 
 assert(net.calls === 0, "MyMemory was called");

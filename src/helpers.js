@@ -178,3 +178,45 @@ export function rememberLevel(level, storage = globalThis.localStorage) {
   if (!ADDRESS_LEVELS.includes(level)) return;
   try { storage && storage.setItem(LEVEL_KEY, String(level)); } catch {}
 }
+
+// ---- World regions ----
+//
+// RTÉ tags many world stories just "World", which the site shows as Domhan.
+// The headline (then the opening of the story) usually names where it is,
+// as App.jsx does with counties for Éire. Each entry is a label RTÉ's own
+// tags already use (scripts/categories.js), with the words that place a
+// story there. People who turn up everywhere (Trump, Putin) are left out,
+// as is Russia; Britain and world bodies keep a story under Domhan.
+export const REGIONS = [
+  // Britain stays Domhan, as RTÉ files it: named first, it keeps the label.
+  [null, /\b(uk|britain|british|london|england|scotland|scottish|wales|welsh|starmer|westminster|downing street)\b/i],
+  // So do the world's own bodies: the UN, NATO, the Pope, summits.
+  [null, /\b(united nations|pope|vatican)\b/i],
+  [null, /\b(UN|UNGA|NATO|G7|G20|COP\d+)\b/],
+  ["An Úcráin", /\b(ukraine|ukrainian|ukrainians|kyiv|kiev|zelensky|zelenskyy|kharkiv|odesa|odessa|donbas|donetsk|crimea|zaporizhzhia)\b/i],
+  ["An Meánoirthear", /\b(israel|israeli|israelis|gaza|gazan|palestinian|palestinians|west bank|hamas|hezbollah|lebanon|lebanese|iran|iranian|tehran|syria|syrian|iraq|iraqi|yemen|houthi|houthis|saudi|netanyahu|jerusalem|tel aviv|qatar|middle east)\b/i],
+  ["An Áise", /\b(china|chinese|beijing|japan|japanese|north korea|south korea|korean|pyongyang|seoul|kim jong|taiwan|india|pakistan|afghanistan|taliban|vietnam|thailand|philippines|indonesia|myanmar|hong kong|bangladesh)\b/i],
+  ["An Afraic", /\b(africa|african|nigeria|kenya|sudan|ethiopia|somalia|congo|libya|uganda|ghana|zimbabwe|mali|rwanda)\b/i],
+  ["An Eoraip", /\b(europe|european|brussels|france|french|paris|germany|german|berlin|spain|spanish|madrid|italy|italian|rome|poland|polish|netherlands|dutch|belgium|belgian|greece|greek|portugal|sweden|swedish|denmark|danish|norway|norwegian|finland|austria|hungary|hungarian|czech|romania|macron|merz)\b/i],
+  ["Meiriceá", /\b(united states|american|americans|washington|white house|pentagon|congress|senate|new york|california|texas|florida|chicago|canada|canadian|mexico|mexican|brazil|venezuela|argentina|colombia)\b/i],
+  // "US" only in capitals: "us" is a word.
+  ["Meiriceá", /\bUSA?\b/],
+];
+
+/**
+ * The region a world story is about, or null: the region named first in the
+ * headline, else in the opening 200 characters of the story.
+ */
+export function regionIn(title, summary = "") {
+  for (const text of [String(title || ""), String(summary || "").slice(0, 200)]) {
+    let best = null;
+    for (const [label, re] of REGIONS) {
+      const m = re.exec(text);
+      if (m && (!best || m.index < best.index)) best = { label, index: m.index };
+    }
+    // Britain or a world body named first (label null): Domhan, without
+    // reading further.
+    if (best) return best.label;
+  }
+  return null;
+}

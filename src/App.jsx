@@ -9,7 +9,7 @@ import places from "../scripts/places.json";
 import {
   parseText, focalFor, timeoutSignal,
   storyAddress, routeFor, addressFor, withAddresses, storyAt,
-  rememberedLevel, rememberLevel,
+  rememberedLevel, rememberLevel, regionIn,
 } from "./helpers.js";
 import GameView from "./Game.jsx";
 
@@ -119,6 +119,8 @@ const BROAD_LABELS = new Set(["Éire", "Ulaidh", "Laighin", "An Mhumhain", "Conn
 const displayCat = s => {
   const info = catInfo(s.category);
   const label = (info && info[0]) || s.categoryIr || "Nuacht";
+  // RTÉ's plain "World": the region the story names (helpers.js regionIn).
+  if (label === "Domhan") return regionIn(s.title, s.summary) || label;
   if (!BROAD_LABELS.has(label)) return label;
   // Headline first; only the opening of the summary, so a passing mention
   // further down cannot hijack the label.
@@ -909,7 +911,9 @@ function FeedView({ stories, loading, onStoryClick, sectionLabel, sectionId = nu
             })
           ) : (
             <div className="ds-grid">
-              {wholeRows(rest, cols).map((s, i) => (
+              {/* Whole rows only where there is a grid: a phone's single
+                  column has no rows to fill, so it shows every story. */}
+              {(isDesktop ? wholeRows(rest, cols) : rest).map((s, i) => (
                 <StoryRow key={s.id} story={s} index={i + 1} onClick={onStoryClick} />
               ))}
             </div>
