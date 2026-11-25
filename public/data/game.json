@@ -1,97 +1,94 @@
 {
   "v": 1,
-  "date": "2026-11-24",
-  "from": "2026-11-23",
-  "source": "post",
-  "title": "U2 score 14th US top 10 album with Carnaval De Luz",
-  "link": "https://www.rte.ie/entertainment/2026/1123/1600249-u2-score-14th-us-top-10-album-with-carnaval-de-luz/",
+  "date": "2026-11-25",
+  "from": "2026-11-24",
+  "source": "auto",
+  "title": "Martin to address O'Connor sacking amid call for clarity",
+  "link": "https://www.rte.ie/news/ireland/2026/1124/1600391-hse-removal-dail/",
   "story": [
     [
-      "U2 score 14th US top 10 album with Carnaval De Luz"
-    ],
-    [
-      "U2 have scored their 14th top 10 ",
+      "Taoiseach Micheál Martin is expected to address the sudden removal of HSE Chief Executive Anne O'Connor from her role in the Dáil ",
       0,
-      " in the US after their latest release, Carnaval De Luz, debuted at number four on the Billboard 200 ",
+      ". Opposition politicians are demanding greater clarity on the sacking of Ms O'Connor but Minister for Health Jennifer Carroll MacNeill insists the ",
       1,
-      ". It marks the Dublin band's first appearance in the US albums chart top 10 since Songs of Surrender reached ",
+      " was exclusively a matter for members of the HSE board, whom she said are independent but have her support. The Government is expected to face sustained questioning on the developments in the Dáil ",
       2,
-      " five in 2023. Released on 13 November, Carnaval De Luz is U2’s 16th ",
+      " Leaders' Questions - with the Green Party calling for time to be set aside for a special Dáil debate. Members of the Dáil's Committee of Public Accounts and the Oireachtas Health Committee will also consider their next steps throughout the day - as they ",
       3,
-      " album and their first collection of new material in nine years. Produced by Dubliner Jacknife Lee, the 12-track record features a ",
+      " for greater scrutiny of the events leading to Ms O'Connor's sacking. Last ",
       4,
-      " with Dolly Parton on the closing song Torn."
+      ", Mr Martin met Tánaiste Simon Harris, the leader of Independent TDs in Government Sean Canney and Ms Carroll MacNeill."
     ]
   ],
   "questions": [
     {
-      "before": "U2 have scored their 14th top 10 ",
-      "after": " in the US after their latest release, Carnaval De Luz, debuted at …",
-      "irish": "albam",
-      "english": "album",
-      "ga": "albam",
-      "en": "album",
-      "options": [
-        "agóid",
-        "fiord",
-        "spórt",
-        "albam"
-      ]
-    },
-    {
-      "before": "… release, Carnaval De Luz, debuted at number four on the Billboard 200 ",
+      "before": "… of HSE Chief Executive Anne O'Connor from her role in the Dáil ",
       "after": ".",
-      "irish": "cairt",
-      "english": "chart",
-      "ga": "cairt",
-      "en": "chart",
+      "irish": "inniu",
+      "english": "today",
+      "ga": "inniu",
+      "en": "today",
       "options": [
-        "cumas",
-        "fiord",
-        "spórt",
-        "cairt"
+        "plean",
+        "inniu",
+        "staid",
+        "othar"
       ]
     },
     {
-      "before": "… in the US albums chart top 10 since Songs of Surrender reached ",
-      "after": " five in 2023.",
-      "irish": "uimhir",
-      "english": "number",
-      "ga": "uimhir",
-      "en": "number",
+      "before": "… of Ms O'Connor but Minister for Health Jennifer Carroll MacNeill insists the ",
+      "after": " was exclusively a matter for members of the HSE board, whom she …",
+      "irish": "cinneadh",
+      "english": "decision",
+      "ga": "cinneadh",
+      "en": "decision",
       "options": [
-        "siopaí",
-        "uimhir",
-        "blianta",
-        "triail"
+        "ospidéil",
+        "feachtas",
+        "cinneadh",
+        "breithlá"
       ]
     },
     {
-      "before": "Released on 13 November, Carnaval De Luz is U2’s 16th ",
-      "after": " album and their first collection of new material in nine years.",
-      "irish": "stiúideo",
-      "english": "studio",
-      "ga": "stiúideo",
-      "en": "studio",
+      "before": "… is expected to face sustained questioning on the developments in the Dáil ",
+      "after": " Leaders' Questions - with the Green Party calling for time to be …",
+      "irish": "le linn",
+      "english": "during",
+      "ga": "le linn",
+      "en": "during",
       "options": [
-        "stiúideo",
-        "tearmann",
-        "oscailte",
-        "imreoirí"
+        "buiséad",
+        "le linn",
+        "amárach",
+        "le chéile"
       ]
     },
     {
-      "before": "Produced by Dubliner Jacknife Lee, the 12-track record features a ",
-      "after": " with Dolly Parton on the closing song Torn.",
-      "irish": "díséad",
-      "english": "duet",
-      "ga": "díséad",
-      "en": "duet",
+      "before": "… will also consider their next steps throughout the day - as they ",
+      "after": " for greater scrutiny of the events leading to Ms O'Connor's sacking.",
+      "irish": "brú",
+      "english": "push",
+      "ga": "brú",
+      "en": "push",
       "options": [
-        "riosca",
-        "díséad",
-        "éirigh",
-        "cabhair"
+        "tír",
+        "ráta",
+        "bia",
+        "brú"
+      ]
+    },
+    {
+      "before": "Last ",
+      "after": ", Mr Martin met Tánaiste Simon Harris, the leader of Independent TDs …",
+      "irish": "oíche",
+      "english": "night",
+      "ga": "oíche",
+      "en": "night",
+      "options": [
+        "staid",
+        "oíche",
+        "ciste",
+        "cumas"
       ]
     }
   ]

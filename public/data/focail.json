@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-24T08:39:16.782Z",
+  "generated": "2026-11-25T08:40:04.534Z",
   "words": [
     {
       "ga": "cumas",
@@ -2585,10 +2585,6 @@
     }
   ],
   "days": {
-    "2026-11-23": {
-      "ga": "cumas",
-      "en": "ability"
-    },
     "2026-11-24": {
       "ga": "comhaontú",
       "en": "agreement"
@@ -2596,6 +2592,10 @@
     "2026-11-25": {
       "ga": "margadh",
       "en": "market"
+    },
+    "2026-11-26": {
+      "ga": "ríomhphost",
+      "en": "email"
     }
   }
 }
