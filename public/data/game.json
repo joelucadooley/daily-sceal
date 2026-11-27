@@ -1,97 +1,96 @@
 {
   "v": 1,
-  "date": "2026-11-26",
-  "from": "2026-11-25",
+  "date": "2026-11-27",
+  "from": "2026-11-26",
   "source": "post",
-  "title": "Saw Doctors musical playing to full houses in Galway",
-  "link": "https://www.rte.ie/news/connacht/2026/1125/1600532-shamtown-galway/",
+  "title": "Humans may have been in Ireland earlier than records show",
+  "link": "https://www.rte.ie/news/2026/1126/1600681-animal-bones-waterford/",
   "story": [
     [
-      "Saw Doctors ",
       0,
-      " playing to full houses in Galway"
+      " may have been in Ireland earlier than records show"
     ],
     [
-      "Tuam's ",
+      "New excavations in a Waterford ",
       1,
-      " contribution to Irish ",
+      " and a fresh examination of ",
       2,
-      " takes centre stage in the new Shamtown music show, which is playing to packed-out audiences in the Mick Lally Theatre in Galway city this week. The ",
+      " from the late 1800s found in the same area may show that humans lived in Ireland nearly 1,000 years earlier than currently confirmed, according to a study. The earliest ",
       3,
-      ", based on the background, formation and early success of The Saw Doctors, is by turns poignant, nostalgic, heart-breaking and hugely uplifting. Written by the band's ",
+      " for people being in Ireland prior to the Mesolithic period is a butchered brown bear bone from Alice and Gwendoline Cave in Co Clare. However, findings in a new ",
       4,
-      " Ollie Jennings, the two-hour production gives a captivating insight into the events that combined to form the group, remembering the contributions of Tuam luminaries past and present, while honouring the universal appeal of the band's music, over almost four decades."
+      " show hunter gatherers may have lived in southern Ireland nearly a millennium earlier than currently confirmed."
     ]
   ],
   "questions": [
     {
-      "before": "Saw Doctors ",
-      "after": " playing to full houses in Galway",
-      "irish": "ceoldráma",
-      "english": "musical",
-      "ga": "ceoldráma",
-      "en": "musical",
+      "before": "",
+      "after": " may have been in Ireland earlier than records show",
+      "irish": "Daoine",
+      "english": "Humans",
+      "ga": "daoine",
+      "en": "humans",
       "options": [
-        "iarratais",
-        "ceoldráma",
-        "galtoitín",
-        "bliantúil"
+        "Domhan",
+        "Daoine",
+        "Eitilt",
+        "Bliain"
       ]
     },
     {
-      "before": "Tuam's ",
-      "after": " contribution to Irish life takes centre stage in the new Shamtown music …",
-      "irish": "cultúrtha",
-      "english": "cultural",
-      "ga": "cultúrtha",
-      "en": "cultural",
+      "before": "New excavations in a Waterford ",
+      "after": " and a fresh examination of animal bones from the late 1800s found …",
+      "irish": "pluais",
+      "english": "cave",
+      "ga": "pluais",
+      "en": "cave",
       "options": [
-        "comhairle",
-        "otharcharr",
-        "múinteoir",
-        "cultúrtha"
+        "pluais",
+        "fiach",
+        "ealaín",
+        "sliabh"
       ]
     },
     {
-      "before": "Tuam's cultural contribution to Irish ",
-      "after": " takes centre stage in the new Shamtown music show, which is playing …",
-      "irish": "saol",
-      "english": "life",
-      "ga": "saol",
-      "en": "life",
+      "before": "New excavations in a Waterford cave and a fresh examination of ",
+      "after": " from the late 1800s found in the same area may show that …",
+      "irish": "cnámha ainmhithe",
+      "english": "animal bones",
+      "ga": "cnámha ainmhithe",
+      "en": "animal bones",
       "options": [
-        "saol",
-        "cúil",
-        "féile",
-        "cíos"
+        "cnámha ainmhithe",
+        "meán náisiúnta",
+        "costas maireachtála",
+        "cuairt oifigiúil"
       ]
     },
     {
-      "before": "The ",
-      "after": ", based on the background, formation and early success of The Saw …",
-      "irish": "dráma",
-      "english": "play",
-      "ga": "dráma",
-      "en": "play",
+      "before": "The earliest ",
+      "after": " for people being in Ireland prior to the Mesolithic period is a …",
+      "irish": "fianaise",
+      "english": "evidence",
+      "ga": "fianaise",
+      "en": "evidence",
       "options": [
-        "dráma",
-        "Béarla",
-        "iníon",
-        "óráid"
+        "cíosanna",
+        "scrapáil",
+        "taighde",
+        "fianaise"
       ]
     },
     {
-      "before": "Written by the band's ",
-      "after": " Ollie Jennings, the two-hour production gives a captivating insight into the events …",
-      "irish": "bainisteoir",
-      "english": "manager",
-      "ga": "bainisteoir",
-      "en": "manager",
+      "before": "However, findings in a new ",
+      "after": " show hunter gatherers may have lived in southern Ireland nearly a millennium …",
+      "irish": "staidéar",
+      "english": "study",
+      "ga": "staidéar",
+      "en": "study",
       "options": [
-        "leabharlann",
-        "mídhleathach",
-        "bainisteoir",
-        "sráidbhaile"
+        "réiteoir",
+        "staidéar",
+        "paindéim",
+        "pleananna"
       ]
     }
   ]
