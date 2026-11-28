@@ -1,96 +1,97 @@
 {
   "v": 1,
-  "date": "2026-11-27",
-  "from": "2026-11-26",
+  "date": "2026-11-28",
+  "from": "2026-11-27",
   "source": "post",
-  "title": "Humans may have been in Ireland earlier than records show",
-  "link": "https://www.rte.ie/news/2026/1126/1600681-animal-bones-waterford/",
+  "title": "Meet the Irish entrepreneur selling gelato in winter",
+  "link": "https://www.rte.ie/lifestyle/food/2026/1127/1600760-meet-the-irish-entrepreneur-selling-gelato-in-winter/",
   "story": [
     [
+      "Meet the Irish ",
       0,
-      " may have been in Ireland earlier than records show"
+      " selling gelato in winter"
     ],
     [
-      "New excavations in a Waterford ",
+      "It's said that a good salesman could sell ",
       1,
-      " and a fresh examination of ",
+      " to a fish, but a greater challenge may be selling frozen treats on the Wild Atlantic Way in the depths of winter. Thankfully, it seems Ronan Galvin is up for the ",
       2,
-      " from the late 1800s found in the same area may show that humans lived in Ireland nearly 1,000 years earlier than currently confirmed, according to a study. The earliest ",
+      ". Handcrafted in small ",
       3,
-      " for people being in Ireland prior to the Mesolithic period is a butchered brown bear bone from Alice and Gwendoline Cave in Co Clare. However, findings in a new ",
+      " in Athenry and served at The Creamery in Salthill, Wild Churn is an artisanal brand bringing authentic Italian gelato to the Emerald Isle. \"Wild Churn was ",
       4,
-      " show hunter gatherers may have lived in southern Ireland nearly a millennium earlier than currently confirmed."
+      " as something from the West, bringing a bit of hominess,\" he says, noting that the logo incorporates the waves that decorate our coastline."
     ]
   ],
   "questions": [
     {
-      "before": "",
-      "after": " may have been in Ireland earlier than records show",
-      "irish": "Daoine",
-      "english": "Humans",
-      "ga": "daoine",
-      "en": "humans",
+      "before": "Meet the Irish ",
+      "after": " selling gelato in winter",
+      "irish": "fiontraí",
+      "english": "entrepreneur",
+      "ga": "fiontraí",
+      "en": "entrepreneur",
       "options": [
-        "Domhan",
-        "Daoine",
-        "Eitilt",
-        "Bliain"
-      ]
-    },
-    {
-      "before": "New excavations in a Waterford ",
-      "after": " and a fresh examination of animal bones from the late 1800s found …",
-      "irish": "pluais",
-      "english": "cave",
-      "ga": "pluais",
-      "en": "cave",
-      "options": [
-        "pluais",
-        "fiach",
-        "ealaín",
-        "sliabh"
-      ]
-    },
-    {
-      "before": "New excavations in a Waterford cave and a fresh examination of ",
-      "after": " from the late 1800s found in the same area may show that …",
-      "irish": "cnámha ainmhithe",
-      "english": "animal bones",
-      "ga": "cnámha ainmhithe",
-      "en": "animal bones",
-      "options": [
-        "cnámha ainmhithe",
-        "meán náisiúnta",
-        "costas maireachtála",
-        "cuairt oifigiúil"
-      ]
-    },
-    {
-      "before": "The earliest ",
-      "after": " for people being in Ireland prior to the Mesolithic period is a …",
-      "irish": "fianaise",
-      "english": "evidence",
-      "ga": "fianaise",
-      "en": "evidence",
-      "options": [
-        "cíosanna",
-        "scrapáil",
-        "taighde",
+        "triomach",
+        "fiontraí",
+        "traenáil",
         "fianaise"
       ]
     },
     {
-      "before": "However, findings in a new ",
-      "after": " show hunter gatherers may have lived in southern Ireland nearly a millennium …",
-      "irish": "staidéar",
-      "english": "study",
-      "ga": "staidéar",
-      "en": "study",
+      "before": "It's said that a good salesman could sell ",
+      "after": " to a fish, but a greater challenge may be selling frozen treats …",
+      "irish": "uisce",
+      "english": "water",
+      "ga": "uisce",
+      "en": "water",
       "options": [
-        "réiteoir",
-        "staidéar",
-        "paindéim",
-        "pleananna"
+        "meán",
+        "othar",
+        "aimsir",
+        "uisce"
+      ]
+    },
+    {
+      "before": "Thankfully, it seems Ronan Galvin is up for the ",
+      "after": ".",
+      "irish": "tasc",
+      "english": "task",
+      "ga": "tasc",
+      "en": "task",
+      "options": [
+        "iasc",
+        "goid",
+        "tasc",
+        "baill"
+      ]
+    },
+    {
+      "before": "Handcrafted in small ",
+      "after": " in Athenry and served at The Creamery in Salthill, Wild Churn is …",
+      "irish": "baisceanna",
+      "english": "batches",
+      "ga": "baisceanna",
+      "en": "batches",
+      "options": [
+        "achomharc",
+        "baisceanna",
+        "ballstáit",
+        "ríomhaire"
+      ]
+    },
+    {
+      "before": "\"Wild Churn was ",
+      "after": " as something from the West, bringing a bit of hominess,\" he says, …",
+      "irish": "cruthaíodh",
+      "english": "created",
+      "ga": "cruthaíodh",
+      "en": "created",
+      "options": [
+        "meicníocht",
+        "cruthaíodh",
+        "reáchtálann",
+        "miondealú"
       ]
     }
   ]
